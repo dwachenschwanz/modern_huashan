@@ -1,0 +1,103 @@
+.choose-from{
+    width:20%;
+    position: absolute;
+}
+
+.select-input{
+    height:640px;
+    width:100%;
+    overflow: auto;
+    position: relative;
+    padding-right: 15px;
+    padding-left: 15px;
+}
+
+.selected{
+    position: absolute;
+    left:22%;
+    width:77%;
+}
+.list-of-templates{
+    height:420px;
+    overflow: auto;
+}
+
+.select-template-title{
+    height:45px;
+    padding-top: 9px;
+}
+
+.textarea-json{
+    float:left;
+    padding-right: 20px;
+    white-space: nowrap;
+}
+
+.selected-inputs{
+    height:570px;
+    padding-top:9px;
+    width:100%;
+}
+
+.pager .save > a,
+.pager .save > span {
+  background-color: #d9534f;
+  color:white;
+}
+
+.pager .save > a:hover,
+.pager .save > a:focus {
+  color: #a94442;
+  background-color: #ebcccc;
+}
+
+td{
+    height:70px !important;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+textarea{
+    width:100%;
+    height:100%;
+}
+
+table{
+    width:100%;
+    table-layout: fixed;
+}
+table,th,td{
+    text-align: center;
+}
+
+td.vert-align{
+    vertical-align: middle;
+}
+th{
+    overflow:hidden;
+}
+
+.no-wrap{
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+html, body{
+	height:100%;
+}
+
+.table-left{
+    float: right;
+}
+
+.right-image{
+    width:30%;
+    float:left;
+}
+
+.selectPTI td {
+    background-color:steelblue!important;
+    color:white;
+    font-weight:bold;
+}

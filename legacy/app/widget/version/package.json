@@ -1,0 +1,33 @@
+{
+  "name": "huashanApp",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Wizard",
+  "devDependencies": {
+    "bower": "^1.3.1",
+    "clean-css-cli": "^4.0.6",
+    "copyfiles": "latest",
+    "glob": "latest",
+    "html-minifier": "latest",
+    "html-minifier-cli": "latest",
+    "http-server": "^0.6.1",
+    "jasmine-core": "^2.3.4",
+    "jshint": "latest",
+    "minifier": "latest",
+    "mkdirp": "latest",
+    "ng-html2js": "latest",
+    "ngmin": "latest",
+    "uglifyjs": "latest"
+  },
+  "scripts": {
+    "postinstall": "bower install",
+    "prestart": "npm install",
+    "build": "npm run makeBuildFolder && npm run buildTemplate && npm run replace && npm run minifyJS && npm run buildCSS",
+    "makeBuildFolder": "mkdirp dist",
+    "buildTemplate": "ng-html2js app/template/version.html -m huashanApp dist/versionview.js",
+    "replace": "replace 'app/template/' 'widget/version/app/template/' dist/*.js",
+    "minifyJS": "npm run buildJS && ngmin dist/bundle.js dist/bundle.min.js",
+    "buildJS": "uglifyjs dist/*.js --screw-ie8 -b -o dist/bundle.js",
+    "buildCSS": "cleancss --output dist/bundle.css app/css/app.css app/bower_components/bootstrap/dist/css/bootstrap.css"
+  }
+}

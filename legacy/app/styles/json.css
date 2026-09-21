@@ -1,0 +1,26 @@
+.save-alert{
+    position:absolute;
+    bottom:25px;
+    right:0px;
+}
+
+.shake {
+    -webkit-animation-duration: 0.3s;
+    animation-duration: 0.3s;
+}
+
+.fadeIn {
+    -webkit-animation-duration: 0.5s;
+    animation-duration: 0.5s;
+}
+#json{
+    height:550px;
+    overflow:auto;
+    border: 1px solid #eee;
+}
+
+#revision-json{
+    height:calc(100% - 260px);
+    overflow:auto;
+    padding-top: 2px;
+}

@@ -1,0 +1,716 @@
+<nav class="navbar navbar-inverse navbar-static-top" role="navigation"
+     style="margin-bottom: 10px;">
+  <div class="container-fluid">
+    <!-- Brand and toggle get grouped for better mobile display -->
+    <div class="navbar-header">
+      <a class="navbar-brand">Huashan</a>
+    </div>
+
+    <!-- Collect the nav links, forms, and other content for toggling -->
+    <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+      <ul class="nav navbar-nav">
+        <li><a href="#">Home</a></li>
+        <li><a ng-if="data.isAdmin" href="#/admin">Admin</a></li>
+        <li><a href="#/selectTemplate">Select Template</a></li>
+        <li ng-hide="data.selectedTemplate === 'Not Selected'"><a
+            href="#/json/{{data.selectedTemplate}}">JSON</a></li>
+        <li class="dropdown active"
+            ng-hide="data.selectedTemplate === 'Not Selected'">
+          <a href="" class="dropdown-toggle" data-toggle="dropdown">Data
+            Structure <span class="caret"></span></a>
+          <ul class="dropdown-menu" role="menu">
+            <li><a href="#/datastructure/{{data.selectedTemplate}}">Project
+              Data Structure</a></li>
+            <!-- <li>
+              <a href="#/platformDataStructure/{{data.selectedTemplate}}">Platform
+                Data Structure</a></li> -->
+          </ul>
+        </li>
+        <li class="dropdown"
+            ng-hide="data.selectedTemplate === 'Not Selected'">
+          <a href="" class="dropdown-toggle" data-toggle="dropdown">App
+            Structure <span class="caret"></span></a>
+          <ul class="dropdown-menu" role="menu">
+            <li><a href="#/appstructure/{{data.selectedTemplate}}">Project
+              App Structure</a></li>
+            <!-- <li>
+              <a href="#/platformAppStructure/{{data.selectedTemplate}}">Platform
+                App Structure</a></li> -->
+          </ul>
+        </li>
+        <li class="dropdown"
+            ng-hide="data.selectedTemplate === 'Not Selected'">
+          <a href="" class="dropdown-toggle" data-toggle="dropdown">Portfolio
+            Structure <span class="caret"></span></a>
+          <ul class="dropdown-menu" role="menu">
+            <li>
+              <a href="#/portfoliostructure/{{data.selectedTemplate}}">Project
+                Portfolio Structure</a></li>
+            <!-- <li>
+              <a href="#/platformPortfolioStructure/{{data.selectedTemplate}}">Platform
+                Portfolio Structure</a></li> -->
+          </ul>
+        </li>
+        <li>
+          <a href="#/revisions/{{data.selectedTemplate}}">Revisions</a>
+        </li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li class="active"><a
+            href=""><b>{{data.selectedTemplate}}</b></a></li>
+      </ul>
+    </div><!-- /.navbar-collapse -->
+  </div><!-- /.container-fluid -->
+</nav>
+
+<div id="loadingSpinner" ng-show="data.showLoading"></div>
+
+<div class="select-template no-padding" ng-hide="data.showLoading">
+  <!--Input/Output Tabs-->
+  <tabset class="animated fadeIn">
+    <tab heading="Input">
+      <div class="select-input">
+        <!--Left side: list of templates to choose from-->
+        <div class="choose-from">
+          <div class="select-template-title">
+            <h4 ng-show="!data.isPlatform">Data Structure</h4>
+            <h4 ng-show="data.isPlatform">Platform Data
+              Structure</h4>
+          </div>
+          <div class="select-template-title">
+            <input type="text" class="form-control"
+                   placeholder="Search"
+                   ng-model="searchInput.CellLink">
+          </div>
+          <div class="panel panel-primary">
+
+            <!-- List group -->
+            <div class="list-of-templates" id="input-list">
+              <ul class="list-group">
+                <li ng-show="!data.showLoading"
+                    class="list-group-item"
+                    ng-repeat="input in data.excludedComponents.Inputs|filter:searchInput track by $index"
+                    tooltip="{{input.CellLink}}"
+                    tooltip-trigger="mouseenter"
+                    tooltip-popup-delay="500">
+                  <div class="no-wrap">
+                    <a href="" class="text-success"
+                       ng-click="data.includeInput(input)">
+                      <i class="fa fa-plus-square"></i>
+                    </a>
+                    {{input.CellLink}}
+                  </div>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div><!--Left side-->
+
+        <!--Right Side: selected template and JSON-->
+        <div class="selected">
+          <div class="select-template-title">
+            <h4>Inputs</h4>
+          </div>
+          <div class="selected-inputs" id="included-inputs">
+            <table id="inputTable" class="table table-striped"
+                   fixed-header
+                   style="min-width:1100px; max-width:1100px;">
+              <thead>
+              <tr>
+                <th style="border:none;min-width: 20px;max-width: 20px;"></th>
+                <th style="min-width: 150px;max-width: 150px;">
+                  Excel Range Name
+                </th>
+                <th style="min-width: 100px;max-width: 100px;">
+                  Display
+                </th>
+                <th style="min-width: 70px;max-width: 70px;">
+                  Units
+                </th>
+                <th style="min-width: 260px;max-width: 260px;">
+                  Description
+                </th>
+                <th style="min-width: 100px;max-width: 100px;">
+                  Default
+                </th>
+                <th style="min-width: 150px;max-width: 150px;">
+                  Type
+                </th>
+                <th style="min-width: 100px;max-width: 100px;">
+                  Kind
+                </th>
+                <th style="min-width: 70px;max-width: 70px;">
+                  Inherited
+                </th>
+                <th style="min-width: 70px;max-width: 70px;">
+                  Edit
+                </th>
+              </tr>
+              </thead>
+
+              <tbody>
+              <tr ng-repeat="input in data.includedComponents.Inputs"
+                  ng-init="show=true"
+                  ng-show="input.Type != 'TABLE'">
+                <td style="min-width: 20px;max-width: 20px;border:none;background-color: white;">
+                  <div>
+                    <a href="" class="text-danger"
+                       ng-click="data.excludeInput(input)">
+                      <i class="fa fa-minus-square"></i></a>
+                  </div>
+                </td>
+                <td style="min-width: 150px;max-width: 150px;">
+                  <div class="no-wrap"
+                       tooltip="{{input.CellLink}}"
+                       tooltip-trigger="mouseenter"
+                       tooltip-popup-delay="500">
+                    {{input.CellLink}}
+                  </div>
+                  <input type="text" ng-model="input.Key"
+                         ng-show="!show || !show2"
+                         style="width:100%;"
+                         class="form form-control">
+                </td>
+                <td style="min-width: 100px;max-width: 100px;">
+                  <p ng-show="show && show2">
+                    {{input.Display}}</p>
+                  <input type="text" ng-model="input.Display"
+                         ng-show="!show || !show2"
+                         style="width:100%;"
+                         class="form form-control">
+                </td>
+                <td style="min-width: 70px;max-width: 70px;">
+                  <p ng-show="show && show2">
+                    {{input.Units}}</p>
+                  <input type="text" ng-model="input.Units"
+                         ng-show="!show || !show2"
+                         style="width:100%;"
+                         class="form form-control">
+                </td>
+                <td style="min-width: 260px;max-width: 260px;">
+                  <p ng-show="show && show2">
+                    {{input.Description}}</p>
+                  <textarea ng-show="!show || !show2"
+                            ng-model="input.Description"
+                            class="form form-control"
+                            style="height:100px;"></textarea>
+                </td>
+
+                <td style="min-width: 100px;max-width: 100px;">
+                  <div ng-show="show && show2" ng-switch
+                       on="input.Type" class="no-wrap">
+                    <p ng-switch-when="SCALAR">
+                      {{input.Val}}</p>
+                    <p ng-switch-when="DISTRIBUTION">
+                      {{input.Val[0]}}<br/>{{input.Val[1]}}<br/>{{input.Val[2]}}
+                    </p>
+                    <p ng-switch-when="TABLE">
+                      {{input.Key}}</p>
+                    <p ng-switch-when="DATE">
+                      {{input.Val}}
+                    </p>
+                  </div>
+                  <div ng-show="!show || !show2" ng-switch
+                       on="input.Type">
+                    <input type="text" ng-model="input.Val"
+                           ng-switch-when="SCALAR"
+                           style="width:100%;"
+                           class="form form-control">
+                    <div ng-switch-when="DISTRIBUTION">
+                      <input type="text"
+                             ng-model="input.Val[0]"
+                             style="width:100%;"
+                             class="form form-control"><br/>
+                      <input type="text"
+                             ng-model="input.Val[1]"
+                             style="width:100%;"
+                             class="form form-control"><br/>
+                      <input type="text"
+                             ng-model="input.Val[2]"
+                             style="width:100%;"
+                             class="form form-control"><br/>
+                    </div>
+                    <div ng-switch-when="TABLE">
+                      {{input.Key}}
+                    </div>
+
+                    <div ng-switch-when="DATE">
+                      <div>Month</div>
+                      <select class="form-control"
+                              style="width: 80px;"
+                              ng-init="monthTem = data.initDataEdit(input.Val).month"
+                              ng-model="monthTem"
+                              ng-change="input.Val = data.updateFormat(input.Val, monthTem, undefined)">
+                        <option value="Jan">Jan</option>
+                        <option value="Feb">Feb</option>
+                        <option value="Mar">Mar</option>
+                        <option value="Apr">Apr</option>
+                        <option value="May">May</option>
+                        <option value="Jun">Jun</option>
+                        <option value="Jul">Jul</option>
+                        <option value="Aug">Aug</option>
+                        <option value="Sep">Sep</option>
+                        <option value="Oct">Oct</option>
+                        <option value="Nov">Nov</option>
+                        <option value="Dec">Dec</option>
+                      </select>
+                      <div>Year</div>
+                      <input
+                          ng-init="yearTem = data.initDataEdit(input.Val).year"
+                          ng-model="yearTem"
+                          ng-change="input.Val = data.updateFormat(input.Val, undefined, yearTem)"
+                          type="text"
+                          class="form-control"
+                          style="width: 80px;">
+                    </div>
+                    <div ng-switch-default></div>
+                  </div>
+                </td>
+
+                <td style="min-width: 150px;max-width: 150px;">
+                  <p ng-show="show && show2 || input.Table !== undefined">
+                    {{input.Type}}</p>
+                  <select
+                      ng-show="(!show && input.Table === undefined) || (!show2 && input.Table === undefined)"
+                      class="btn btn-default form-control"
+                      ng-model="input.Type"
+                      ng-change="data.changeType(input);">
+                    <option value="DISTRIBUTION">
+                      DISTRIBUTION
+                    </option>
+                    <option value="SCALAR">SCALAR</option>
+                    <option value="TABLE">TABLE</option>
+                    <option value="DATE">DATE</option>
+                  </select>
+                </td>
+                <td style="min-width: 100px;max-width: 100px;">
+                  <p ng-show="show && show2">
+                    {{input.Constraint}}</p>
+                  <select ng-show="!show || !show2"
+                          class="btn btn-default form-control"
+                          ng-model="input.Constraint">
+                    <option value="double">double</option>
+                    <option value="string">string</option>
+                    <option value="integer">integer</option>
+                    <option value="date">date</option>
+                    <option value="year">year</option>
+                  </select>
+                </td>
+                <td align="center"
+                    style="min-width: 70px;max-width: 70px;">
+                  <input type="checkbox"
+                         ng-model="input.Inherited"
+                         ng-disabled="show && show2">
+                </td>
+                <td style="min-width: 70px;max-width: 70px;">
+                  <button type="button"
+                          class="btn btn-success btn-sm"
+                          ng-click="show=false"
+                          ng-show="show && show2">
+                    <span class="glyphicon glyphicon-pencil"></span>
+                  </button>
+                  <button type="button" class="btn btn-danger"
+                          ng-click="show=true"
+                          ng-show="!show || !show2">
+                    <span class="glyphicon glyphicon-ok"></span>
+                  </button>
+                </td>
+              </tr>
+            </table>
+          </div>
+
+
+        </div><!--Right side-->
+      </div>
+    </tab>
+    <tab heading="Table Inputs">
+      <div class="select-input">
+        <!--Left side: list of templates to choose from-->
+        <div class="choose-from">
+          <div class="select-template-title">
+            <h4>Choose From</h4>
+          </div>
+          <div class="select-template-title">
+            <input type="text" class="form-control"
+                   placeholder="Search"
+                   ng-model="searchInput.CellLink">
+          </div>
+          <div class="panel panel-primary">
+            <!-- List group -->
+            <div class="list-of-templates"
+                 id="potential-tableInput-list">
+
+              <a href=""
+                 class="list-group-item"
+                 ng-repeat="ptInputs in data.excludedPotentialTableInputs|filter:searchInput track by $index"
+                 ng-click="data.selectedChooseFrom(ptInputs)"
+                 ng-class="{active: data.selectedCelllink == ptInputs.CellLink}"
+                 tooltip="{{ptInputs.CellLink}}"
+                 tooltip-trigger="mouseenter"
+                 tooltip-popup-delay="500">
+                <table>
+                  <tr>
+                    <td class="appStructList">
+                      <div class="no-wrap">
+                        <a href="" class="text-success"
+                           ng-click="data.includePotentialTableInput(ptInputs)">
+                          <i class="fa fa-plus-square"></i>
+                        </a>
+
+                        {{ptInputs.CellLink}}
+                      </div>
+                    </td>
+                  </tr>
+                </table>
+              </a>
+            </div>
+          </div>
+        </div><!--Left side-->
+
+        <!--Right Side: selected template and JSON-->
+
+        <div class="selected">
+          <div class="select-template-title">
+            <h4>Table Inputs</h4>
+          </div>
+          <div class="col-sm-12">
+            <div class="col-sm-6">
+
+              <div style="border:1px;
+                                        height:400px;
+                                        overflow-y:scroll;
+                                        overflow-x:scroll;
+                                        margin-top: 30px;
+                                        margin-left: 10px">
+                <!-- REST CalcEngine (WI-3): inline HTML table rendered directly in a div
+                     (body-inner only, via tablePreviewHtml filter) — no iframe -->
+                <div ng-if="data.htmlPreview" ng-bind-html="data.htmlPreview | tablePreviewHtml"
+                     style="width:100%; height:100%;"></div>
+                <!-- Legacy SOAP: server-generated PNG preview -->
+                <img ng-if="!data.htmlPreview" src="{{data.imageURL}}">
+              </div>
+
+            </div>
+            <div class="col-sm-6">
+              <div class="selected-inputs" id="potential-included-inputs">
+                <div class="table-left">
+                  <table id="potentialinputTable"
+                         class="table table-striped"
+                  >
+                    <thead>
+                    <tr>
+                      <th width="5%"></th>
+                      <th width="35%">
+                        Excel Range Name
+                      </th>
+                      <th>
+                        Display
+                      </th>
+                      <th>
+                        Inherited
+                      </th>
+                      <th>
+                        Edit
+                      </th>
+                    </tr>
+                    </thead>
+
+                    <tbody>
+                    <tr ng-repeat="ptInput in data.includedComponents.Inputs track by $index"
+                        ng-init="show=true; showImage=true;"
+                        ng-click="data.select(ptInput)"
+                        ng-class="{'selectPTI': data.selectedCelllink == ptInput.CellLink}"
+                        ng-show="ptInput.Type === 'TABLE'">
+                      <td>
+                        <div>
+                          <a href="" class="text-danger"
+                             ng-click="data.excludePotentialTableInput(ptInput)">
+                            <i class="fa fa-minus-square"></i></a>
+                        </div>
+                      </td>
+                      <td>
+                        <div class="no-wrap"
+                             tooltip="{{ptInput.CellLink}}"
+                             tooltip-trigger="mouseenter"
+                             tooltip-popup-delay="500">
+                          {{ptInput.CellLink}}
+                        </div>
+                        <input type="text"
+                               ng-model="ptInput.Key"
+                               ng-show="!show || !show2"
+                               style="width:100%;"
+                               class="form form-control">
+                      </td>
+                      <td>
+                        <p ng-show="show && show2">
+                          {{ptInput.Display}}</p>
+                        <input type="text"
+                               ng-model="ptInput.Display"
+                               ng-show="!show || !show2"
+                               style="width:100%;"
+                               class="form form-control">
+                      </td>
+
+                      <td align="center"
+                      >
+                        <input type="checkbox"
+                               ng-model="ptInput.Inherited"
+                               ng-disabled="show && show2">
+                      </td>
+                      <td>
+                        <button type="button"
+                                class="btn btn-success btn-sm"
+                                ng-click="show=false"
+                                ng-show="show && show2">
+                          <span class="glyphicon glyphicon-pencil"></span>
+                        </button>
+                        <button type="button"
+                                class="btn btn-danger"
+                                ng-click="show=true"
+                                ng-show="!show || !show2">
+                          <span class="glyphicon glyphicon-ok"></span>
+                        </button>
+                      </td>
+                  </table>
+                </div>
+                <!--<div class="right-image">-->
+                <!--<div style="border:1px;-->
+                <!--width:440px;-->
+                <!--height:400px;-->
+                <!--overflow-y:scroll;-->
+                <!--overflow-x:scroll;"><img-->
+                <!--src="{{data.imageURL}}">-->
+                <!--</div>-->
+                <!--</div>-->
+              </div>
+            </div>
+          </div>
+        </div><!--Right side-->
+      </div>
+    </tab>
+    <tab heading="Output">
+      <div class="select-input">
+        <!--Left side: list of templates to choose from-->
+        <div class="choose-from">
+          <div class="select-template-title">
+            <h4>Choose From</h4></div>
+          <div class="select-template-title">
+            <input type="text" class="form-control"
+                   placeholder="Search" ng-model="searchOutput">
+          </div>
+          <div class="panel panel-primary">
+            <!-- List group -->
+            <div class="list-of-templates">
+              <ul class="list-group">
+                <li class="list-group-item"
+                    ng-repeat="output in data.excludedComponents.Outputs|filter:searchOutput track by $index"
+                    tooltip="{{output.CellLink}}"
+                    tooltip-trigger="mouseenter"
+                    tooltip-popup-delay="500">
+                  <div class="no-wrap">
+                    <a href="" class="text-success"
+                       ng-click="data.includeOutput(output)">
+                      <i class="fa fa-plus-square"></i>
+                    </a>
+                    {{output.CellLink}}
+                  </div>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div><!--Left side-->
+
+        <!--Right Side: selected template and JSON-->
+        <div class="selected">
+          <div class="select-template-title">
+            <h4>Outputs</h4>
+          </div>
+          <div class="selected-inputs" id="included-outputs">
+            <table id="outputTable" class="table table-striped"
+                   fixed-header
+                   style="min-width:1100px; max-width:1100px;">
+              <thead>
+              <tr>
+                <th style="border:none;min-width: 20px;max-width: 20px;"></th>
+                <th style="min-width: 400px;max-width: 400px;">
+                  Excel Range Name
+                </th>
+                <th style="min-width: 300px;max-width: 300px;">
+                  Display
+                </th>
+                <th style="min-width: 150px;max-width: 150px;">
+                  Units
+                </th>
+                <th style="min-width: 150px;max-width: 150px;">
+                  Postprocessing
+                </th>
+                <th style="min-width: 70px;max-width: 70px;">
+                  Edit
+                </th>
+
+              </tr>
+              </thead>
+              <tbody>
+
+              <tr ng-repeat="output in data.includedComponents.Outputs"
+                  ng-init="show=true">
+                <td style="border:none;background-color: white;min-width: 20px;max-width: 20px;">
+                  <div>
+                    <a href="" class="text-danger"
+                       ng-click="data.excludeOutput(output)">
+                      <i class="fa fa-minus-square"></i>
+                    </a>
+                  </div>
+                </td>
+                <td style="min-width: 400px;max-width: 400px;">
+                  <div class="no-wrap"
+                       tooltip="{{output.CellLink}}"
+                       tooltip-trigger="mouseenter"
+                       tooltip-popup-delay="500">
+                    {{output.CellLink}}
+                  </div>
+                  <input type="text" ng-show="!show || !show2"
+                         ng-model="output.Key"
+                         style="width:100%;"
+                         class="form form-control">
+                </td>
+                <td style="min-width: 300px;max-width: 300px;">
+                  <p ng-show="show && show2">
+                    {{output.Display}}</p>
+                  <input type="text" ng-show="!show || !show2"
+                         ng-model="output.Display"
+                         style="width:100%;"
+                         class="form form-control">
+                </td>
+                <td style="min-width: 150px;max-width: 150px;">
+                  <p ng-show="show && show2">
+                    {{output.Units}}</p>
+                  <input type="text" ng-show="!show || !show2"
+                         ng-model="output.Units"
+                         style="width:100%;"
+                         class="form form-control">
+                </td>
+                <td align="center"
+                    style="min-width: 150px;max-width: 150px;">
+                  <input type="checkbox"
+                         ng-model="output.UsePostProcessingOutputs"
+                         ng-disabled="show && show2"></td>
+                <td style="min-width: 70px;max-width: 70px;">
+                  <button type="button"
+                          class="btn btn-success"
+                          ng-click="show=false"
+                          ng-show="show">
+                    <span class="glyphicon glyphicon-pencil"></span>
+                  </button>
+                  <button type="button" class="btn btn-danger"
+                          ng-click="show=true"
+                          ng-show="!show">
+                    <span class="glyphicon glyphicon-ok"></span>
+                  </button>
+                </td>
+              </tr>
+
+              </tbody>
+            </table>
+          </div>
+        </div><!--Right side-->
+      </div>
+    </tab>
+
+  </tabset><!--Input/Output Tabs-->
+</div>
+
+<div class="col-sm-12 text-center align-to-bottom">
+  <a href="#/selectTemplate" class="btn btn-primary pull-left" role="button">
+    <span class="glyphicon glyphicon-chevron-left"></span> Previous: Select
+    Template</a>
+  <a href="#/appstructure/{{data.selectedTemplate}}"
+     class="btn btn-primary pull-right" role="button">Next: App Structure
+    <span class="glyphicon glyphicon-chevron-right"></span></a>
+
+  <button type="button" class="btn btn-success" ng-click="show2=false"
+          ng-show="show2" ng-init="show2 = true">Edit
+    <!--<span class="glyphicon glyphicon-pencil"></span>-->
+  </button>
+  <button type="button" class="btn btn-danger" ng-click="show2=true"
+          ng-show="!show2">
+    <span class="glyphicon glyphicon-ok"></span>
+  </button>
+  <button class="btn btn-danger"
+          style="width:60px;"
+          data-toggle="modal"
+          data-target="#commitMessageModal"
+          ng-disabled="data.isUnchanged()"
+          ng-click="show2=true"><i class="fa fa-spinner fa-spin fa-lg"
+        ng-show="!data.saveComplete"></i><span
+      ng-show="data.saveComplete">save</span>
+  </button>
+
+  <div class="col-sm-12 save-alert">
+    <alert class="animated shake" ng-repeat="alert in data.alerts"
+           type="{{alert.type}}" close="data.closeAlert($index)"><i
+        class="fa fa-exclamation-triangle fa-lg"></i> <b>Saving
+      failed.</b> {{alert.msg}}
+    </alert>
+  </div>
+</div>
+
+<!-- Check Save Modal -->
+<div class="modal fade" id="checkSaveModal" tabindex="-1" role="dialog"
+     aria-labelledby="checkSaveModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal"><span
+            aria-hidden="true">&times;</span><span class="sr-only">Close</span>
+        </button>
+        <h4 class="modal-title">Delete Template</h4>
+
+      </div>
+      <div class="modal-body">
+        <h4 class="modal-title" id="checkSaveModalLabel">Do you want to
+          save changes to data structure?</h4>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-primary" ng-click="data.save()">Save
+        </button>
+        <button type="button" class="btn btn-warning"
+                data-dismiss="modal">Discard
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<commit-message-modal save-function="data.saveWithCommit(commitMessage)"></commit-message-modal>
+
+<script>
+    angular.module('huashanApp', []);
+    (function () {
+        var opts = {
+            lines: 13, // The number of lines to draw
+            length: 11, // The length of each line
+            width: 5, // The line thickness
+            radius: 17, // The radius of the inner circle
+            corners: 1, // Corner roundness (0..1)
+            rotate: 0, // The rotation offset
+            color: '#FFF', // #rgb or #rrggbb
+            speed: 1, // Rounds per second
+            trail: 60, // Afterglow percentage
+            shadow: false, // Whether to render a shadow
+            hwaccel: false, // Whether to use hardware acceleration
+            className: 'spinner', // The CSS class to assign to the spinner
+            zIndex: 2e9, // The z-index (defaults to 2000000000)
+            top: 'auto', // Top position relative to parent in px
+            left: 'auto' // Left position relative to parent in px
+        };
+        var target = document.getElementById("loadingSpinner");
+        var spinner = new Spinner(opts).spin(target);
+        iosOverlay({
+            text: "Loading",
+            spinner: spinner,
+            parentEl: "loadingSpinner"
+        });
+    })();
+</script>

@@ -1,0 +1,23 @@
+<!doctype html>
+<html class="no-js">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Huashan</title>
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width">
+    <!-- Place favicon.ico and apple-touch-icon.png in the root directory -->
+
+    <link rel="stylesheet" href="bundle.css" />
+
+  </head>
+
+  <body ng-app="huashanApp">
+    <div ng-view></div>
+
+    <!-- Highcharts (pre-built ES6 dist) loaded separately: the legacy uglifyjs used for
+         bundle.min.js cannot parse it, and it renders REST CalcEngine chart JSON. -->
+    <script src="highcharts.js"></script>
+    <script src="bundle.min.js"></script>
+</body>
+</html>

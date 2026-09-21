@@ -1,0 +1,17 @@
+<div id="imagePanel">
+
+    <span id="imageToBeZoomed" class="zoom">
+        <i class="fa fa-spinner fa-spin" ng-show="!loaded"></i>
+        <img ng-show="loaded" id="image" ng-src="{{imageUrl}}" class="img-responsive img-thumbnail">
+    </span>
+    <br/>
+    <a href="{{imageUrl}}" class="btn btn-primary btn-small" download>Download</a>
+    <!--
+    <span class='zoom' ui-jq="zoom" ui-options="imageUrlGetter">
+
+	</span>
+	-->
+    <h5>{{shadowTitle}}</h5>
+	<img ng-show="shadow" ng-src="{{ShadowImageUrl}}">
+
+</div>

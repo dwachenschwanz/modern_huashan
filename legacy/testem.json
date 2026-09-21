@@ -1,0 +1,33 @@
+{
+  "framework": "jasmine2",
+  "src_files": [
+    "app/bower_components/smart-jasmine-matcher/src/smartJasmineMatcher.js",
+    "app/lib/smartorg/smartorg.js",
+    "app/bower_components/angular/angular.js",
+    "app/bower_components/angular-route/angular-route.js",
+    "app/bower_components/angular-cookies/angular-cookies.js",
+    "app/bower_components/angular-mocks/angular-mocks.js",
+    "app/bower_components/ui-bootstrap/src/tabs/tabs.js",
+    "app/bower_components/ui-bootstrap/src/modal/modal.js",
+    "app/bower_components/underscore/underscore.js",
+    "app/bower_components/jquery/dist/jquery.js",
+    "app/bower_components/angular-ui-sortable/sortable.js",
+    "app/scripts/lib/core/md5-min.js",
+    "app/scripts/lib/core/PageUtils.js",
+    "app/scripts/directives/commitMessage.js",
+    "app/scripts/app.js",
+    "app/scripts/services/huashan.authentication.js",
+    "app/scripts/services/huashan.service.js",
+    "app/bower_components/angular-ui-bootstrap-bower/ui-bootstrap-tpls.js",
+    "test/fit/execJS/FitUtils.js",
+    "app/scripts/logic/common.js",
+    "app/scripts/controllers/loginController.js",
+    "app/scripts/controllers/selectTemplateController.js",
+    "app/scripts/controllers/appStructureController.js",
+    "app/scripts/controllers/portfolioStructureController.js",
+    "app/scripts/controllers/revisionsController.js",
+    "test/spec/mockData/*.js",
+    "test/mockService/*.js",
+    "test/spec/controllers/*.js"
+  ]
+}

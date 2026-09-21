@@ -1,0 +1,628 @@
+<nav class="navbar navbar-inverse navbar-static-top" role="navigation" style="margin-bottom: 10px;">
+  <div class="container-fluid">
+    <!-- Brand and toggle get grouped for better mobile display -->
+    <div class="navbar-header">
+      <a class="navbar-brand">Huashan</a>
+    </div>
+
+    <!-- Collect the nav links, forms, and other content for toggling -->
+    <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+      <ul class="nav navbar-nav">
+        <li><a href="#">Home</a></li>
+        <li><a ng-if="select.isAdmin" href="#/admin">Admin</a></li>
+        <li class="active"><a href="#/selectTemplate">Select Template</a></li>
+        <li ng-hide="select.selectedTemplate === 'Not Selected'"><a href="#/json/{{select.selectedTemplate}}">JSON</a>
+        </li>
+        <li class="dropdown" ng-hide="select.selectedTemplate === 'Not Selected'">
+          <a href="" class="dropdown-toggle" data-toggle="dropdown">Data
+            Structure <span class="caret"></span></a>
+          <ul class="dropdown-menu" role="menu">
+            <li><a href="#/datastructure/{{select.selectedTemplate}}">Project
+                Data Structure</a></li>
+            <!-- <li><a href="#/platformDataStructure/{{select.selectedTemplate}}">Platform
+                Data Structure</a></li> -->
+          </ul>
+        </li>
+        <li class="dropdown" ng-hide="select.selectedTemplate === 'Not Selected'">
+          <a href="" class="dropdown-toggle" data-toggle="dropdown">App
+            Structure <span class="caret"></span></a>
+          <ul class="dropdown-menu" role="menu">
+            <li><a href="#/appstructure/{{select.selectedTemplate}}">Project
+                App Structure</a></li>
+            <!-- <li><a href="#/platformAppStructure/{{select.selectedTemplate}}">Platform
+                App Structure</a></li> -->
+          </ul>
+        </li>
+        <li class="dropdown" ng-hide="select.selectedTemplate === 'Not Selected'">
+          <a href="" class="dropdown-toggle" data-toggle="dropdown">Portfolio
+            Structure <span class="caret"></span></a>
+          <ul class="dropdown-menu" role="menu">
+            <li><a href="#/portfoliostructure/{{select.selectedTemplate}}">Project
+                Portfolio Structure</a></li>
+            <!-- <li><a href="#/platformPortfolioStructure/{{select.selectedTemplate}}">Platform
+                Portfolio Structure</a></li> -->
+          </ul>
+        </li>
+        <li ng-hide="select.selectedTemplate === 'Not Selected'">
+          <a href="#/revisions/{{select.selectedTemplate}}">Revisions</a>
+        </li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+      </ul>
+    </div>
+    <!-- /.navbar-collapse -->
+  </div>
+  <!-- /.container-fluid -->
+</nav>
+
+
+<div class="select-template" class="animated fadeIn" style="height: 100%">
+
+  <div class="loader-container" ng-show="select.loading">
+    <div class="loader"></div>
+  </div>
+  <!--Left side: list of templates to choose from-->
+  <div id="choose-from" style="height: 100%">
+    <div class="select-template-title">
+      <h4>Select a Template</h4>
+    </div>
+    <div class="select-template-title">
+      <input type="text" class="form-control" placeholder="Search" ng-model="searchName.name">
+    </div>
+    <div class="panel panel-primary" style="height: calc(100% - 260px)">
+
+
+      <!-- List group -->
+      <div class="list-of-templates height-for-list" style="height: 100%">
+
+        <div class="list-group" style="height: 100%">
+          <div ng-show="select.loadingTable" class="loader-small"></div>
+          <a href="" class="list-group-item"
+            ng-repeat="template in select.templates|filter:searchName:strict | orderBy: select.sort.column: select.sort.descending track by $index"
+            ng-click="select.select(template)" ng-class="{active: select.selectedTemplate == template.name}"
+            tooltip="{{template.name}}" tooltip-trigger="mouseenter" tooltip-popup-delay="500">
+            <table>
+              <tr>
+                <td class="appStructList">{{template.name}}</td>
+                <td class="appStructList" style="width:60px">
+                  <span data-toggle="modal" data-target="#deleteModal"
+                    ng-show="select.selectedTemplate == template.name && select.isAdmin" ng-click="$('#deleteModal').modal('show')"
+                    class="inline-icon pull-right glyphicon glyphicon-trash" tooltip="Delete"
+                    tooltip-trigger="mouseenter" tooltip-popup-delay="500"></span>
+                  <span data-toggle="modal" data-target="#renameModal"
+                    ng-show="select.selectedTemplate == template.name && select.isAdmin" ng-click="$('#renameModal').modal('show')"
+                    class="inline-icon pull-right glyphicon glyphicon-pencil" tooltip="Rename"
+                    tooltip-trigger="mouseenter" tooltip-popup-delay="500"></span>
+                </td>
+              </tr>
+            </table>
+
+
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div class="">
+      <!-- View Trash Button -->
+      <button ng-if="select.isAdmin" class="btn btn-primary pull-left" data-toggle="modal" data-target="#trashModal" tooltip="Open Archive"
+        tooltip-trigger="mouseenter" tooltip-popup-delay="500" ng-click="select.listDeletedTemplates()">Archive
+      </button>
+
+      <!-- Rename Button -->
+      <!--<button class="btn btn-warning pull-right"-->
+      <!--ng-disabled="select.selectedTemplate == 'Not Selected'"-->
+      <!--data-toggle="modal" data-target="#renameModal" tooltip="Edit"-->
+      <!--tooltip-trigger="mouseenter" tooltip-popup-delay="500"><span-->
+      <!--class="glyphicon glyphicon-pencil"></span></button>-->
+
+      <!-- Delete Button -->
+      <!--<button class="btn btn-danger pull-right"-->
+      <!--ng-disabled="select.selectedTemplate == 'Not Selected'"-->
+      <!--data-toggle="modal" data-target="#deleteModal" tooltip="Delete"-->
+      <!--tooltip-trigger="mouseenter" tooltip-popup-delay="500"><span-->
+      <!--class="glyphicon glyphicon-trash"></span></button>-->
+
+      <!-- Upload Button -->
+      <button class="btn btn-success pull-right" data-toggle="modal" data-target="#uploadModal" tooltip="Upload"
+        tooltip-trigger="mouseenter" tooltip-popup-delay="500"><span class="glyphicon glyphicon-open"></span></button>
+
+    </div>
+    <!--container of all popups-->
+
+  </div>
+  <!--Left side-->
+
+  <!--Right Side: selected template and JSON-->
+  <div id="selected-template">
+
+    <div ng-if="select.syncTemplateResult == 'Success'" class="alert alert-success alert-dismissible text-center"
+      role="alert">
+      <button class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      Synchronize template to multiple calculation engine for
+      '{{select.selectedTemplate}}' portfolio is successfully!
+    </div>
+
+    <div ng-if="select.runningUpdateDataStructure == 'Running'" class="alert alert-info alert-dismissible text-center"
+      role="alert">
+      <button class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      Updating Data Structure for '{{select.selectedPortfolioName}}' portfolio.
+      Will be notified when done.
+    </div>
+    <div ng-if="select.runningUpdateDataStructure == 'Success'"
+      class="alert alert-success alert-dismissible text-center" role="alert">
+      <button class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      Data Structure for '{{select.selectedPortfolioName}}' portfolio is
+      updated successfully!
+    </div>
+    <div ng-if="select.runningUpdateDataStructure == 'Failure'" class="alert alert-danger alert-dismissible text-center"
+      role="alert">
+      <button class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      Updating Data Structure for '{{select.selectedPortfolioName}}' was not
+      successful. {select.responseMsg}
+    </div>
+
+
+    <div ng-if="select.showMessage"
+      ng-class="{'alert-success': select.showMessage === 'Success', 'alert-danger': select.showMessage === 'Failure'}"
+      class="alert alert-success alert-dismissible text-center" role="alert">
+      <button class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      {{select.showMessageContent}}
+    </div>
+
+    <div class="st-ipointer" id="template-description">
+
+      <div class="col-sm-6" id="description">
+        <div ng-show="select.selectedTemplate != 'Not Selected'">
+
+
+          <h2>{{select.selectedTemplate}}</h2>
+
+          <h4>
+            <div ng-show="!select.revisionInfo">
+              <span>No Version Info</span>&nbsp;
+            </div>
+          </h4>
+
+
+          <div style="display: flex; justify-content: space-between">
+            <h4 ng-if="select.revisionInfo">Version Info:</h4>
+            <!--            <button type="button"-->
+            <!--                    class="btn btn-danger"-->
+            <!--                    tooltip="Send template to multipal calculation servers"-->
+            <!--                    tooltip-trigger="mouseenter"-->
+            <!--                    tooltip-popup-delay="500"-->
+            <!--                    ng-click="select.syncTemplate(select.selectedTemplate)">Synchronize-->
+            <!--            </button>-->
+          </div>
+
+          <div ng-if="select.revisionInfo" class="panel panel-default panel-body">
+            <div><b>{{select.revisionInfo.committer}}</b> saved changes <b>{{select.revisionInfo.relativeTime}}</b>
+            </div>
+            <div>Commit Hash: {{select.revisionInfo.commitNum}}</div>
+            <div>Commit Message: {{select.revisionInfo.commitMessage}}</div>
+          </div>
+
+          <div ng-if="select.showVersionLog" class="panel panel-default">
+            <div class="panel-body st-versionlog">
+              <span ng-if="!select.selected.info.VersionLog && !select.selected.info.VersionLogs">
+                No VersionLog
+              </span>
+              <ul>
+                <li ng-repeat="log in select.selected.info.VersionLogs">
+                  <h5>V{{log.Version}} - {{log.VersionTime}}</h5>
+                  <span style="white-space: pre;">{{log.VersionLog}}</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- <h4>Description</h4>
+          <div class="panel panel-default">
+            <div ng-if="!select.editDescription" class="panel-body">
+              <span ng-if="!select.selected.info.Description">No Description</span>
+              <span>{{select.selected.info.Description}}</span>
+              &nbsp;
+              <i class="fa fa-pencil" ng-click="select.toggleEditDescription(true);"></i>
+            </div>
+            <div ng-if="select.editDescription">
+              <textarea rows="15" ng-model="select.selected.info.Description"></textarea>
+              &nbsp;<i class="fa fa-check" ng-click="select.toggleEditDescription(false)"></i>
+            </div>
+          </div> -->
+
+          <!-- <div>
+            <div ng-if="!select.editCreator">
+              <span ng-if="!select.selected.info.Creator">Add Creator Info</span>
+              <span ng-if="select.selected.info.Creator">Created by {{select.selected.info.Creator}}</span>
+              &nbsp;
+              <i class="fa fa-pencil" ng-click="select.toggleEditCreator(true)"></i>
+            </div>
+            <div ng-if="select.editCreator">
+              <input type="text" ng-model="select.selected.info.Creator" placeholder="Creater Name...">
+              &nbsp;
+              <i class="fa fa-check" ng-click="select.toggleEditCreator(false)"></i>
+            </div>
+          </div> -->
+          <!-- <div>
+            <div ng-if="!select.editCreatorLink">
+              <span ng-if="!select.selected.info.CreatorLink">Add Creator Link</span>
+              <a ng-if="select.selected.info.CreatorLink" ng-href="{{select.selected.info.CreatorLink}}">
+                {{select.selected.info.CreatorLink}}</a>
+              &nbsp;
+              <i class="fa fa-pencil" ng-click="select.toggleEditCreatorLink(true)"></i>
+            </div>
+            <div ng-if="select.editCreatorLink">
+              <input type="text" ng-model="select.selected.info.CreatorLink" placeholder="Creater Website...">
+              &nbsp;
+              <i class="fa fa-check" ng-click="select.toggleEditCreatorLink(false)"></i>
+            </div>
+          </div> -->
+
+          <!-- <div>
+            <div ng-if="!select.editEmail">
+              <span ng-if="!select.selected.info.Email">Add Creator Email</span>
+              <a ng-if="select.selected.info.Email" ng-href="mailto:#">{{select.selected.info.Email}}</a>
+              &nbsp;
+              <i class="fa fa-pencil" ng-click="select.toggleEditEmail(true)"></i>
+            </div>
+            <div ng-if="select.editEmail">
+              <input type="text" ng-model="select.selected.info.Email" placeholder="Creater Email...">
+              &nbsp;
+              <i class="fa fa-check" ng-click="select.toggleEditEmail(false)"></i>
+            </div>
+          </div> -->
+
+          <br />
+          <a ng-href="#/json/{{select.selectedTemplate}}" class="btn btn-primary" role="button"
+            ng-hide="select.selectedTemplate == 'Not Selected'">View JSON</a>
+          <a class="btn btn-primary" ng-click="select.downloadTemplate()" role="button"
+            ng-hide="select.selectedTemplate == 'Not Selected'">Download Excel
+            model</a>
+          <div ng-if="select.portfolioNameList.length > 0">
+            <br>
+            <a class="btn btn-primary" ng-click="select.initializeUpdateDataStructure()" role="button"
+              ng-hide="select.selectedTemplate == 'Not Selected'" data-toggle="modal"
+              data-target="#updateDataStructureModal">Update Data Structure
+            </a>
+
+            <!--Update DataStructure Modal -->
+            <div class="modal fade" id="updateDataStructureModal" role="dialog">ke i
+              <div class="modal-dialog">
+
+                <!--Update DataStructure Modal content-->
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <h4 class="modal-title">Update Data Structure</h4>
+                  </div>
+                  <div class="modal-body">
+                    <h4>Select a Portfolio </h4>
+                    <div class="list-of-portfolios">
+                      <div class="list-group">
+                        <a href="" class="list-group-item"
+                          ng-repeat="portfolioName in select.portfolioNameList track by $index"
+                          ng-click="select.selectPortfolioName(portfolioName)"
+                          ng-class="{active: select.selectedPortfolioName === portfolioName}"
+                          tooltip="{{portfolioName}}" tooltip-trigger="mouseenter" tooltip-popup-delay="500">
+                          {{portfolioName}}
+                        </a>
+                      </div>
+                    </div>
+                    <h4>Select Leaf / Platform </h4>
+                    <label>
+                      <input type="checkbox" ng-model="select.updateDataStructure.Leaf"> Leaf
+                    </label><br />
+                    <label>
+                      <input type="checkbox" ng-model="select.updateDataStructure.Platform">
+                      Platform
+                    </label><br />
+                  </div>
+                  <div class="modal-footer">
+                    <button ng-if="select.selectedPortfolioName !== ''" class="btn btn-primary" data-dismiss="modal"
+                      ng-click="select.runUpdateDataStructure()">Run
+                    </button>
+                    <button class="btn btn-default" data-dismiss="modal" ng-click="select.resetPortfolioName()">Close
+                    </button>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-sm-6 select-template-title"></div>
+      <!-- <div class="col-sm-6" ng-hide="select.selectedTemplate ==='Not Selected'">
+        <div style="height: 305px;">
+          <carousel interval="myInterval" style="height:100%;width:100%;overflow: hidden;">
+            <slide ng-repeat="slide in select.slides" active="slide.active">
+              <img ng-src="{{slide.image}}" style="margin:auto;">
+
+              <div class="carousel-caption">
+              </div>
+            </slide>
+          </carousel>
+        </div>
+      </div> -->
+    </div>
+  </div>
+  <!--Right side-->
+
+</div>
+
+
+
+
+<div class="col-sm-12 text-center align-to-bottom">
+  <a ng-href="#/datastructure/{{select.selectedTemplate}}" class="btn btn-primary pull-right" role="button"
+    ng-disabled="select.selectedTemplate == 'Not Selected'">Next: Data
+    Structure <span class="glyphicon glyphicon-chevron-right"></span></a>
+</div>
+
+
+<!--Rename Modal -->
+<div class="modal fade" id="renameModal" tabindex="-1" role="dialog" aria-labelledby="renameModalLabel"
+  aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span
+            class="sr-only">Close</span>
+        </button>
+        <h4 class="modal-title" id="renameModalLabel">Rename
+          {{select.selectedTemplate}}</h4>
+      </div>
+      <div class="modal-body">
+        <h4>New Name:</h4>
+        <input type="text" ng-model="select.newTemplateName" class="form form-control" />
+
+        <div class="col-sm-12 save-alert text-center">
+          <alert class="animated shake" ng-repeat="alert in select.renameAlerts" type="{{alert.type}}"
+            close="select.closeAlert(select.renameAlerts,$index)"><i class="fa fa-exclamation-triangle fa-lg"></i>
+            {{alert.msg}}
+          </alert>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" ng-click="select.rename()">Rename
+        </button>
+        <!--<button class= "btn btn-warning" ng-click="uploads.cancel()">Cancel</button>-->
+        <button type="button" class="btn btn-default" data-dismiss="modal">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel"
+  aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span
+            class="sr-only">Close</span>
+        </button>
+        <h4 class="modal-title">Delete Template</h4>
+
+      </div>
+      <div class="modal-body">
+        <h4 class="modal-title" id="deleteModalLabel">Are you sure to delete
+          <b>{{select.selectedTemplate}}</b>?
+        </h4>
+
+        <div class="col-sm-12 save-alert text-center">
+          <alert class="animated shake" ng-repeat="alert in select.deleteAlerts" type="{{alert.type}}"
+            close="closeAlert(deleteAlerts,$index)"><i class="fa fa-exclamation-triangle fa-lg"></i> {{alert.msg}}
+          </alert>
+          <alert class="animated fadeIn" ng-repeat="alert in select.submitSuccess" type="{{alert.type}}"
+            close="closeAlert(submitSuccess,$index)"><i class="fa fa-check-circle-o fa-lg"></i> {{alert.msg}}
+          </alert>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" ng-click="select.delete()">Delete
+        </button>
+        <!--<button class= "btn btn-warning" ng-click="uploads.cancel()">Cancel</button>-->
+        <button type="button" class="btn btn-default" data-dismiss="modal">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- Trash Modal -->
+<div class="modal fade" id="trashModal" tabindex="-1" role="dialog" aria-labelledby="trashModalLabel"
+  aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span
+            class="sr-only">Close</span>
+        </button>
+        <h4 class="modal-title" id="trashModalLabel">Templates in
+          Archive:</h4>
+      </div>
+      <div class="modal-body">
+        <!-- List group -->
+        <!-- <h4 ng-show="select.deletedTemplates.length == 0">Archive is
+          Empty</h4> -->
+          <div ng-show="select.loadingDeleteList" class="loader-small"></div>
+
+        <div class="list-of-templates">
+          <div class="list-group">
+            <a class="list-group-item" ng-repeat="deleted in select.deletedTemplates"
+              ng-click="select.selectDeleted(deleted)" ng-class="{active: select.selectedDeletedTemplate == deleted}"
+              tooltip="{{deleted}}" tooltip-trigger="mouseenter" tooltip-popup-delay="500">{{deleted}}</a>
+          </div>
+        </div>
+        <div class="col-sm-12 save-alert text-center">
+          <alert class="animated shake" ng-repeat="alert in select.undeleteAlerts" type="{{alert.type}}"
+            close="select.closeAlert(select.undeleteAlerts,$index)"><i class="fa fa-exclamation-triangle fa-lg"></i>
+            {{alert.msg}}
+          </alert>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" ng-click="select.undelete()"
+          ng-disabled="select.selectedDeletedTemplate == 'Not Selected'">
+          Unarchive
+        </button>
+        <button type="button" class="btn btn-default" data-dismiss="modal">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- Upload Modal -->
+<div class="modal fade" id="uploadModal" tabindex="-1" role="dialog" aria-labelledby="uploadModalLabel"
+  aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div ng-if="select.ogre===false">
+          <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span
+              class="sr-only">Close</span></button>
+          <h4 class="modal-title" id="uploadModalLabel">Select a Template to
+            upload</h4>
+        </div>
+        <div ng-if="select.ogre===true && select.ogreStage === 'SelectModel'">
+          <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span
+              class="sr-only">Close</span></button>
+          <h2 class="modal-title" id="uploadModalLabel">Help the Smart Ogre
+            out</h2>
+        </div>
+        <div ng-if="select.ogre===true && select.ogreStage === 'GeneratingTemplate'">
+          <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span
+              class="sr-only">Close</span></button>
+          <h2 class="modal-title" id="uploadModalLabel">Smart Ogre is doing its
+            thing...</h2>
+        </div>
+      </div>
+      <div class="modal-body">
+        <div ng-if="select.ogre===false">
+          <iframe name="targetFrame" id="itargetFrame" style="display: none; height: 0px; width:0px;"></iframe>
+          <h4>Please choose an Excel file.</h4>
+
+          <p class="text-danger"> No spaces or underscores allowed in file
+            name.</p>
+          <input type="file" name="zFileToUpload" id="FileToUploadID" file-model="select.fileToUpload" />
+        </div>
+        <div ng-if="select.ogre===true && select.ogreStage === 'SelectModel'">
+          <iframe name="targetFrame" id="itargetFrame" style="display: none; height: 0px; width:0px;"></iframe>
+          <h4>What evaluation model is this?</h4>
+          <table class="table">
+            <tr>
+              <td class="centeredText">
+                <img src="images/cube.png" align="middle"
+                  ng-click="select.generateProductPortfolio('Product Portfolio')" /><br />
+                Product Portfolio (R&D)
+              </td>
+              <td align="center">
+                <img src="images/complexCrystal.png" align="middle"
+                  ng-click="select.generateProductPortfolio('Platform Portfolio')" /><br />
+                Platform Product Portfolio (R&D)
+              </td>
+            </tr>
+          </table>
+        </div>
+        <div ng-if="select.ogre===true && select.ogreStage === 'GeneratingTemplate'">
+          <iframe name="targetFrame" id="itargetFrame" style="display: none; height: 0px; width:0px;"></iframe>
+          <h4>Building {{select.templateName}} with a
+            {{select.selectedOgreModel}} model</h4>
+          <i ng-if="select.ogreBuildCompleted === false" class="fa fa-circle-o-notch fa-spin"></i>
+          <span ng-if="select.ogreBuildCompleted === true">Build completed! Check your template.</span>
+        </div>
+      </div>
+      <div class="col-sm-12 save-alert text-center">
+        <alert class="animated shake" ng-repeat="alert in select.submitAlerts" type="{{alert.type}}"
+          close="select.closeAlert(select.submitAlerts,$index)"><i class="fa fa-exclamation-triangle fa-lg"></i>
+          {{alert.msg}}
+        </alert>
+      </div>
+      <div class="modal-footer">
+        <div ng-if="select.ogre===false">
+
+          <!--          <a class="btn btn-primary btn pull-left"-->
+          <!--             ng-click="select.smartogrify()">-->
+          <!--            Smartogrify-->
+          <!--          </a>-->
+          <button class="btn btn-primary" ng-click="select.submit()">Upload
+          </button>
+          <button class="btn btn-default" data-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel"
+  aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span
+            class="sr-only">Close</span>
+        </button>
+        <h4 class="modal-title">Delete Template</h4>
+
+      </div>
+      <div class="modal-body">
+        <h4 class="modal-title" id="deleteModalLabel">Are you sure to delete
+          <b>{{select.selectedTemplate}}</b>?
+        </h4>
+
+        <div class="col-sm-12 save-alert text-center">
+          <alert class="animated shake" ng-repeat="alert in select.deleteAlerts" type="{{alert.type}}"
+            close="closeAlert(deleteAlerts,$index)"><i class="fa fa-exclamation-triangle fa-lg"></i> {{alert.msg}}
+          </alert>
+          <alert class="animated fadeIn" ng-repeat="alert in select.submitSuccess" type="{{alert.type}}"
+            close="closeAlert(submitSuccess,$index)"><i class="fa fa-check-circle-o fa-lg"></i> {{alert.msg}}
+          </alert>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" ng-click="select.delete()">Delete
+        </button>
+        <!--<button class= "btn btn-warning" ng-click="uploads.cancel()">Cancel</button>-->
+        <button type="button" class="btn btn-default" data-dismiss="modal">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="uploadSuccessAlert" class="text-center"
+  style="display:none;position:fixed; top:40%;left:35%;height:100px;width:30%;">
+  <alert type="success"><i class="fa fa-check fa-lg"></i> Successfully
+    Uploaded!
+  </alert>
+</div>
+
+<div id="infoMsgAlert" class="text-center"
+  style="display:none;position:fixed; top:40%;left:35%;height:100px;width:30%;z-index: 9999;">
+  <alert type="info">{{select.alertMsg.msg}}
+  </alert>
+</div>
+
+<div id="errorMsgAlert" class="text-center"
+  style="display:none;position:fixed; top:40%;left:35%;height:100px;width:30%;">
+  <alert type="danger">{{select.alertMsg.msg}}
+  </alert>
+</div>
+
+<div id="pyOrgrigySuccessAlert" class="text-center"
+  style="display:none;position:fixed; top:40%;left:35%;height:100px;width:30%;">
+  <alert type="success"><i class="fa fa-check fa-lg"></i> SmartOgrify
+    Successfully
+    Executed!
+  </alert>
+</div>

@@ -1,0 +1,1956 @@
+<nav class="navbar navbar-inverse navbar-static-top" role="navigation"
+     style="margin-bottom: 10px;">
+  <div class="container-fluid">
+    <!-- Brand and toggle get grouped for better mobile display -->
+    <div class="navbar-header">
+      <a class="navbar-brand">Huashan</a>
+    </div>
+
+    <!-- Collect the nav links, forms, and other content for toggling -->
+    <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+      <ul class="nav navbar-nav">
+        <li><a href="#">Home</a></li>
+        <li><a ng-if="appCtrl.isAdmin" href="#/admin">Admin</a></li>
+        <li><a href="#/selectTemplate">Select Template</a></li>
+        <li ng-hide="appCtrl.selectedTemplate === 'Not Selected'"><a
+            href="#/json/{{appCtrl.selectedTemplate}}">JSON</a>
+        </li>
+        <li class="dropdown"
+            ng-hide="appCtrl.selectedTemplate === 'Not Selected'">
+          <a href="" class="dropdown-toggle" data-toggle="dropdown">Data
+            Structure <span class="caret"></span></a>
+          <ul class="dropdown-menu" role="menu">
+            <li><a href="#/datastructure/{{appCtrl.selectedTemplate}}">Project
+              Data Structure</a></li>
+            <!-- <li><a href="#/platformDataStructure/{{appCtrl.selectedTemplate}}">Platform
+              Data Structure</a>
+            </li> -->
+          </ul>
+        </li>
+        <li class="dropdown active"
+            ng-hide="appCtrl.selectedTemplate === 'Not Selected'">
+          <a href="" class="dropdown-toggle" data-toggle="dropdown">App
+            Structure <span class="caret"></span></a>
+          <ul class="dropdown-menu" role="menu">
+            <li><a href="#/appstructure/{{appCtrl.selectedTemplate}}">Project
+              App Structure</a></li>
+            <!-- <li><a href="#/platformAppStructure/{{appCtrl.selectedTemplate}}">Platform
+              App Structure</a>
+            </li> -->
+          </ul>
+        </li>
+        <li class="dropdown"
+            ng-hide="appCtrl.selectedTemplate === 'Not Selected'">
+          <a href="" class="dropdown-toggle" data-toggle="dropdown">Portfolio
+            Structure <span
+                class="caret"></span></a>
+          <ul class="dropdown-menu" role="menu">
+            <li><a href="#/portfoliostructure/{{appCtrl.selectedTemplate}}">Project
+              Portfolio Structure</a>
+            </li>
+            <!-- <li><a
+                href="#/platformPortfolioStructure/{{appCtrl.selectedTemplate}}">Platform
+              Portfolio
+              Structure</a></li> -->
+          </ul>
+        </li>
+        <li>
+          <a href="#/revisions/{{appCtrl.selectedTemplate}}">Revisions</a>
+        </li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li class="active"><a class="navbar-brand" href=""><b>{{appCtrl.selectedTemplate}}</b></a>
+        </li>
+      </ul>
+    </div><!-- /.navbar-collapse -->
+  </div><!-- /.container-fluid -->
+</nav>
+
+
+<div class="select-template"
+     class="container col-sm-12 animated fadeIn"
+     style="height: calc(100% - 100px);">
+
+  <!--Left side: list of templates to choose from-->
+  <div class="choose-from"
+       style="text-align: left; overflow: hidden; height: 100%;">
+    <div class="select-template-title">
+      <h4 ng-show="!appCtrl.isPlatform">App Structure</h4>
+      <h4 ng-show="appCtrl.isPlatform">Platform App Structure</h4>
+    </div>
+
+    <div class="select-template-title">
+      <input type="text"
+             class="form-control"
+             placeholder="Search"
+             ng-model="searchMenu.Display">
+    </div>
+
+    <div class="panel panel-primary"
+         style="height: calc(100% - 260px); margin-bottom: 10px">
+
+      <!-- List group -->
+      <div class="list-of-templates"
+           style="height: 100%">
+        <div ui-sortable
+             ng-model="appCtrl.appStructure.MENU"
+             class="list-group"
+             id="app-structure-menu">
+          <a href=""
+             class="list-group-item
+                    cursor-move"
+             ng-repeat="menu in appCtrl.appStructure.MENU|filter:searchMenu:strict track by $index"
+             ng-click="appCtrl.selectMenu(menu)"
+             ng-class="{active: appCtrl.selectedMenu == menu}">
+            <table>
+              <tr>
+                <td class="appStructList no-wrap">
+                  <!--<i class="fa fa-sort"></i>-->
+                  {{menu.Display}}
+                </td>
+                <td class="appStructList" style="width:60px">
+                   <span data-toggle="modal"
+                         data-target="#deleteAppStructureModal"
+                         ng-show="appCtrl.selectedMenu == menu"
+                         ng-click="$('#deleteAppStructureModal').modal('show')"
+                         class="inline-icon pull-right glyphicon glyphicon-trash"
+                         tooltip="Delete"
+                         tooltip-trigger="mouseenter"
+                         tooltip-popup-delay="500"></span>
+                  <span data-toggle="modal"
+                        data-target="#editAppStructureModal"
+                        ng-show="appCtrl.selectedMenu === menu"
+                        ng-click="$('#editAppStructureModal').modal('show')"
+                        class="inline-icon pull-right glyphicon glyphicon-pencil"
+                        tooltip="Rename"
+                        tooltip-trigger="mouseenter"
+                        tooltip-popup-delay="500"></span>
+                </td>
+              </tr>
+            </table>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div class="pull-left">
+      <!-- New Button -->
+      <button class="btn btn-success"
+              id="new-button"
+              data-toggle="modal"
+              ng-click="appCtrl.openNew()"
+              data-target="#newAppStructureModal"
+              tooltip="New"
+              tooltip-trigger="mouseenter"
+              tooltip-popup-delay="500">
+        <span class="glyphicon glyphicon-plus"></span>
+      </button>
+    </div>
+
+  </div><!--Left side-->
+
+  <!--Right Side: selected template and JSON-->
+  <div id="selected-template"
+       style="height: 100%">
+    <div class="select-template-title">
+      <div class="col-sm-12">
+        <h4 ng-show="!appCtrl.show">
+          {{appCtrl.selectedMenu.Display}}
+        </h4>
+      </div>
+    </div>
+
+    <div class="selected-inputs" style="background-color: #eee;">
+      <div class="col-sm-12"
+           ng-show="appCtrl.selectedMenu.Command == 'TABLE_INPUT'">
+        <div class="row">
+          <div class="col-sm-6">
+            <h4>{{appCtrl.selectedMenu.Command}}</h4>
+          </div>
+          <div class="col-sm-3">
+            <h4>
+              <input type="checkbox" ng-model="appCtrl.selectedMenu.Visible">Visible
+            </h4>
+          </div>
+          <div class="col-sm-3">
+            <h4>
+              <input type="checkbox"
+                     ng-model="appCtrl.selectedMenu.UsePostProcessingOutputs">Use
+              Post
+              Processing
+            </h4>
+          </div>
+        </div>
+
+        <div class="col-sm-3 no-padding">
+          <div class="list-of-templates">
+            <div class="list-group">
+              <a href=""
+                 class="list-group-item"
+                 ng-repeat="input in appCtrl.tableInputs"
+                 ng-class="{active: appCtrl.selectedMenu.Parameters.InputKey === input.Key}"
+                 ng-click="appCtrl.selectTableInput(input.Key);"
+                 scroll-if="appCtrl.selectedMenu.Parameters.InputKey === input.Key">
+                {{input.Display}}
+              </a>
+            </div>
+          </div>
+        </div>
+        <div class="col-sm-9">
+          <table>
+            <tr>
+              <td class="text-right col-sm-2" style="vertical-align: top;">
+                <h4>Cell Link</h4>
+              </td>
+              <td class="text-left col-sm-10" style="vertical-align: top;">
+                <h5>
+                  {{appCtrl.findKey(appCtrl.tableInputs)(appCtrl.selectedMenu.Parameters.InputKey).CellLink}}</h5></ht>
+              </td>
+            </tr>
+            <tr>
+              <td class="text-right col-sm-2" style="vertical-align: top;">
+                <h4>Description</h4>
+              </td>
+              <td class="text-left col-sm-10" style="vertical-align: top;">
+                <h5>
+                  {{appCtrl.findKey(appCtrl.tableInputs)(appCtrl.selectedMenu.Parameters.InputKey).Description}}</h5>
+              </td>
+            </tr>
+            <tr>
+              <td class="text-right col-sm-2" style="vertical-align: top;">
+                <h4>Preview</h4>
+              </td>
+              <td class="text-left col-sm-10" style="vertical-align: top;">
+                <!-- REST CalcEngine: inline HTML table (HtmlPreview) rendered in a div -->
+                <div ng-if="appCtrl.findCellLink(appCtrl.findKey(appCtrl.tableInputs)(appCtrl.selectedMenu.Parameters.InputKey).CellLink).HtmlPreview"
+                     ng-bind-html="appCtrl.findCellLink(appCtrl.findKey(appCtrl.tableInputs)(appCtrl.selectedMenu.Parameters.InputKey).CellLink).HtmlPreview | tablePreviewHtml"
+                     style="width:100%; overflow:auto;"></div>
+                <!-- Legacy SOAP: PNG preview -->
+                <img
+                    ng-if="!appCtrl.findCellLink(appCtrl.findKey(appCtrl.tableInputs)(appCtrl.selectedMenu.Parameters.InputKey).CellLink).HtmlPreview"
+                    src="{{appCtrl.server}}{{appCtrl.findCellLink(appCtrl.findKey(appCtrl.tableInputs)(appCtrl.selectedMenu.Parameters.InputKey).CellLink).PreviewURL}}"
+                    alt="{{appCtrl.findKey(appCtrl.tableInputs)(appCtrl.selectedMenu.Parameters.InputKey).CellLink}}"
+                    width="100%">
+              </td>
+            </tr>
+          </table>
+        </div>
+      </div>
+
+      <div class="col-sm-12"
+           ng-show="appCtrl.selectedMenu.Command == 'INPUT_SCREEN'">
+        <div class="row">
+          <div class="col-sm-6">
+            <h4>{{appCtrl.selectedMenu.Command}}</h4>
+          </div>
+          <div class="col-sm-3">
+            <h4>
+              <input type="checkbox" ng-model="appCtrl.selectedMenu.Visible">Visible
+            </h4>
+          </div>
+          <div class="col-sm-3">
+            <h4>
+              <input type="checkbox"
+                     ng-model="appCtrl.selectedMenu.UsePostProcessingOutputs">Use
+              Post
+              Processing
+            </h4>
+          </div>
+          <div>
+          </div>
+
+          <div class="col-sm-6">
+            <h4>Included Inputs</h4>
+          </div>
+          <div class="col-sm-6">
+            <h4>Excluded Inputs</h4>
+          </div>
+
+          <div class="col-sm-6" style=" height:420px;overflow: auto;">
+            <div class="list-of-templates" style="height: 100%;">
+              <ul class="list-group">
+                <li class="list-group-item"
+                    ng-repeat="key in appCtrl.selectedMenu.Parameters.InputKeys">
+                  <div class="no-wrap">
+                    <a class="text-danger">
+                      <i class="fa fa-minus-square fa-lg"
+                         ng-click="appCtrl.excludeInput(key)"></i>
+                    </a>
+                    {{appCtrl.findKey(appCtrl.inputs)(key).Display}}
+                  </div>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="col-sm-6" style=" height:420px;overflow: auto;">
+            <div class="list-of-templates" style="height:100%;">
+              <ul class="list-group">
+                <li class="list-group-item"
+                    ng-repeat="input in appCtrl.excludedInputs">
+                  <div class="no-wrap">
+                    <a class="text-success">
+                      <i class="fa fa-plus-square fa-lg"
+                         ng-click="appCtrl.includeInput(input)"></i>
+                    </a>
+                    {{input.Display}}
+                  </div>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="col-sm-12 no-padding"
+           ng-show="appCtrl.selectedMenu.Command == 'TABLE'">
+        <div class="row">
+          <div class="col-sm-3">
+            <h4>{{appCtrl.selectedMenu.Command}}</h4>
+          </div>
+          <div class="col-sm-1">
+            <h4>OutputKey</h4>
+          </div>
+          <div class="col-sm-2">
+            <input type="text" class="form form-control"
+                   ng-model="appCtrl.selectedMenu.Parameters.OutputKey">
+          </div>
+          <div class="col-sm-2">
+            <h4>
+              <input type="checkbox" ng-model="appCtrl.selectedMenu.Visible">Visible
+            </h4>
+          </div>
+          <div class="col-sm-2">
+            <h4>
+              <input type="checkbox"
+                     ng-model="appCtrl.selectedMenu.Parameters.Pnl">Pnl
+            </h4>
+          </div>
+          <div class="col-sm-2">
+            <h4>
+              <input type="checkbox"
+                     ng-model="appCtrl.selectedMenu.UsePostProcessingOutputs">Use
+              Post
+              Processing
+            </h4>
+          </div>
+        </div>
+
+        <div class="col-sm-3">
+          <div class="list-of-templates">
+            <div class="list-group">
+              <a href=""
+                 id="table{{$index}}"
+                 class="list-group-item"
+                 ng-repeat="table in appCtrl.potentialTables"
+                 ng-click="appCtrl.selectPotentialTable(table)"
+                 ng-class="{active: appCtrl.selectedPotentialTable === table}"
+                 scroll-if="table.CellLink === appCtrl.selectedPotentialTable.CellLink">
+                {{table.CellLink}}
+              </a>
+            </div>
+          </div>
+        </div>
+        <div class="col-sm-9">
+          <!-- REST CalcEngine: inline HTML table (HtmlPreview) rendered in a div -->
+          <div ng-if="appCtrl.selectedPotentialTable.HtmlPreview"
+               ng-bind-html="appCtrl.selectedPotentialTable.HtmlPreview | tablePreviewHtml"
+               style="width:100%; overflow:auto;"></div>
+          <!-- Legacy SOAP: PNG preview -->
+          <img
+              ng-if="!appCtrl.selectedPotentialTable.HtmlPreview"
+              src="{{appCtrl.server}}{{appCtrl.selectedPotentialTable.PreviewURL}}"
+              alt="{{appCtrl.selectedPotentialTable.CellLink}}" width="100%">
+        </div>
+      </div>
+
+      <div class="col-sm-12 no-padding"
+           ng-show="appCtrl.selectedMenu.Command == 'IMAGE'">
+        <div class="container-fluid">
+          <div class="row">
+            <div class="col-sm-3">
+              <h4>{{appCtrl.selectedMenu.Command}}</h4>
+            </div>
+            <div class="col-sm-3">
+              <h4>
+                <input name="test" type="radio"
+                       ng-model='appCtrl.selectedMenu.Parameters.Type'
+                       value="RANGE"> RANGE
+                <input name="test" type="radio"
+                       ng-model='appCtrl.selectedMenu.Parameters.Type'
+                       value="CHART"> CHART
+              </h4>
+            </div>
+            <div class="col-sm-2">
+              <h4>
+                <input type="checkbox" ng-model="appCtrl.selectedMenu.Visible"
+                       checked>Visible
+              </h4>
+            </div>
+
+            <div class="col-sm-2">
+              <h4>
+                <input type="checkbox"
+                       ng-model="appCtrl.selectedMenu.Parameters.FitToScreen"
+                       checked>Fit To Screen
+              </h4>
+            </div>
+
+            <div class="col-sm-2">
+              <h4>
+                <input type="checkbox"
+                       ng-model="appCtrl.selectedMenu.UsePostProcessingOutputs">Use
+                Post
+                Processing
+              </h4>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-sm-3">
+
+          <div class="list-of-templates"
+               ng-show="appCtrl.selectedMenu.Parameters.Type === 'RANGE'">
+            <div class="list-group">
+              <a id="imageTable{{$index}}"
+                 class="list-group-item"
+                 ng-repeat="table in appCtrl.potentialTables"
+                 ng-model="appCtrl.selectedMenu.Parameters.CellLink"
+                 ng-class="{active: table.CellLink == appCtrl.selectedMenu.Parameters.CellLink}"
+                 ng-click="appCtrl.selectImageTable(table);"
+                 scroll-if="table.CellLink === appCtrl.selectedImageTable.CellLink">
+                {{table.CellLink}}
+              </a>
+            </div>
+          </div>
+          <div class="list-of-templates"
+               ng-show="appCtrl.selectedMenu.Parameters.Type === 'CHART'">
+            <div class="list-group">
+              <a class="list-group-item"
+                 ng-repeat="chart in appCtrl.charts"
+                 ng-model="appCtrl.selectedMenu.Parameters.CellLink"
+                 ng-class="{active: appCtrl.selectedMenu.Parameters.CellLink == chart.ChartName}"
+                 ng-click="appCtrl.selectImageChart(chart)"
+                 scroll-if="chart.ChartName === appCtrl.selectedImageChart.ChartName">
+                {{chart.ChartName}}
+              </a>
+            </div>
+          </div>
+        </div>
+        <div class="col-sm-9" style="height:500px;overflow: auto">
+          <!-- RANGE image = inline HTML table. REST CalcEngine returns HtmlPreview; render in a div. -->
+          <div ng-if="appCtrl.selectedMenu.Parameters.Type === 'RANGE' && appCtrl.selectedImageTable.HtmlPreview"
+               ng-bind-html="appCtrl.selectedImageTable.HtmlPreview | tablePreviewHtml"
+               style="width:100%; overflow:auto;"></div>
+          <img ng-if="appCtrl.selectedMenu.Parameters.Type === 'RANGE' && !appCtrl.selectedImageTable.HtmlPreview"
+               src="{{appCtrl.server}}{{appCtrl.selectedImageTable.PreviewURL}}"
+               alt="{{appCtrl.selectedMenu.Parameters.CellLink}}"
+               width="100%">
+          <!-- CHART image. REST CalcEngine returns chart JSON (no PNG) under selectedImageChart.Chart;
+               it is rendered client-side with Highcharts into this container by renderCalcEngineChart. -->
+          <div id="appstructure-image-chart"
+               ng-if="appCtrl.selectedMenu.Parameters.Type === 'CHART' && appCtrl.selectedImageChart.Chart"
+               style="width:100%; height:480px;"></div>
+          <!-- Legacy SOAP fallback: server PNG, only if a PreviewURL is present. -->
+          <img ng-if="appCtrl.selectedMenu.Parameters.Type === 'CHART' && !appCtrl.selectedImageChart.Chart && appCtrl.selectedImageChart.PreviewURL"
+               src="{{appCtrl.server}}{{appCtrl.selectedImageChart.PreviewURL}}"
+               alt="{{appCtrl.selectedMenu.Parameters.CellLink}}"
+               width="100%">
+          <p ng-if="appCtrl.selectedMenu.Parameters.Type === 'CHART' && !appCtrl.selectedImageChart.Chart && !appCtrl.selectedImageChart.PreviewURL"
+             class="text-muted" style="padding-top:20px;">
+            No chart preview available for this item.
+          </p>
+        </div>
+      </div>
+
+      <div class="col-sm-12"
+           ng-show="appCtrl.selectedMenu.Command == 'ADD_TABLES'">
+        <div class="col-sm-12">
+          <div class="col-sm-6">
+            <h4>{{appCtrl.selectedMenu.Command}}</h4>
+          </div>
+          <div class="col-sm-2">
+            <h4>
+              <input type="checkbox" ng-model="appCtrl.selectedMenu.Visible"
+                     checked>Visible
+            </h4>
+          </div>
+        </div>
+        <div class="col-sm-4">
+          <div class="list-group">
+            <a id="table{{$index}}"
+               class="list-group-item"
+               ng-repeat="table in appCtrl.tables"
+               ng-class="{active: appCtrl.selectedTable === table}"
+               ng-click="appCtrl.selectTable(table)"
+               scroll-if="table.CellLink === appCtrl.selectedPotentialTable.CellLink">
+              {{table.Display}}
+            </a>
+          </div>
+        </div>
+
+        <div class="col-sm-8">
+          <!-- REST CalcEngine: inline HTML table (HtmlPreview) rendered in a div -->
+          <div ng-if="appCtrl.selectedPotentialTable.HtmlPreview"
+               ng-bind-html="appCtrl.selectedPotentialTable.HtmlPreview | tablePreviewHtml"
+               style="width:100%; overflow:auto;"></div>
+          <!-- Legacy SOAP: PNG preview -->
+          <img
+              ng-if="!appCtrl.selectedPotentialTable.HtmlPreview"
+              src="{{appCtrl.server}}{{appCtrl.selectedPotentialTable.PreviewURL}}"
+              alt="{{appCtrl.selectedPotentialTable.CellLink}}" width="100%">
+        </div>
+
+
+        <!--half bottom for special rules-->
+        <div class="col-sm-12">
+          <div class="row table-padding col-sm-4">
+            <div class=" col-sm-6 text-right">
+              <b>PNL</b>
+            </div>
+            <div class="col-sm-6">
+              <input type="checkbox"
+                     ng-model="appCtrl.selectedMenu.Parameters.Pnl">
+            </div>
+          </div>
+        </div>
+
+        <div class="col-sm-12">
+          <div class="row table-padding col-sm-4">
+            <div class="col-sm-6 text-right" style="padding-top: 2%">
+              <b>Precision Options</b>
+            </div>
+          </div>
+        </div>
+
+
+        <div class="col-sm-12">
+          <div class="row table-padding col-sm-4">
+            <div class="col-sm-6 text-right" style="padding-top: 2%">
+              <b>Min</b>
+            </div>
+            <div class="col-sm-6">
+              <input type="number"
+                     class="form form-control"
+                     ng-model="appCtrl.minPrecision"
+                     ng-change="appCtrl.changePrecisionOptions()"
+                     min="0">
+            </div>
+          </div>
+
+          <div class="row table-padding col-sm-4">
+            <div class="col-sm-6 text-right" style="padding-top: 2%">
+              <b>Max</b>
+            </div>
+            <div class="col-sm-6">
+              <input type="number"
+                     class="form form-control"
+                     ng-model="appCtrl.maxPrecision"
+                     ng-change="appCtrl.changePrecisionOptions()"
+                     min="0">
+            </div>
+          </div>
+
+
+          <div class="row table-padding col-sm-4">
+            <div class="col-sm-6 text-right">
+              <b>Default Precision</b>
+            </div>
+            <div class="col-sm-6">
+              <select class="btn btn-default form-control"
+                      ng-model="appCtrl.selectedMenu.Parameters.DefaultPrecision"
+                      ng-options="option for option in appCtrl.selectedMenu.Parameters.PrecisionOptions">
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-sm-12">
+          <div class="row table-padding col-sm-4">
+            <div class="col-sm-6 text-right" style="padding-top: 2%">
+              <b>Special Rules</b>
+            </div>
+            <div class="col-sm-6">
+              <select class="btn btn-default form-control">
+                <option value="1">None</option>
+                <option value="2">Ignore</option>
+                <option value="3">IRR</option>
+                <option value="4">MVSto Range</option>
+                <option value="5">Year</option>
+                <option value="6">Tooltip</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-sm-12"
+           ng-show="appCtrl.selectedMenu.Command == 'COMPARE_VALUE'">
+        <div class="col-sm-12">
+          <div class="col-sm-6">
+            <h4>{{appCtrl.selectedMenu.Command}}</h4>
+          </div>
+          <div class="col-sm-2">
+            <h4>
+              <input type="checkbox" ng-model="appCtrl.selectedMenu.Visible"
+                     checked>Visible
+            </h4>
+          </div>
+        </div>
+
+        <div class="row table-padding">
+          <div class="col-sm-2">
+            <b>Total</b>
+          </div>
+          <div class="col-sm-3">
+            <input type="checkbox"
+                   ng-model="appCtrl.selectedMenu.Parameters.Total">
+          </div>
+        </div>
+        <div class="row table-padding">
+          <div class="col-sm-2">
+            <b>Min</b>
+          </div>
+          <div class="col-sm-3">
+            <input type="number" class="form form-control"
+                   ng-model="appCtrl.selectedMenu.Parameters.Min">
+          </div>
+          <div class="col-sm-2">
+            <b>Max</b>
+          </div>
+          <div class="col-sm-3">
+            <input type="number" class="form form-control"
+                   ng-model="appCtrl.selectedMenu.Parameters.Max">
+          </div>
+        </div>
+        <div class="row table-padding">
+          <div class="col-sm-3">
+            <b>Key</b>
+          </div>
+          <div class="col-sm-3">
+            <b>Unit</b>
+          </div>
+          <div class="col-sm-3">
+            <b>Title</b>
+          </div>
+        </div>
+        <div class="row table-padding"
+             ng-repeat="key in appCtrl.selectedMenu.Parameters.Keys track by $index">
+          <div class="col-sm-3">
+            <select class="form form-control"
+                    ng-options="output.Key as appCtrl.findKey(appCtrl.outputs)(output.Key).Display for output in appCtrl.outputs"
+                    ng-model="appCtrl.selectedMenu.Parameters.Keys[$index]"
+                    ng-change="appCtrl.selectedMenu.Parameters.Units[$index] = appCtrl.findKey(appCtrl.outputs)(appCtrl.selectedMenu.Parameters.Keys[$index]).Units;appCtrl.selectedMenu.Parameters.Titles[$index] = appCtrl.findKey(appCtrl.outputs)(appCtrl.selectedMenu.Parameters.Keys[$index]).Display;">
+            </select>
+          </div>
+          <div class="col-sm-3">
+            <input type="text" class="form form-control"
+                   ng-model="appCtrl.selectedMenu.Parameters.Units[$index]">
+          </div>
+          <div class="col-sm-3">
+            <input type="text" class="form form-control"
+                   ng-model="appCtrl.selectedMenu.Parameters.Titles[$index]">
+          </div>
+          <div class="col-sm-1">
+            <button class="btn btn-danger"
+                    ng-click="appCtrl.deleteCompareValueItem($index);"><span
+                class="glyphicon glyphicon-trash"></span></button>
+          </div>
+        </div>
+        <div class="row table-padding">
+          <div class="col-sm-1">
+            <button class="btn btn-success"
+                    ng-click="appCtrl.addCompareValueItem();"><span
+                class="glyphicon glyphicon-plus"></span></button>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-sm-12"
+           ng-show="appCtrl.selectedMenu.Command == 'TORNADODIST'">
+        <div class="row">
+          <div class="col-sm-6">
+            <h4>{{appCtrl.selectedMenu.Command}}</h4>
+          </div>
+          <div class="col-sm-3">
+            <h4>
+              <input type="checkbox" ng-model="appCtrl.selectedMenu.Visible">Visible
+            </h4>
+          </div>
+          <div class="col-sm-3">
+            <h4>
+              <input type="checkbox"
+                     ng-model="appCtrl.selectedMenu.UsePostProcessingOutputs">Use
+              Post
+              Processing
+            </h4>
+          </div>
+        </div>
+
+
+        <tabset class="animated fadeIn">
+          <tab heading="Tornado Output">
+            <div>
+              <div class="col-sm-6">
+                <h4>Included Outputs</h4>
+              </div>
+              <div class="col-sm-6">
+                <h4>Excluded Outputs</h4>
+              </div>
+
+              <div class="col-sm-6" style=" height:420px;overflow: auto;">
+                <div class="list-of-templates">
+                  <ul class="list-group">
+                    <li class="list-group-item"
+                        ng-repeat="key in appCtrl.tornado.Parameters.ValueMetricKeys">
+                      <div class="no-wrap">
+                        <a class="text-danger">
+                          <i class="fa fa-minus-square fa-lg"
+                             ng-click="appCtrl.selectTornado(key)"></i>
+                        </a>
+                        {{appCtrl.findKey(appCtrl.outputs)(key).Display}}
+                      </div>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              <div class="col-sm-6" style=" height:420px;overflow: auto;">
+                <div class="list-of-templates">
+                  <ul class="list-group">
+                    <li class="list-group-item"
+                        ng-repeat="output in appCtrl.outputs"
+                        ng-show="appCtrl.tornado.Parameters.ValueMetricKeys.indexOf(output.Key)===-1">
+                      <div class="no-wrap">
+                        <a href="" class="text-success">
+                          <i class="fa fa-plus-square fa-lg"
+                             ng-click="appCtrl.selectTornado(output.Key)"></i>
+                        </a>
+                        {{appCtrl.findKey(appCtrl.outputs)(output.Key).Display}}
+                      </div>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+            </div>
+          </tab>
+          <tab heading="Parameters">
+            <div class="container-fluid">
+              <div class="row table-padding">
+                <div class="col-sm-3 text-right">
+                  <h5>Chart Title</h5>
+                </div>
+                <div class="col-sm-6" colspan="2">
+                  <input type="text"
+                         ng-model="appCtrl.tornado.Parameters.ChartTitle"
+                         class="form form-control">
+                </div>
+              </div>
+              <div class="row table-padding">
+                <div class="col-sm-3 text-right">
+                  <h5>Combined Uncertainty Label</h5>
+                </div>
+                <div class="col-sm-6" colspan="2">
+                  <input type="text"
+                         ng-model="appCtrl.tornado.Parameters.CombinedUncertaintyLabel"
+                         class="form form-control">
+                </div>
+              </div>
+              <div class="row table-padding">
+                <div class="col-sm-3 text-right">
+                  <h5>Depth</h5>
+                </div>
+                <div class="col-sm-3">
+                  <select class="btn btn-default form-control"
+                          ng-model="appCtrl.tornado.Parameters.Depth">
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                    <option value="6">6</option>
+                  </select>
+                </div>
+              </div>
+              <div class="row table-padding">
+                <div class="col-sm-3 text-right">
+                  <h5>Probability Weights</h5>
+                </div>
+              </div>
+              <div class="row table-padding">
+                <div class="col-sm-3 text-right">
+                  <h5>High</h5>
+                </div>
+                <div class="col-sm-3">
+                  <input type="number"
+                         ng-model="appCtrl.tornado.Parameters.Weights.High"
+                         min="0" max="1" step="0.01"
+                         class="form form-control">
+                </div>
+                <div class="col-sm-6">
+                  <div class="text-danger"
+                       ng-show="appCtrl.tornado.Parameters.Weights.High+appCtrl.tornado.Parameters.Weights.Med+appCtrl.tornado.Parameters.Weights.Low != 1">
+                    <h4>Weights do not add up to 1.</h4>
+                  </div>
+                </div>
+              </div>
+              <div class="row table-padding">
+                <div class="col-sm-3 text-right">
+                  <h5>Medium</h5>
+                </div>
+                <div class="col-sm-3">
+                  <input type="number"
+                         ng-model="appCtrl.tornado.Parameters.Weights.Med"
+                         min="0" max="1" step="0.01"
+                         class="form form-control">
+                </div>
+                <div class="col-sm-6">
+                  <div class="text-danger"
+                       ng-show="appCtrl.tornado.Parameters.Weights.Med<appCtrl.tornado.Parameters.Weights.Low">
+                    <h4>Med probability is lower than Low</h4>
+                  </div>
+                  <div class="text-danger"
+                       ng-show="appCtrl.tornado.Parameters.Weights.Med < appCtrl.tornado.Parameters.Weights.High">
+                    <h4>Med probability is lower than High</h4>
+                  </div>
+                </div>
+              </div>
+              <div class="row table-padding">
+                <div class="col-sm-3 text-right">
+                  <h5>Low</h5>
+                </div>
+                <div class="col-sm-3">
+                  <input type="number"
+                         ng-model="appCtrl.tornado.Parameters.Weights.Low"
+                         min="0" max="1" step="0.01"
+                         class="form form-control">
+                </div>
+              </div>
+            </div>
+          </tab>
+          <tab heading="Post Processing">
+            <div class="container-fluid" style="height:470px;overflow:auto;">
+              <div class="row table-padding"
+                   ng-repeat="sendback in appCtrl.postProcessing">
+                <div class="col-sm-1">
+                  <button class="btn btn-danger"
+                          ng-click="appCtrl.deleteSendBack(sendback)"><span
+                      class="glyphicon glyphicon-trash"></span></button>
+                </div>
+                <div class="col-sm-1">
+                  <h5>Send</h5>
+                </div>
+                <div class="col-sm-2">
+                  <select class="btn btn-default form-control"
+                          ng-init="sendTo = sendback.Reference.slice(22)"
+                          ng-change="appCtrl.selectSendBackTo(sendback,sendTo)"
+                          ng-model="sendTo"
+                          ng-options="element.value as element.display for element in appCtrl.sendBackElements">
+                  </select>
+                </div>
+                <div class="col-sm-1">
+                  <h5>of</h5>
+                </div>
+                <div class="col-sm-3">
+                  <select class="btn btn-default form-control"
+                          ng-init="index = sendback.Reference[19];appCtrl.selectSendBackTornado(sendback,index)"
+                          ng-change="appCtrl.selectSendBackTornado(sendback,index)"
+                          ng-model="index"
+                          ng-options="appCtrl.tornado.Parameters.ValueMetricKeys.indexOf(key).toString()
+                                            as appCtrl.findKey(appCtrl.outputs)(key).Display
+                                            for key in appCtrl.tornado.Parameters.ValueMetricKeys">
+                  </select>
+                </div>
+                <div class="col-sm-1">
+                  <h5>Back To</h5>
+                </div>
+<!--                <div class="col-sm-1" style="padding-right: 0px;!important;">-->
+<!--                  <input type="text" ng-model="sendback.SendBack"-->
+<!--                         class="form form-control">-->
+<!--                </div>-->
+<!--                <div class="col-sm-2"-->
+<!--                     style="padding-left: 0px;!important;">-->
+<!--                  <select class="btn btn-default form-control"-->
+<!--                          ng-model="sendback.SendBack">-->
+<!--                    <option ng-repeat="io in appCtrl.allDataStructureComponents"-->
+<!--                            value="{{io.CellLink}}">-->
+<!--                      {{io.Display}}-->
+<!--                    </option>-->
+<!--                    <option ng-repeat="output in appCtrl.outputs"-->
+<!--                            value="{{output.CellLink}}">-->
+<!--                      {{output.Display}}-->
+<!--                    </option>-->
+<!--                  </select>-->
+<!--                </div>-->
+                <div class="col-sm-3"
+                     style="padding-left: 0px;!important;">
+                  <select class="btn btn-default form-control"
+                          ng-init="sendback.SendBack = sendback.SendBack"
+                          ng-model="sendback.SendBack"
+                          ng-options="io.CellLink as io.Display for io in appCtrl.allDataStructureComponents">
+                  </select>
+                </div>
+              </div>
+              <div class="row table-padding">
+                <div class="col-sm-1">
+                  <button class="btn btn-success"
+                          ng-click="appCtrl.addSendBack();"><span
+                      class="glyphicon glyphicon-plus"></span></button>
+                </div>
+              </div>
+            </div>
+          </tab>
+        </tabset>
+      </div>
+
+      <div class="col-sm-12"
+           ng-show="appCtrl.selectedMenu.Command == 'METALOG_DISPLAY'">
+        <div class="row">
+          <div class="col-sm-6">
+            <h4>{{appCtrl.selectedMenu.Command}}</h4>
+          </div>
+          <div class="col-sm-3">
+            <h4>
+              <input type="checkbox" ng-model="appCtrl.selectedMenu.Visible">Visible
+            </h4>
+          </div>
+          <div class="col-sm-3">
+            <h4>
+              <input type="checkbox"
+                     ng-model="appCtrl.selectedMenu.UsePostProcessingOutputs">Use
+              Post
+              Processing
+            </h4>
+          </div>
+        </div>
+        <tabset class="animated fadeIn">
+          <tab heading="MetalogKeys">
+            <div>
+              <div class="col-sm-6">
+                <h4>Included MetalogKeys</h4>
+              </div>
+              <div class="col-sm-6">
+                <h4>Excluded MetalogKeys</h4>
+              </div>
+
+              <div class="col-sm-6" style=" height:420px;overflow: auto;">
+                <div class="list-of-templates">
+                  <ul class="list-group">
+                    <li class="list-group-item"
+                        ng-repeat="key in appCtrl.selectedMenu.Parameters.MetaLogKeys">
+                      <div class="no-wrap">
+                        <a class="text-danger">
+                          <i class="fa fa-minus-square fa-lg"
+                             ng-click="appCtrl.selectWithinMetalog(key)"></i>
+                        </a>
+                        {{appCtrl.findKey(appCtrl.outputs)(key).Display}}
+                      </div>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              <div class="col-sm-6" style=" height:420px;overflow: auto;">
+                <div class="list-of-templates">
+                  <ul class="list-group">
+                    <li class="list-group-item"
+                        ng-repeat="key in appCtrl.tornadoValueMetricKeys"
+                        ng-show="appCtrl.selectedMenu.Parameters.MetaLogKeys.indexOf(key)===-1">
+                      <div class="no-wrap">
+                        <a href="" class="text-success">
+                          <i class="fa fa-plus-square fa-lg"
+                             ng-click="appCtrl.selectWithinMetalog(key)"></i>
+                        </a>
+                        {{appCtrl.findKey(appCtrl.outputs)(key).Display}}
+                      </div>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+            </div>
+          </tab>
+          <tab heading="Explanation">
+            <div class="container-fluid">
+              <div class="row table-padding">
+                <div class="col-sm-1">
+                  <i style="cursor:pointer"
+                     data-toggle="popover"
+                     data-placement="right"
+                     data-content="{{tableItem}}"
+                     class="fa fa-question-circle"
+                     ng-click="metalogHelpIcon=!metalogHelpIcon"
+                  >
+                  </i>
+                </div>
+                <div ng-if="metalogHelpIcon === true">
+                  <div class="col-sm-10">
+                    </p>
+                    The text entered here will be used to explain the metalog in
+                    the system.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="container-fluid">
+              <div class="row table-padding">
+                <div class="col-sm-1 text-right">
+
+                </div>
+                <div class="col-sm-6" colspan="20">
+                  <textarea type="text"
+                            rows="10"
+                            ng-model="appCtrl.selectedMenu.Parameters.FittedPointExplanation"
+                            class="form form-control"></textarea>
+                </div>
+              </div>
+            </div>
+          </tab>
+          <tab heading="FailureBranch">
+            <div class="container-fluid" style="height:470px;overflow:auto;">
+
+              <div class="row table-padding">
+                <div class="col-sm-1">
+                  <i style="cursor:pointer"
+                     data-toggle="popover"
+                     data-placement="right"
+                     data-content="{{tableItem}}"
+                     class="fa fa-question-circle"
+                     ng-click="showFittedPointsHelp=!showFittedPointsHelp"
+                  >
+                  </i>
+                </div>
+                <div ng-if="showFittedPointsHelp === true">
+                  <div class="col-sm-10">
+                    </p>
+                    Use this to define stages of failure. Probability of
+                    Failure at any given stage must be defined as
+                    Probability
+                    of Success at all earlier stages x Probability of
+                    failure
+                    at the given stage. Similarly, the cumulative cost is
+                    the
+                    cost of previous stages and current stage. Here is a
+                    <a href="http://devblog.smartorg.com/single-post.php?id=25734&at=f0b9496fa3bbb364d506af38f"
+                       target="_blank">blog post</a>
+                    that helps you through this.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div
+                  ng-repeat="stage in appCtrl.selectedMenu.Parameters.FailureBranch.Stages track by $index">
+                <div class="row table-padding">
+                  <!--<div class="col-sm-2">-->
+                  <!--<b>NodeLookup</b>-->
+                  <!--</div>-->
+                  <!--<div class="col-sm-3">-->
+                  <!--<input type="text" class="form form-control"-->
+                  <!--ng-model="stage.NodeLookup">-->
+                  <!--</div>-->
+                  <div class="col-sm-2">
+                    <b>Probability of Failure of Stage Key</b>
+                  </div>
+                  <div class="col-sm-3">
+                    <!--{{stage}}&#45;&#45;&#45;&#45;-->
+                    <!--{{stage.ProbabilityKey}}-->
+                    <select
+                        ng-options="output.Key as output.Key for output in appCtrl.outputs"
+                        class="form form-control"
+                        ng-model="stage.ProbabilityFailureOfStageKey"
+                        ng-init="stage.ProbabilityFailureOfStageKey = stage.ProbabilityFailureOfStageKey">
+                    </select>
+                  </div>
+                  <div class="col-sm-2">
+                    <b>Cumulative Cost of Stage Key</b>
+                  </div>
+                  <div class="col-sm-3">
+                    <!--<input type="text" class="form form-control"-->
+                    <!--ng-model="stage.SubtractionValueKey">-->
+                    <select
+                        ng-options="output.Key as output.Key for output in appCtrl.outputs"
+                        class="form form-control"
+                        ng-model="stage.CumeCostOfStageKey"
+                        ng-init="stage.CumeCostOfStageKey = stage.CumeCostOfStageKey">
+                    </select>
+                  </div>
+                  <div class="col-sm-1">
+                    <button class="btn btn-danger"
+                            ng-click="appCtrl.deleteFailurebranchStage($index)"><span
+                        class="glyphicon glyphicon-trash"></span></button>
+                  </div>
+                </div>
+              </div>
+              <!--<div class="row table-padding" ng-show="appCtrl.failurebranchFlag">-->
+              <!--<div class="col-sm-4">-->
+              <!--<b>SubtractCostGivenSuccess</b>-->
+              <!--</div>-->
+              <!--<div class="col-sm-2">-->
+              <!--<select class="form form-control"-->
+              <!--ng-options="o.value as o.value for o in [{value: false}, {value:true}]"-->
+              <!--ng-model="appCtrl.selectedMenu.Parameters.FailureBranch.SubtractCostGivenSuccess"-->
+              <!--ng-init="appCtrl.selectedMenu.Parameters.FailureBranch.SubtractCostGivenSuccess=-->
+              <!--appCtrl.selectedMenu.Parameters.FailureBranch.SubtractCostGivenSuccess"></select>-->
+              <!--</div>-->
+              <!--</div>-->
+              <div class="row table-padding">
+                <div class="col-sm-1">
+                  <button class="btn btn-success"
+                          ng-click="appCtrl.addFailurebranch();"><span
+                      class="glyphicon glyphicon-plus"></span></button>
+                </div>
+              </div>
+
+            </div>
+          </tab>
+          <tab heading="Simulation">
+            <div class="container-fluid">
+              <div class="row table-padding">
+                <div class="col-sm-1 text-right">
+
+                </div>
+                <div class="col-sm-6" colspan="20">
+                  <div class="checkbox">
+                    <label><input type="checkbox"
+                                  ng-model="appCtrl.selectedMenu.Parameters.CalcMVSFromFittedPoints"
+                                  value=""><b>Calculate
+                      Mean, Variance and Skewness from Fitted Points</b>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </tab>
+        </tabset>
+      </div>
+
+      <div class="col-sm-12"
+           ng-show="appCtrl.selectedMenu.Command == 'COMPARE_UNCERTAINTY'">
+        <div class="col-sm-6">
+          <h4>{{appCtrl.selectedMenu.Command}}</h4>
+          <div>
+            <h4>There's nothing to customize in this menu item</h4>
+          </div>
+        </div>
+        <div class="col-sm-6">
+          <h4>
+            <input type="checkbox" ng-model="appCtrl.selectedMenu.Visible">Visible
+          </h4>
+        </div>
+        <!--<div>-->
+        <!--<h4>There's nothing to customize in this menu item</h4>-->
+        <!--</div>-->
+      </div>
+
+      <div class="col-sm-12"
+           ng-show="appCtrl.selectedMenu.Command == 'CFO_CHART'">
+        <div class="col-sm-12">
+          <div class="col-sm-6">
+            <h4>{{appCtrl.selectedMenu.Command}}</h4>
+          </div>
+          <div class="col-sm-6">
+            <h4>
+              <input type="checkbox" ng-model="appCtrl.selectedMenu.Visible">Visible
+            </h4>
+          </div>
+
+          <div ng-repeat="set in appCtrl.selectedMenu.Parameters.Sets">
+            <div class="col-sm-12">
+              <div class="row table-padding">
+                <div class="col-sm-3">
+                  <b>X Axis</b>
+                </div>
+                <div class="col-sm-3">
+                  <b>X Title</b>
+                </div>
+                <div class="col-sm-3">
+                  <b>Name</b>
+                </div>
+              </div>
+            </div>
+
+            <div class="row table-padding">
+              <div class="col-sm-3">
+                <select
+                    ng-options="output.Key as appCtrl.getOutputDisplayFromKey(output.Key) for output in appCtrl.allOutputs"
+                    class="form form-control"
+                    ng-init="xKey = appCtrl.getKeyFrom(set.AverageCost);"
+                    ng-model="xKey"
+                    ng-change="set.AverageCost = appCtrl.buildOutputFromKey(xKey);
+                                set.xTitle = appCtrl.getOutputDisplayFromKey(xKey);"></select>
+              </div>
+
+              <div class="col-sm-3">
+                <input type="text" class="form form-control"
+                       ng-model="set.xTitle">
+              </div>
+              <div class="col-sm-3">
+                <input type="text" class="form form-control"
+                       ng-model="set.name">
+              </div>
+            </div>
+
+            <div class="col-sm-12">
+              <div class="row table-padding">
+                <div class="col-sm-3">
+                  <b>Y Axis</b>
+                </div>
+                <div class="col-sm-3">
+                  <b>Y Title</b>
+                </div>
+              </div>
+            </div>
+            <div class="row table-padding">
+              <div class="col-sm-3">
+                <select
+                    ng-options="output.Key as appCtrl.getOutputDisplayFromKey(output.Key) for output in appCtrl.allOutputs"
+                    class="form form-control"
+                    ng-init="yKey = appCtrl.getKeyFrom(set.AverageValueMinusCost);"
+                    ng-model="yKey"
+                    ng-change="set.AverageValueMinusCost = appCtrl.buildOutputFromKey(yKey);set.yTitle = appCtrl.getOutputDisplayFromKey(yKey);"></select>
+              </div>
+              <div class="col-sm-3">
+                <input type="text" class="form form-control"
+                       ng-model="set.yTitle">
+              </div>
+              <div class="col-sm-1">
+                <button class="btn btn-danger"
+                        ng-click="appCtrl.deleteCFOChartItem($index);"><span
+                    class="glyphicon glyphicon-trash"></span></button>
+              </div>
+            </div>
+          </div>
+
+          <div class="row table-padding">
+            <div class="col-sm-1">
+              <button class="btn btn-success"
+                      ng-click="appCtrl.addCFOChartItem();"><span
+                  class="glyphicon glyphicon-plus"></span></button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-sm-12"
+           ng-show="appCtrl.selectedMenu.Command == 'INNOVATION_SCREEN'">
+        <div class="col-sm-12">
+          <div class="col-sm-6">
+            <h4>{{appCtrl.selectedMenu.Command}}</h4>
+          </div>
+          <div class="col-sm-6">
+            <h4>
+              <input type="checkbox" ng-model="appCtrl.selectedMenu.Visible">Visible
+            </h4>
+          </div>
+          <div ng-repeat="set in appCtrl.selectedMenu.Parameters.Sets">
+            <div class="row table-padding">
+              <div class="col-sm-2">
+                <b>X Axis</b>
+              </div>
+              <div class="col-sm-3">
+                <select
+                    ng-options="output.Key as appCtrl.getOutputDisplayFromKey(output.Key) for output in appCtrl.allOutputs"
+                    class="form form-control"
+                    ng-init="xKey = appCtrl.getKeyFrom(set.x);"
+                    ng-model="xKey"
+                    ng-change="set.x = appCtrl.buildOutputFromKey(xKey);
+                    set.xTitle = appCtrl.getOutputDisplayFromKey(xKey);"></select>
+              </div>
+              <div class="col-sm-2">
+                <b>X Title</b>
+              </div>
+              <div class="col-sm-3">
+                <input type="text" class="form form-control"
+                       ng-model="set.xTitle">
+              </div>
+            </div>
+            <div class="row table-padding">
+              <div class="col-sm-2">
+                <b>Y Axis</b>
+              </div>
+              <div class="col-sm-3">
+                <select
+                    ng-options="output.Key as appCtrl.getOutputDisplayFromKey(output.Key) for output in appCtrl.allOutputs"
+                    class="form form-control"
+                    ng-init="yKey = appCtrl.getKeyFrom(set.y);"
+                    ng-model="yKey"
+                    ng-change="set.y = appCtrl.buildOutputFromKey(yKey);set.yTitle = appCtrl.getOutputDisplayFromKey(yKey);"></select>
+              </div>
+              <div class="col-sm-2">
+                <b>Y Title</b>
+              </div>
+              <div class="col-sm-3">
+                <input type="text" class="form form-control"
+                       ng-model="set.yTitle">
+              </div>
+            </div>
+            <div class="row table-padding">
+              <div class="col-sm-2">
+                <b>Vertical Cut-off</b>
+              </div>
+              <div class="col-sm-3">
+                <input type="number" class="form form-control"
+                       ng-model="set.VerticalCutoff">
+              </div>
+
+              <div class="col-sm-2">
+                <b>Name</b>
+              </div>
+              <div class="col-sm-3">
+                <input type="text" class="form form-control"
+                       ng-model="set.name">
+              </div>
+
+              <div class="col-sm-1">
+                <button class="btn btn-danger"
+                        ng-click="appCtrl.deleteInnovationScreenItem($index);"><span
+                    class="glyphicon glyphicon-trash"></span></button>
+              </div>
+            </div>
+
+          </div><!-- end of ng-repeat -->
+          <div class="row table-padding">
+            <div class="col-sm-1">
+              <button class="btn btn-success"
+                      ng-click="appCtrl.addInnovationScreenItem();"><span
+                  class="glyphicon glyphicon-plus"></span></button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-sm-12"
+           ng-show="appCtrl.selectedMenu.Command == 'SCATTER_PLOT'">
+        <div class="col-sm-12">
+          <div class="col-sm-6">
+            <h4>{{appCtrl.selectedMenu.Command}}</h4>
+          </div>
+          <div class="col-sm-6">
+            <h4>
+              <input type="checkbox" ng-model="appCtrl.selectedMenu.Visible">Visible
+            </h4>
+          </div>
+          <div class="row table-padding">
+            <div class="col-sm-2">
+              <b>Use Same Scale</b>
+            </div>
+            <div class="col-sm-3">
+              <input type="checkbox"
+                     ng-model="appCtrl.selectedMenu.Parameters.SameScale">
+            </div>
+          </div>
+          <div class="row table-padding">
+            <div class="col-sm-2">
+              <b>Min</b>
+            </div>
+            <div class="col-sm-3">
+              <input type="number" class="form form-control"
+                     ng-model="appCtrl.selectedMenu.Parameters.Min">
+            </div>
+            <div class="col-sm-2">
+              <b>Max</b>
+            </div>
+            <div class="col-sm-3">
+              <input type="number" class="form form-control"
+                     ng-model="appCtrl.selectedMenu.Parameters.Max">
+            </div>
+          </div>
+
+          <div ng-repeat="set in appCtrl.selectedMenu.Parameters.Sets">
+            <div class="row table-padding">
+              <div class="col-sm-2"><h3>Series {{$index + 1}}</h3></div>
+            </div>
+            <div class="row table-padding">
+              <div class="col-sm-2"><b>Name</b></div>
+              <div class="col-sm-3"
+                   ng-class="{'has-error': (set.name === undefined || set.name === '') && appCtrl.selectedMenu.Parameters.Sets.length > 1}">
+                <input type="text" class="form form-control"
+                       ng-model="set.name">
+              </div>
+            </div>
+            <div class="row table-padding">
+              <div class="col-sm-2">
+                <b>X Axis</b>
+              </div>
+              <div class="col-sm-3">
+                <select
+                    ng-options="output.Key as appCtrl.getOutputDisplayFromKey(output.Key) for output in appCtrl.allOutputs"
+                    class="form form-control"
+                    ng-init="xKey = appCtrl.getKeyFrom(set.x);"
+                    ng-model="xKey"
+                    ng-change="set.x = appCtrl.buildOutputFromKey(xKey);set.xTitle = appCtrl.getOutputDisplayFromKey(xKey);"></select>
+              </div>
+
+              <div class="col-sm-2">
+                <b>X Title</b>
+              </div>
+              <div class="col-sm-3">
+                <input type="text" class="form form-control"
+                       ng-model="set.xTitle">
+              </div>
+            </div>
+            <div class="row table-padding">
+              <div class="col-sm-2">
+                <b>Y Axis</b>
+              </div>
+              <div class="col-sm-3">
+                <select
+                    ng-options="output.Key as appCtrl.getOutputDisplayFromKey(output.Key) for output in appCtrl.allOutputs"
+                    class="form form-control"
+                    ng-init="yKey = appCtrl.getKeyFrom(set.y);"
+                    ng-model="yKey"
+                    ng-change="set.y = appCtrl.buildOutputFromKey(yKey);set.yTitle = appCtrl.getOutputDisplayFromKey(yKey);"></select>
+              </div>
+              <div class="col-sm-2">
+                <b>Y Title</b>
+              </div>
+              <div class="col-sm-3">
+                <input type="text" class="form form-control"
+                       ng-model="set.yTitle">
+              </div>
+              <div class="col-sm-2">
+                <button class="btn btn-danger"
+                        ng-click="appCtrl.deleteScatterPlotItem($index);"><span
+                    class="glyphicon glyphicon-trash"></span></button>
+              </div>
+            </div>
+          </div>
+          <div class="col-sm-2">
+            <button class="btn btn-success"
+                    ng-click="appCtrl.addScatterPlotItem();"><span
+                class="glyphicon glyphicon-plus"></span></button>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-sm-12"
+           ng-show="appCtrl.selectedMenu.Command == 'BUCKET_CHART'">
+        <div class="col-sm-12">
+          <div class="col-sm-6">
+            <h4>{{appCtrl.selectedMenu.Command}}</h4>
+          </div>
+          <div class="col-sm-6">
+            <h4>
+              <input type="checkbox" ng-model="appCtrl.selectedMenu.Visible">Visible
+            </h4>
+          </div>
+
+          <!--Below had ng-repeat, may need ng-repeat later-->
+          <!--class="panel"-->
+          <div
+              ng-repeat="s in appCtrl.selectedMenu.Parameters.Sets track by $index">
+            <div>
+              <div class="row table-padding">
+                <div class="col-sm-2"
+                     ng-class="{'has-error': (s.Title === undefined || s.Title === '') && appCtrl.selectedMenu.Parameters.Sets.length > 1}">
+                  <b>Title</b>
+                </div>
+                <div class="col-sm-3">
+                  <input type="text" class="form form-control"
+                         ng-model="s.Title">
+                </div>
+                <div class="col-sm-2">
+                  <b>Counts</b>
+                </div>
+                <div class="col-sm-3">
+                  <select type="text" class="form form-control"
+                          ng-model="s.Counts"
+                          ng-options="o.v as o.v for o in [{v:false}, {v:true}]">
+                  </select>
+                </div>
+              </div>
+              <div class="row table-padding">
+                <div class="col-sm-2">
+                  <b>X Axis</b>
+                </div>
+                <div class="col-sm-3">
+                  <select type="text" class="form form-control"
+                          ng-model="s.Key"
+                          ng-options="output.Key as appCtrl.getOutputDisplayFromKey(output.Key) for output in appCtrl.allOutputs">
+                  </select>
+                </div>
+                <div class="col-sm-2">
+                  <b>X Label</b>
+                </div>
+                <div class="col-sm-3">
+                  <input type="text" class="form form-control"
+                         ng-model="s.xTitle">
+                </div>
+              </div>
+              <div class="row table-padding">
+                <div class="col-sm-2">
+                  <b>Y Label</b>
+                </div>
+                <div class="col-sm-3">
+                  <input type="text" class="form form-control"
+                         ng-model="s.yTitle">
+                </div>
+              </div>
+
+              <!--&& appCtrl.bucketManagers[$index].indicator-->
+              <div class="row">&nbsp;</div>
+              <div class="row table-padding well"
+                   ng-if="s.xBuckets.length===0 && !appCtrl.bucketManagers[$index] ">
+                <div class="col-sm-2">
+                  Buckets<br/>
+                  <input type="number" min="1" class="form form-control"
+                         ng-init="s.xBuckets.length"
+                         ng-model="appCtrl.numBuckets">
+                </div>
+                <div class="col-sm-2">Low<br/><input type="text"
+                                                     class="form-control"
+                                                     ng-model="appCtrl.bucketLow">
+                </div>
+                <div class="col-sm-2">High<br/><input type="text"
+                                                      class="form-control"
+                                                      ng-model="appCtrl.bucketHigh">
+                </div>
+                <div class="col-sm-1">
+                  <br/>
+                  <button class="btn btn-primary"
+                          ng-click="appCtrl.generateBuckets($index);">Generate
+                    Buckets
+                  </button>
+                </div>
+              </div>
+
+              <div class="row table-padding"
+                   ng-if="appCtrl.bucketManagers[$index].editing===false">
+                <div class="col-md-9">
+                  <b>Buckets: <span
+                      ng-repeat="bucket in appCtrl.bucketManagers[$index].editableBuckets track by $index">{{bucket.Name}}<span
+                      ng-show="$index < appCtrl.bucketManagers[$parent.$index].editableBuckets.length-1">,</span>
+                   </span> <i class="pull-righ glyphicon glyphicon-pencil"
+                              ng-click="appCtrl.bucketManagers[$index].makeEditable()"></i></b>
+                </div>
+              </div>
+              <div class="row table-padding"
+                   ng-if="appCtrl.bucketManagers[$index].editing===true">
+                <div class="col-md-3"></div>
+                <div class="col-md-6">
+                  <table
+                      class="table table-bordered table-striped table-condensed">
+                    <thead>
+                    <th>Bucket Label</th>
+                    <th>Bucket Rule</th>
+                    </thead>
+                    <tbody>
+                    <tr ng-repeat="bucket in appCtrl.bucketManagers[$index].editableBuckets track by $index">
+
+                      <td>
+                        <div ng-if="bucket.nameEditable === true">
+                          <input class="form-control input-sm" type="text"
+                                 ng-model="bucket.Name"
+                                 ng-if="bucket.nameEditable === true"/>
+                          <span>
+                            <button class="btn btn-primary btn-sm"
+                                    style="margin-top: 15px;"
+                                    ng-click="appCtrl.toggleNameEdit(bucket, $parent.$parent.$index)">Done
+                          </button>
+                          </span>
+                        </div>
+                        <br/>
+                        <span
+                            ng-if="bucket.nameEditable===false || !bucket.nameEditable">{{bucket.Name}}
+                            <br/>
+                        <i class="pull-righ glyphicon glyphicon-pencil"
+                           ng-click="appCtrl.toggleNameEdit(bucket, $parent.$parent.$index)"></i></span>
+                      </td>
+                      <td>
+                        <!-- ng-if creates an extra scope on angular. -->
+                        <div ng-if="bucket.rulesEditable===true">
+                          <select
+                              class="form-control input-sm"
+                              ng-model="bucket.rule1Type"
+                              ng-options="rule as rule.Label for rule in appCtrl.bucketManagers[$parent.$parent.$index].rule1Options">
+                          </select>
+                          <input type="text" class="form-control input-sm"
+                                 ng-model="bucket.rule1Value"
+                                 ng-if="bucket.rule1Type.Value!=='NONE'"/><br/>
+                          <select
+                              class="form-control input-sm"
+                              ng-model="bucket.rule2Type"
+                              ng-options="rule as rule.Label for rule in appCtrl.bucketManagers[$parent.$parent.$index].rule2Options">
+                          </select>
+                          <input type="text" class="form-control input-sm"
+                                 ng-model="bucket.rule2Value"
+                                 ng-if="bucket.rule2Type.Value!=='NONE'"/><br/>
+
+                          <button class="btn btn-primary btn-sm"
+                                  ng-click="appCtrl.toggleRuleEdit(bucket, $parent.$parent.$index)">
+                            Done
+                          </button>
+                        </div>
+                        <div
+                            ng-if="bucket.rulesEditable==false || !bucket.rulesEditable">
+                          {{bucket.rule1Type.Label}}&nbsp{{bucket.rule1Value}}<br/>
+                          {{bucket.rule2Type.Label}}&nbsp{{bucket.rule2Value}}<br/>
+                          <i class="pull-righ glyphicon glyphicon-pencil"
+                             ng-click="appCtrl.toggleRuleEdit(bucket, $parent.$parent.$index)"></i></span>
+                        </div>
+                      </td>
+                    </tr>
+                    </tbody>
+                  </table>
+                  <div style="text-align: center">
+                    <button class="btn btn-primary"
+                            ng-click="appCtrl.addBucket($index)">Add Bucket
+                    </button>
+                    <button class="btn btn-primary"
+                            ng-click="appCtrl.deleteBucket($index)"
+                            ng-disabled="appCtrl.bucketManagers[$index].editableBuckets.length === 0">
+                      Delete Bucket
+                    </button>
+                    <button class="btn btn-primary"
+                            ng-click="appCtrl.bucketManagers[$parent.$index].stopEditing()">
+                      Stop Editing
+                    </button>
+                  </div>
+
+                </div>
+              </div>
+            </div>
+
+
+            <div class="row table-padding">
+
+
+              <div class="col-sm-1">
+                <button class="btn btn-danger"
+                        ng-click="appCtrl.deleteBucketSet($index);"><span
+                    class="glyphicon glyphicon-trash"></span></button>
+              </div>
+            </div>
+            <hr>
+          </div>
+
+          <div class="row table-padding">
+            <div class="col-sm-1">
+              <button class="btn btn-success"
+                      ng-click="appCtrl.addBucketChartSet();"><span
+                  class="glyphicon glyphicon-plus"></span></button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Here is Waterfall! -->
+      <div class="col-sm-12 no-padding" ng-show="appCtrl.selectedMenu.Command == 'WATERFALL'">
+        <div class="row">
+          <div class="col-sm-3" align="center">
+            <h4>{{appCtrl.selectedMenu.Command}}</h4>
+          </div>
+          <div class="col-sm-offset-3 col-sm-3">
+            <h4>
+              <input type="checkbox" ng-model="appCtrl.selectedMenu.Visible">Visible
+            </h4>
+          </div>
+          <div class="col-sm-3">
+            <h4>
+              <input type="checkbox" ng-model="appCtrl.selectedMenu.UsePostProcessingOutputs">Use Post Processing
+            </h4>
+          </div>
+        </div>
+
+        <div class="col-sm-3">
+          <div class="list-of-templates">
+            <div class="list-group">
+              <a href=""
+                 id="waterfalltable{{$index}}"
+                 class="list-group-item"
+                 ng-repeat="table in appCtrl.potentialTables"
+                 ng-click="appCtrl.insertParamsToWaterfallTables(table)"
+                 ng-class="{active: table.CellLink === appCtrl.selectedPotentialTable.CellLink}"
+                 scroll-if="table.CellLink === appCtrl.selectedPotentialTable.CellLink">
+                {{table.CellLink}}
+              </a>
+            </div>
+          </div>
+        </div>
+        <div class="col-sm-9" ng-show="appCtrl.selectedPotentialTable">
+          <!-- REST CalcEngine: inline HTML table (HtmlPreview) rendered in a div -->
+          <div ng-if="appCtrl.selectedPotentialTable.HtmlPreview"
+               ng-bind-html="appCtrl.selectedPotentialTable.HtmlPreview | tablePreviewHtml"
+               style="width:100%; overflow:auto;"></div>
+          <!-- Legacy SOAP: PNG preview -->
+          <img
+              ng-if="!appCtrl.selectedPotentialTable.HtmlPreview"
+              src="{{appCtrl.server}}{{appCtrl.selectedPotentialTable.PreviewURL}}"
+              alt="{{appCtrl.selectedPotentialTable.CellLink}}" width="100%">
+        </div>
+        <div class="col-sm-9"><br></div>
+        <div ng-repeat="params in appCtrl.waterfall track by $index">
+          <div class="col-sm-8">
+            <div class="col-sm-12 col-sm-3" align="right">
+              <h5>OutputKey</h5>
+            </div>
+            <div class="col-sm-12 col-sm-3">
+              <input type="text" class="form form-control" ng-model="params.OutputKey">
+            </div>
+            <div class="col-sm-12 col-sm-3" align="right">
+              <h5>name</h5>
+            </div>
+            <div class="col-sm-12 col-sm-3">
+              <input type="text" class="form form-control" ng-model="params.name">
+            </div>
+          </div>
+          <div class="col-sm-1"></div>
+          <div class="col-sm-8">
+            <div class="col-sm-12 col-sm-3" align="right">
+              <h5>Units</h5>
+            </div>
+            <div class="col-sm-12 col-sm-3">
+              <input type="text" class="form form-control" ng-model="params.Units">
+            </div>
+            <div class="col-sm-12 col-sm-3" align="right">
+              <h5>yTitle</h5>
+            </div>
+            <div class="col-sm-12 col-sm-3">
+              <input type="text" class="form form-control" ng-model="params.yTitle">
+            </div>
+          </div>
+          <div class="col-sm-1">
+            <button class="btn btn-danger" ng-click="appCtrl.deleteTableInWaterfall($index)">
+              <span class="glyphicon glyphicon-trash"></span>
+            </button>
+          </div>
+          <div class="col-sm-9"><br></div>
+        </div>
+        <div class="col-sm-offset-8 col-sm-1">
+          <button class="btn btn-success" ng-click="appCtrl.addNewParamsToWaterfall()">
+            <span class="glyphicon glyphicon-plus"></span>
+          </button>
+        </div>
+      </div>
+
+
+    </div><!--Right side-->
+
+  </div>
+
+
+  <div class="col-sm-12 text-center align-to-bottom">
+    <a href="#/datastructure/{{appCtrl.selectedTemplate}}"
+       class="btn btn-primary pull-left" role="button"><span
+        class="glyphicon glyphicon-chevron-left"></span> Previous: Data
+      Structure</a>
+    <a href="#/portfoliostructure/{{appCtrl.selectedTemplate}}"
+       class="btn btn-primary pull-right" role="button">Next:
+      Portfolio Structure <span
+          class="glyphicon glyphicon-chevron-right"></span></a>
+    <button class="btn btn-danger" ng-disabled="appCtrl.isUnchanged()"
+            data-toggle="modal"
+            data-target="#commitMessageModal"><i
+        class="fa fa-spinner fa-spin fa-lg" ng-show="!appCtrl.saveComplete"></i><span
+        ng-show="appCtrl.saveComplete">save</span></button>
+    <div class="col-sm-12 save-alert">
+      <alert class="animated shake" ng-repeat="alert in appCtrl.saveAlerts"
+             type="{{alert.type}}"
+             close="appCtrl.closeAlert(appCtrl.saveAlerts,$index)"><i
+          class="fa fa-exclamation-triangle fa-lg"></i>
+        <b>Saving failed.</b> {{alert.msg}}
+      </alert>
+    </div>
+  </div>
+
+
+  <!-- Delete Modal -->
+  <div class="modal fade" id="deleteAppStructureModal" tabindex="-1"
+       role="dialog"
+       aria-labelledby="deleteAppStructureModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal"><span
+              aria-hidden="true">&times;</span><span
+              class="sr-only">Close</span></button>
+          <h4 class="modal-title">Delete Menu Item</h4>
+
+        </div>
+        <div class="modal-body">
+          <h4 class="modal-title" id="deleteAppStructureModalLabel">Are you sure
+            to delete <b>{{appCtrl.selectedMenu.Display}}</b>?
+          </h4>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-primary"
+                  ng-click="appCtrl.deleteAppStructure()">Delete
+          </button>
+          <button type="button" class="btn btn-default" data-dismiss="modal">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Modal -->
+  <div class="modal fade" id="editAppStructureModal" tabindex="-1" role="dialog"
+       aria-labelledby="editAppStructureModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal"><span
+              aria-hidden="true">&times;</span><span
+              class="sr-only">Close</span></button>
+          <h4 class="modal-title">Rename Menu Item</h4>
+
+        </div>
+        <div class="modal-body">
+          <h4>New Name:</h4>
+          <input type="text" ng-model="appCtrl.selectedMenu.Display"
+                 class="form form-control"/>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-primary" ng-click="appCtrl.rename()">Rename
+          </button>
+          <button type="button" class="btn btn-default" data-dismiss="modal">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- New Modal -->
+  <div class="modal fade" id="newAppStructureModal" tabindex="-1" role="dialog"
+       aria-labelledby="newAppStructureModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal"><span
+              aria-hidden="true">&times;</span><span
+              class="sr-only">Close</span></button>
+          <h4 class="modal-title">New Menu Item</h4>
+
+        </div>
+        <div class="modal-body">
+          <div class="container-fluid">
+            <div class="row table-padding">
+              <div class="col-sm-3 col-sm-offset-1 text-right">
+                <h4>Name</h4>
+              </div>
+              <div class="col-sm-6">
+                <input type="text" ng-model="display" class="form form-control"
+                       id="new-display">
+              </div>
+            </div>
+            <div class="row table-padding">
+              <div class="col-sm-3 col-sm-offset-1 text-right">
+                <h4>Command</h4>
+              </div>
+
+              <!--for project app structure-->
+              <div class="col-sm-6" ng-show="!appCtrl.isPlatform">
+                <select ng-model="command" class="form form-control"
+                        id="new-command-project">
+                  <option value="INPUT_SCREEN">INPUT_SCREEN</option>
+                  <option value="TABLE">TABLE</option>
+                  <option value="TABLE_INPUT">TABLE_INPUT</option>
+                  <option value="IMAGE">IMAGE</option>
+                  <option value="TORNADODIST">TORNADODIST</option>
+                  <option value="METALOG_DISPLAY">METALOG_DISPLAY</option>
+                  <option value="WATERFALL">WATERFALL</option>
+                </select>
+              </div>
+              <!--for platform app structure-->
+              <div class="col-sm-6" ng-show="appCtrl.isPlatform">
+                <select ng-model="command" class="form form-control"
+                        id="new-command-platform">
+                  <option value="INPUT_SCREEN">INPUT_SCREEN</option>
+                  <option value="TABLE">TABLE</option>
+                  <option value="TABLE_INPUT">TABLE_INPUT</option>
+                  <option value="IMAGE">IMAGE</option>
+                  <option value="TORNADODIST">TORNADODIST</option>
+                  <option value="METALOG_DISPLAY">METALOG_DISPLAY</option>
+                  <option value="COMPARE_VALUE">COMPARE_VALUE</option>
+                  <option value="COMPARE_UNCERTAINTY">COMPARE_UNCERTAINTY
+                  </option>
+                  <option value="CFO_CHART">CFO_CHART</option>
+                  <option value="INNOVATION_SCREEN">INNOVATION_SCREEN</option>
+                  <option value="ADD_TABLES">ADD_TABLES</option>
+                  <option value="SCATTER_PLOT">SCATTER_PLOT</option>
+                  <option value="BUCKET_CHART">BUCKET_CHART</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-sm-12 save-alert text-center">
+          <alert class="animated shake"
+                 ng-repeat="alert in appCtrl.newAppStructureAlerts"
+                 type="{{alert.type}}"
+                 close="appCtrl.closeAlert(appCtrl.newAppStructureAlerts,$index)">
+            <i class="fa fa-exclamation-triangle fa-lg"></i>
+            {{alert.msg}}
+          </alert>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-primary"
+                  ng-click="appCtrl.addNewAppStructure(display,command)">Add
+          </button>
+          <!--<button class= "btn btn-warning" ng-click="uploads.cancel()">Cancel</button>-->
+          <button type="button" class="btn btn-default" data-dismiss="modal">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!--<div class="modal fade" id="commitMessageModal" tabindex="-1" role="dialog"-->
+       <!--aria-hidden="true">-->
+    <!--<div class="modal-dialog">-->
+      <!--<div class="modal-content">-->
+        <!--<div class="modal-header">-->
+          <!--<button type="button" class="close" data-dismiss="modal"><span-->
+              <!--aria-hidden="true">&times;</span><span-->
+              <!--class="sr-only">Close</span></button>-->
+          <!--<h4 class="modal-title">Change Message</h4>-->
+
+        <!--</div>-->
+        <!--<div class="modal-body">-->
+          <!--<h4>You will see this message in the revisions page</h4>-->
+          <!--<textarea type="text" ng-model="display" class="form form-control"-->
+                    <!--id="commit-display"></textarea>-->
+        <!--</div>-->
+
+        <!--<div class="modal-footer">-->
+          <!--<button class="btn btn-primary"-->
+                  <!--ng-click="appCtrl.addNewAppStructure(display,command)">Ok-->
+          <!--</button>-->
+          <!--&lt;!&ndash;<button class= "btn btn-warning" ng-click="uploads.cancel()">Cancel</button>&ndash;&gt;-->
+          <!--<button type="button" class="btn btn-default" data-dismiss="modal">-->
+            <!--Cancel-->
+          <!--</button>-->
+        <!--</div>-->
+      <!--</div>-->
+    <!--</div>-->
+  <!--</div>-->
+
+
+</div>
+
+<commit-message-modal save-function="appCtrl.saveWithCommit(commitMessage)"></commit-message-modal>
+
+<!--<script>-->
+<!--$(function () {-->
+<!--$("#app-structure-menu").sortable({-->
+<!--change: function (event, ui) {-->
+<!--// save-->
+<!--var newOrderList = $(-->
+<!--"#app-structure-menu").sortable("toArray");-->
+
+<!--console.log(newOrderList);-->
+<!--}-->
+<!--}-->
+<!--);-->
+<!--$("#app-structure-menu").disableSelection();-->
+<!--});-->
+<!--</script>-->

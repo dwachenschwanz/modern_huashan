@@ -1,0 +1,2 @@
+angular.module('huashanApp', ['ui.bootstrap', 'ui.bootstrap.tpls']).constant('mode', 'standalone');
+//# sourceMappingURL=app.js.map

@@ -1,0 +1,275 @@
+<nav class="navbar navbar-inverse navbar-static-top" role="navigation" style="margin-bottom: 10px;">
+    <div class="container-fluid">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header">
+            <a class="navbar-brand">Huashan</a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+            <ul class="nav navbar-nav">
+                <li><a href="#">Home</a></li>
+                <li><a ng-if="ctrl.isAdmin" href="#/admin">Admin</a></li>
+                <li><a href="#/selectTemplate">Select Template</a></li>
+                <li ng-hide="ctrl.selectedTemplate === 'Not Selected'"><a
+                        href="#/json/{{ctrl.selectedTemplate}}">JSON</a></li>
+                <li class="dropdown" ng-hide="ctrl.selectedTemplate === 'Not Selected'">
+                    <a href="" class="dropdown-toggle" data-toggle="dropdown">Data
+                        Structure <span class="caret"></span></a>
+                    <ul class="dropdown-menu" role="menu">
+                        <li><a href="#/datastructure/{{ctrl.selectedTemplate}}">Project
+                                Data Structure</a></li>
+                        <!-- <li>
+                            <a href="#/platformDataStructure/{{ctrl.selectedTemplate}}">Platform
+                                Data Structure</a>
+                        </li> -->
+                    </ul>
+                </li>
+                <li class="dropdown" ng-hide="ctrl.selectedTemplate === 'Not Selected'">
+                    <a href="" class="dropdown-toggle" data-toggle="dropdown">App
+                        Structure <span class="caret"></span></a>
+                    <ul class="dropdown-menu" role="menu">
+                        <li><a href="#/appstructure/{{ctrl.selectedTemplate}}">Project
+                                App Structure</a></li>
+                        <!-- <li>
+                            <a href="#/platformAppStructure/{{ctrl.selectedTemplate}}">Platform
+                                App Structure</a>
+                        </li> -->
+                    </ul>
+                </li>
+                <li class="dropdown" ng-hide="ctrl.selectedTemplate === 'Not Selected'">
+                    <a href="" class="dropdown-toggle" data-toggle="dropdown">Portfolio
+                        Structure <span class="caret"></span></a>
+                    <ul class="dropdown-menu" role="menu">
+                        <li>
+                            <a href="#/portfoliostructure/{{ctrl.selectedTemplate}}">Project
+                                Portfolio Structure</a>
+                        </li>
+                        <!-- <li><a href="#/platformPortfolioStructure/{{ctrl.selectedTemplate}}">Platform
+                                Portfolio Structure</a></li> -->
+                    </ul>
+                </li>
+                <li class="active"><a href="#/revisions/{{ctrl.selectedTemplate}}">Revisions</a>
+                </li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <li class="active"><a class="navbar-brand" href=""><b>{{ctrl.selectedTemplate}}</b></a>
+                </li>
+            </ul>
+        </div>
+        <!-- /.navbar-collapse -->
+    </div>
+    <!-- /.container-fluid -->
+</nav>
+
+
+<div class="select-template" class="animated fadeIn" style="height: 100%">
+
+    <!--Left side: list of templates to choose from-->
+    <div id="choose-from" style="height: 100%">
+        <div class="select-template-title">
+            <h4><b>Revision History</b></h4>
+        </div>
+        <div class="panel panel-primary" style="height: calc(100% - 260px)">
+            <div class="list-of-templates height-for-list" style="height: 100%">
+                <!-- List group -->
+                <div ng-model="ctrl.selectedRevision" class="list-group" id="revisons-list">
+                    <a href="" class="list-group-item
+                    cursor-move" ng-repeat="revision in ctrl.re.revisionLogs track by $index"
+                        ng-click="ctrl.clickItem($event, revision.commitNum, revision)"
+                        ng-class="{active: ctrl.selectedRevision == revision || ctrl.selectedRevisionCompare == revision}">
+
+                        <table>
+                            <tr>
+                                <td colspan="2" class="appStructList no-wrap">
+                                    {{revision.commitMessage}}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="appStructList no-wrap">
+                                    {{revision.relativeTime}}
+                                </td>
+                                <td class="appStructList no-wrap">
+                                    {{revision.committer}}
+                                </td>
+                            </tr>
+                        </table>
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="">
+            <!-- View Trash Button -->
+            <button class="btn btn-info pull-left" ng-show="ctrl.selectedRevisionCompare != null" tooltip="Compare"
+                tooltip-trigger="mouseenter" tooltip-popup-delay="500"
+                ng-click="ctrl.compareJsonFiles(ctrl.selectedRevision, ctrl.selectedRevisionCompare)">
+                Compare
+            </button>
+
+
+        </div>
+        <!--container of all popups-->
+    </div>
+
+
+    <!--Right Side: selected template and JSON-->
+    <div id="selected-template">
+        <div class="select-template-title" style="padding-left: 15px">
+            <h4><b>Revision Details</b></h4>
+        </div>
+        <div class="panel panel-default panel-body" style="padding-left: 15px;  margin-left: 13px; margin-right: 13px">
+            <div>
+                <b>{{ctrl.selectedRevision.committer}}</b> saved changes on <b>{{ctrl.selectedRevision.timeStamp | customDateFormat}}</b>;
+                &nbsp; Commit Message: {{ctrl.selectedRevision.commitMessage}};
+                &nbsp; GUID: {{ctrl.selectedRevision.commitNum}}
+
+            </div>
+        </div>
+
+        <div class="select-template-title" style="padding-left: 15px"
+            ng-show="ctrl.jsonCompareResult != null && ctrl.selectedRevisionCompare != null">
+            <h4><b>Compare Result</b></h4>
+        </div>
+
+        <div class="panel panel-default panel-body" style="padding-left: 15px;  margin-left: 13px; margin-right: 13px"
+            ng-repeat="js in ctrl.jsonCompareResult track by $index"
+            ng-show="(js.values_changed || js.iterable_item_added || js.iterable_item_removed || js.dictionary_item_added || js.dictionary_item_removed) && ctrl.selectedRevisionCompare != null">
+            <h4 style="color: #3383bb;">{{ctrl.getDisplayNameBy(js.fileName)}}</h4>
+
+
+            <h5 ng-show="js.values_changed" style="padding-left: 20px">
+                Values Changed:</h5>
+            <ul ng-show="js.values_changed" class="json-container-revision" ng-repeat="item in js.values_changed"
+                style="padding-left: 45px">
+                <li>
+                    <b>{{item.path}}</b>
+                    <div ng-show="item.key">Key: <b>{{item.key}}</b></div>
+                    <div style="padding-left: 25px">Current Version:</div>
+                    <textarea class="revision-text">{{item.result.currentValue}}</textarea>
+                    <div style="padding-left: 25px">Compared Version:</div>
+                    <textarea class="revision-text">{{item.result.comparedValue}}</textarea>
+                </li>
+            </ul>
+
+            <h5 ng-show="js.iterable_item_added" style="padding-left: 20px">
+                Iterable Item Added:</h5>
+            <ul ng-show="js.iterable_item_added" class="json-container-revision"
+                ng-repeat="item in js.iterable_item_added" style="padding-left: 45px">
+                <li>
+                    <b>{{item.path}}</b>
+                    <div ng-show="item.key">Key: <b>{{item.key}}</b></div>
+                    <div style="padding-left: 25px">Current Version:</div>
+                    <textarea class="revision-text">{{item.result.currentValue}}</textarea>
+                    <div style="padding-left: 25px">Compared Version:</div>
+                    <textarea class="revision-text">{{item.result.comparedValue}}</textarea>
+                </li>
+            </ul>
+
+            <h5 ng-show="js.iterable_item_removed" style="padding-left: 20px">
+                Iterable Item Removed:</h5>
+            <ul ng-show="js.iterable_item_removed" class="json-container-revision"
+                ng-repeat="item in js.iterable_item_removed" style="padding-left: 45px">
+                <li>
+                    <b>{{item.path}}</b>
+                    <div ng-show="item.key">Key: <b>{{item.key}}</b></div>
+                    <div style="padding-left: 25px">Current Version:</div>
+                    <textarea class="revision-text">{{item.result.currentValue}}</textarea>
+                    <div style="padding-left: 25px">Compared Version:</div>
+                    <textarea class="revision-text">{{item.result.comparedValue}}</textarea>
+                </li>
+            </ul>
+
+            <h5 ng-show="js.dictionary_item_added" style="padding-left: 20px">
+                Dictionary Item Added:</h5>
+            <ul ng-show="js.dictionary_item_added" class="json-container-revision"
+                ng-repeat="item in js.dictionary_item_added" style="padding-left: 45px">
+                <li>
+                    <b>{{item.path}}</b>
+                    <div ng-show="item.key">Key: <b>{{item.key}}</b></div>
+                    <div style="padding-left: 25px">Current Version:</div>
+                    <textarea class="revision-text">{{item.result.currentValue}}</textarea>
+                    <div style="padding-left: 25px">Compared Version:</div>
+                    <textarea class="revision-text">{{item.result.comparedValue}}</textarea>
+                </li>
+            </ul>
+
+            <h5 ng-show="js.dictionary_item_removed" style="padding-left: 20px">
+                Dictionary Item Removed:</h5>
+            <ul ng-show="js.dictionary_item_removed" class="json-container-revision"
+                ng-repeat="item in js.dictionary_item_removed" style="padding-left: 45px">
+                <li>
+                    <b>{{item.path}}</b>
+                    <div ng-show="item.key">Key: <b>{{item.key}}</b></div>
+                    <div style="padding-left: 25px">Current Version:</div>
+                    <textarea class="revision-text">{{item.result.currentValue}}</textarea>
+                    <div style="padding-left: 25px">Compared Version:</div>
+                    <textarea class="revision-text">{{item.result.comparedValue}}</textarea>
+                </li>
+            </ul>
+        </div>
+
+        <div id="revision-json">
+            <div class="col-sm-4">
+                <accordion close-others="false">
+                    <accordion-group is-open="status.isFirstOpen" ng-init="status.isFirstOpen=true;">
+                        <accordion-heading>
+                            Data Structure <i class="pull-right glyphicon"
+                                ng-class="{'glyphicon-chevron-down': status.isFirstOpen, 'glyphicon-chevron-left': !status.isFirstOpen}"></i>
+                        </accordion-heading>
+                        <textarea ng-model="ctrl.jsonData.dataStructure" class="json-container"></textarea>
+                    </accordion-group>
+                    <accordion-group is-open="status.isSecondOpen" ng-if="ctrl.platformExists()">
+                        <accordion-heading>
+                            Platform Data Structure <i class="pull-right glyphicon"
+                                ng-class="{'glyphicon-chevron-down': status.isSecondOpen, 'glyphicon-chevron-left': !status.isSecondOpen}"></i>
+                        </accordion-heading>
+                        <textarea ng-model="ctrl.jsonData.platformDataStructure" class="json-container"></textarea>
+                    </accordion-group>
+                </accordion>
+            </div>
+
+            <div class="col-sm-4">
+                <accordion close-others="false">
+                    <accordion-group is-open="status.isThirdOpen" ng-init="status.isThirdOpen=true;">
+                        <accordion-heading>
+                            App Structure <i class="pull-right glyphicon"
+                                ng-class="{'glyphicon-chevron-down': status.isThirdOpen, 'glyphicon-chevron-left': !status.isThirdOpen}"></i>
+                        </accordion-heading>
+                        <textarea ng-model="ctrl.jsonData.appStructure" class="json-container"></textarea>
+                    </accordion-group>
+
+                    <accordion-group is-open="status.isFourthOpen" ng-if="ctrl.platformExists()">
+                        <accordion-heading>
+                            Platform App Structure <i class="pull-right glyphicon"
+                                ng-class="{'glyphicon-chevron-down': status.isFourthOpen, 'glyphicon-chevron-left': !status.isFourthOpen}"></i>
+                        </accordion-heading>
+                        <textarea ng-model="ctrl.jsonData.platformAppStructure" class="json-container"></textarea>
+                    </accordion-group>
+                </accordion>
+
+            </div>
+
+            <div class="col-sm-4">
+                <accordion close-others="false">
+                    <accordion-group is-open="status.isFifthOpen" ng-init="status.isFifthOpen=true;">
+                        <accordion-heading>
+                            Portfolio Structure <i class="pull-right glyphicon"
+                                ng-class="{'glyphicon-chevron-down': status.isFifthOpen, 'glyphicon-chevron-left': !status.isFifthOpen}"></i>
+                        </accordion-heading>
+                        <textarea ng-model="ctrl.jsonData.portfolioStructure" class="json-container"></textarea>
+                    </accordion-group>
+                    <accordion-group is-open="status.isSixthOpen" ng-if="ctrl.platformExists()">
+                        <accordion-heading>
+                            Platform Portfolio Structure <i class="pull-right glyphicon"
+                                ng-class="{'glyphicon-chevron-down': status.isSixthOpen, 'glyphicon-chevron-left': !status.isSixthOpen}"></i>
+                        </accordion-heading>
+                        <textarea ng-model="ctrl.jsonData.platformPortfolioStructure" class="json-container"></textarea>
+                    </accordion-group>
+                </accordion>
+            </div>
+        </div>
+    </div>
+    <!--Right side-->
+
+</div>
+<!--Right side-->

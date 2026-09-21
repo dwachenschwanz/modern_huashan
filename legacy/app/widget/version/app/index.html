@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en" >
+<head>
+  <meta charset="utf-8">
+  <title>Image Widget</title>
+  <link rel="stylesheet" href="../app/css/app.css">
+  <link rel="stylesheet" href="../app/bower_components/bootstrap/dist/css/bootstrap.css">
+
+  <script src="../app/bower_components/angular/angular.js"></script>
+
+  <script src="../app/bower_components/angular-ui-bootstrap-bower/ui-bootstrap-tpls.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/standaloneController.js"></script>
+  <script src="../../../scripts/services/huashan.version.js"></script>
+  <script src="js/versionDirective.js"></script>
+</head>
+<body>
+  <div ng-app="huashanApp" ng-controller="imageStandaloneCtrl">
+      <li huashan-version></li>
+  </div>
+</body>
+</html>

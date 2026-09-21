@@ -1,0 +1,25 @@
+.inline-icon:hover{
+    cursor: pointer;
+    color: #dff0d8 !important;
+}
+.inline-icon{
+    padding-left: 5px;
+}
+
+.no-padding{
+    padding:0px !important;
+}
+
+.text-right{
+    text-align: right;
+}
+
+.input-append .btn.dropdown-toggle {
+    float: none;
+}
+.table-padding{
+    padding-top: 20px;
+}
+.cursor-move:hover{
+    cursor: move !important;
+}

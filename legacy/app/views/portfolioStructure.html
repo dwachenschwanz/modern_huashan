@@ -1,0 +1,1135 @@
+<nav class="navbar navbar-inverse navbar-static-top" role="navigation"
+    style="margin-bottom: 10px;">
+  <div class="container-fluid">
+    <!-- Brand and toggle get grouped for better mobile display -->
+    <div class="navbar-header">
+      <a class="navbar-brand">Huashan</a>
+    </div>
+
+    <!-- Collect the nav links, forms, and other content for toggling -->
+    <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+      <ul class="nav navbar-nav">
+        <li><a href="#">Home</a></li>
+        <li><a ng-if="port.isAdmin" href="#/admin">Admin</a></li>
+        <li><a href="#/selectTemplate">Select Template</a></li>
+        <li ng-hide="port.selectedTemplate === 'Not Selected'"><a
+            href="#/json/{{port.selectedTemplate}}">JSON</a></li>
+        <li class="dropdown"
+            ng-hide="port.selectedTemplate === 'Not Selected'">
+          <a href="" class="dropdown-toggle" data-toggle="dropdown">Data
+            Structure <span class="caret"></span></a>
+          <ul class="dropdown-menu" role="menu">
+            <li><a href="#/datastructure/{{port.selectedTemplate}}">Project
+              Data Structure</a></li>
+            <!-- <li><a href="#/platformDataStructure/{{port.selectedTemplate}}">Platform
+              Data Structure</a></li> -->
+          </ul>
+        </li>
+        <li class="dropdown"
+            ng-hide="port.selectedTemplate === 'Not Selected'">
+          <a href="" class="dropdown-toggle" data-toggle="dropdown">App
+            Structure <span class="caret"></span></a>
+          <ul class="dropdown-menu" role="menu">
+            <li><a href="#/appstructure/{{port.selectedTemplate}}">Project App
+              Structure</a></li>
+            <!-- <li><a href="#/platformAppStructure/{{port.selectedTemplate}}">Platform
+              App Structure</a></li> -->
+          </ul>
+        </li>
+        <li class="dropdown active"
+            ng-hide="port.selectedTemplate === 'Not Selected'">
+          <a href="" class="dropdown-toggle" data-toggle="dropdown">Portfolio
+            Structure <span class="caret"></span></a>
+          <ul class="dropdown-menu" role="menu">
+            <li><a href="#/portfoliostructure/{{port.selectedTemplate}}">Project
+              Portfolio Structure</a></li>
+            <!-- <li><a
+                href="#/platformPortfolioStructure/{{port.selectedTemplate}}">Platform
+              Portfolio Structure</a></li> -->
+          </ul>
+        </li>
+        <li>
+          <a href="#/revisions/{{port.selectedTemplate}}">Revisions</a>
+        </li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li class="active"><a href=""><b>{{port.selectedTemplate}}</b></a></li>
+      </ul>
+    </div><!-- /.navbar-collapse -->
+  </div><!-- /.container-fluid -->
+</nav>
+
+<div class="select-template"
+    class="container col-sm-12 animated fadeIn"
+    style="height: calc(100% - 100px)">
+
+  <!--Left side: list of templates to choose from-->
+  <div class="choose-from" style="height: calc(100% - 260px)">
+
+    <div class="select-template-title">
+      <h4 ng-show="!port.isPlatform">Portfolio Structure</h4>
+      <h4 ng-show="port.isPlatform">Platform Portfolio Structure</h4>
+    </div>
+    <div class="select-template-title">
+      <input type="text" class="form-control" placeholder="Search"
+          ng-model="searchMenu.Display">
+    </div>
+    <div class="panel panel-primary" style="height: 100%">
+
+
+      <!-- List group -->
+      <div class="list-of-templates height-for-list" style="height: 100%">
+
+        <div ui-sortable
+            ng-model="port.portfolioStructure.MENU"
+            class="list-group"
+            id="app-structure-menu">
+          <a href=""
+              class="list-group-item
+                    cursor-move"
+              ng-repeat="menu in port.portfolioStructure.MENU|filter:searchMenu:strict track by $index"
+              ng-click="port.selectMenu(menu)"
+              ng-class="{active: port.selectedMenu == menu}">
+            <table>
+              <tr>
+                <td class="appStructList no-wrap">{{menu.Display}}</td>
+                <td class="appStructList" style="width:60px">
+                  <span data-toggle="modal"
+                      data-target="#deletePortfolioStructureModal"
+                      ng-show="port.selectedMenu === menu"
+                      ng-click="$('#deletePortfolioStructureModal').modal('show')"
+                      class="inline-icon pull-right glyphicon glyphicon-trash"
+                      tooltip="Delete"
+                      tooltip-trigger="mouseenter"
+                      tooltip-popup-delay="500"></span>
+                  <span data-toggle="modal"
+                      data-target="#editPortfolioStructureModal"
+                      ng-show="port.selectedMenu === menu"
+                      ng-click="$('#editPortfolioStructureModal').modal('show')"
+                      class="inline-icon pull-right glyphicon glyphicon-pencil"
+                      tooltip="Rename"
+                      tooltip-trigger="mouseenter"
+                      tooltip-popup-delay="500"></span></td>
+              </tr>
+            </table>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div class="pull-left">
+      <!-- New Button -->
+      <button class="btn btn-success"
+          id="new-button"
+          data-toggle="modal"
+          ng-click="port.openNew()"
+          data-target="#newPortfolioStructureModal"
+          tooltip="New"
+          tooltip-trigger="mouseenter"
+          tooltip-popup-delay="500">
+        <span class="glyphicon glyphicon-plus"></span>
+      </button>
+    </div>
+
+  </div><!--Left side-->
+
+  <!--Right Side: selected template and JSON-->
+  <div id="selected-template">
+    <div class="select-template-title">
+      <div class="col-sm-12">
+        <h4 ng-show="!port.show">
+          {{port.selectedMenu.Display}}
+        </h4>
+      </div>
+    </div>
+    <div class="selected-inputs"
+        style="background-color: #eee; overflow: scroll">
+      <div class="col-sm-12" ng-show="port.selectedMenu.Command == 'ADD_TABLES'">
+        <div class="col-sm-12">
+          <div class="col-sm-6">
+            <h4>{{port.selectedMenu.Command}}</h4>
+          </div>
+          <div class="col-sm-6">
+            <h4>
+              <input type="checkbox" ng-model="port.selectedMenu.Visible">Visible
+            </h4>
+          </div>
+        </div>
+        <div class="col-sm-4">
+          <div class="list-group">
+            <a id="table{{$index}}"
+                class="list-group-item"
+                ng-repeat="table in port.tables"
+                ng-class="{active: port.selectedTable === table}"
+                ng-click="port.selectTable(table)"
+                scroll-if="table.CellLink === port.selectedTable.CellLink">
+              {{table.Display}}
+            </a>
+          </div>
+        </div>
+
+        <div class="col-sm-8">
+          <!-- REST CalcEngine: inline HTML table (HtmlPreview) rendered in a div -->
+          <div ng-if="port.selectedPotentialTable.HtmlPreview"
+               ng-bind-html="port.selectedPotentialTable.HtmlPreview | tablePreviewHtml"
+               style="width:100%; overflow:auto;"></div>
+          <!-- Legacy SOAP: PNG preview -->
+          <img ng-if="!port.selectedPotentialTable.HtmlPreview"
+               src="{{port.server}}{{port.selectedPotentialTable.PreviewURL}}"
+              alt="{{port.selectedPotentialTable.CellLink}}" width="100%">
+        </div>
+
+
+        <!--half bottom for special rules-->
+        <div class="col-sm-12">
+          <div class="row table-padding col-sm-4">
+            <div class=" col-sm-6 text-right">
+              <b>PNL</b>
+            </div>
+            <div class="col-sm-6">
+              <input type="checkbox"
+                  ng-model="port.selectedMenu.Parameters.Pnl">
+            </div>
+          </div>
+        </div>
+
+        <div class="col-sm-12">
+          <div class="row table-padding col-sm-4">
+            <div class="col-sm-6 text-right" style="padding-top: 2%">
+              <b>Precision Options</b>
+            </div>
+          </div>
+        </div>
+
+
+        <div class="col-sm-12">
+          <div class="row table-padding col-sm-4">
+            <div class="col-sm-6 text-right" style="padding-top: 2%">
+              <b>Min</b>
+            </div>
+            <div class="col-sm-6">
+              <input type="number"
+                  class="form form-control"
+                  ng-model="appCtrl.minPrecision"
+                  ng-change="appCtrl.changePrecisionOptions()"
+                  min="0">
+            </div>
+          </div>
+
+          <div class="row table-padding col-sm-4">
+            <div class="col-sm-6 text-right" style="padding-top: 2%">
+              <b>Max</b>
+            </div>
+            <div class="col-sm-6">
+              <input type="number"
+                  class="form form-control"
+                  ng-model="appCtrl.maxPrecision"
+                  ng-change="appCtrl.changePrecisionOptions()"
+                  min="0">
+            </div>
+          </div>
+
+
+          <div class="row table-padding col-sm-4">
+            <div class="col-sm-6 text-right">
+              <b>Default Precision</b>
+            </div>
+            <div class="col-sm-6">
+              <select class="btn btn-default form-control"
+                  ng-model="appCtrl.selectedMenu.Parameters.DefaultPrecision"
+                  ng-options="option for option in appCtrl.selectedMenu.Parameters.PrecisionOptions">
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!--<div class="col-sm-12">-->
+        <!--<div class="row table-padding col-sm-4">-->
+        <!--<div class="col-sm-6 text-right">-->
+        <!--<b>Special Rules</b>-->
+        <!--</div>-->
+        <!--<div class="col-sm-6">-->
+        <!--<select class="btn btn-default form-control">-->
+        <!--<option value="1">None</option>-->
+        <!--<option value="2">Ignore</option>-->
+        <!--<option value="3">IRR</option>-->
+        <!--<option value="4">MVSto Range</option>-->
+        <!--<option value="5">Year</option>-->
+        <!--<option value="6">Tooltip</option>-->
+        <!--</select>-->
+        <!--</div>-->
+        <!--</div>-->
+        <!--</div>-->
+
+        <!--special rules dropdown-->
+        <div class="row table-padding"
+            ng-repeat="key in port.selectedMenu.Parameters.Keys track by $index">
+          <div class="col-sm-3">
+            <select class="form form-control"
+                ng-options="output.Key as port.getOutputDisplayFromKey(output.Key) for output in port.allOutputs"
+                ng-model="port.selectedMenu.Parameters.Keys[$index]"
+                ng-change="port.selectedMenu.Parameters.Units[$index] = port.getOutputUnitFromKey(port.selectedMenu.Parameters.Keys[$index]);
+                    port.selectedMenu.Parameters.Titles[$index] = port.getOutputDisplayFromKey(port.selectedMenu.Parameters.Keys[$index]);">
+            </select>
+          </div>
+        </div>
+        <div class="col-sm-12">
+          <div class="row table-padding col-sm-4">
+            <div class="col-sm-6 text-right">
+              <b>Special Rules</b>
+            </div>
+            <div class="col-sm-6">
+              <select class="btn btn-default form-control">
+                <option value="1">None</option>
+                <option value="2">Ignore</option>
+                <option value="3">IRR</option>
+                <option value="4">MVSto Range</option>
+                <option value="5">Year</option>
+                <option value="6">Tooltip</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="col-sm-12" ng-show="port.selectedMenu.Command == 'COMPARE_VALUE'">
+        <div class="col-sm-6">
+          <h4>{{port.selectedMenu.Command}}</h4>
+        </div>
+        <div class="col-sm-6">
+          <h4>
+            <input type="checkbox" ng-model="port.selectedMenu.Visible">Visible
+          </h4>
+        </div>
+        <div class="row table-padding">
+          <div class="col-sm-2">
+            <b>Total</b>
+          </div>
+          <div class="col-sm-3">
+            <input type="checkbox"
+                ng-model="port.selectedMenu.Parameters.Total">
+          </div>
+        </div>
+        <div class="row table-padding">
+          <div class="col-sm-2">
+            <b>Min</b>
+          </div>
+          <div class="col-sm-3">
+            <input type="number" class="form form-control"
+                ng-model="port.selectedMenu.Parameters.Min">
+          </div>
+          <div class="col-sm-2">
+            <b>Max</b>
+          </div>
+          <div class="col-sm-3">
+            <input type="number" class="form form-control"
+                ng-model="port.selectedMenu.Parameters.Max">
+          </div>
+        </div>
+        <div class="row table-padding">
+          <div class="col-sm-3">
+            <b>Key</b>
+          </div>
+          <div class="col-sm-3">
+            <b>Unit</b>
+          </div>
+          <div class="col-sm-3">
+            <b>Title</b>
+          </div>
+        </div>
+        <div class="row table-padding"
+            ng-repeat="key in port.selectedMenu.Parameters.Keys track by $index">
+          <div class="col-sm-3">
+            <select class="form form-control"
+                ng-options="output.Key as port.getOutputDisplayFromKey(output.Key) for output in port.allOutputs"
+                ng-model="port.selectedMenu.Parameters.Keys[$index]"
+                ng-change="port.selectedMenu.Parameters.Units[$index] = port.getOutputUnitFromKey(port.selectedMenu.Parameters.Keys[$index]);
+                    port.selectedMenu.Parameters.Titles[$index] = port.getOutputDisplayFromKey(port.selectedMenu.Parameters.Keys[$index]);">
+            </select>
+          </div>
+          <div class="col-sm-3">
+            <input type="text" class="form form-control"
+                ng-model="port.selectedMenu.Parameters.Units[$index]">
+          </div>
+          <div class="col-sm-3">
+            <input type="text" class="form form-control"
+                ng-model="port.selectedMenu.Parameters.Titles[$index]">
+          </div>
+          <div class="col-sm-1">
+            <button class="btn btn-danger"
+                ng-click="port.deleteCompareValueItem($index);"><span
+                class="glyphicon glyphicon-trash"></span></button>
+          </div>
+        </div>
+        <div class="row table-padding">
+          <div class="col-sm-1">
+            <button class="btn btn-success"
+                ng-click="port.addCompareValueItem();"><span
+                class="glyphicon glyphicon-plus"></span></button>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-sm-12" ng-show="port.selectedMenu.Command == 'COMPARE_UNCERTAINTY'">
+        <div class="col-sm-6">
+          <h4>{{port.selectedMenu.Command}}</h4>
+          <div>
+            <h4>There's nothing to customize in this menu item</h4>
+          </div>
+        </div>
+        <div class="col-sm-6">
+          <h4>
+            <input type="checkbox" ng-model="port.selectedMenu.Visible">Visible
+          </h4>
+        </div>
+        <!--<div>-->
+        <!--<h4>There's nothing to customize in this menu item</h4>-->
+        <!--</div>-->
+      </div>
+
+      <div class="col-sm-12" ng-show="port.selectedMenu.Command == 'INNOVATION_SCREEN'">
+        <div class="col-sm-12">
+          <div class="col-sm-6">
+            <h4>{{port.selectedMenu.Command}}</h4>
+          </div>
+          <div class="col-sm-6">
+            <h4>
+              <input type="checkbox" ng-model="port.selectedMenu.Visible">Visible
+            </h4>
+          </div>
+          <div ng-repeat="set in port.selectedMenu.Parameters.Sets">
+            <div class="row table-padding">
+              <div class="col-sm-2">
+                <b>X Axis</b>
+              </div>
+              <div class="col-sm-3">
+                <select
+                    ng-options="output.Key as port.getOutputDisplayFromKey(output.Key) for output in port.allOutputs"
+                    class="form form-control"
+                    ng-init="xKey = port.getKeyFrom(set.x);"
+                    ng-model="xKey"
+                    ng-change="set.x = port.buildOutputFromKey(xKey);
+                    set.xTitle = port.getOutputDisplayFromKey(xKey);"></select>
+              </div>
+              <div class="col-sm-2">
+                <b>X Title</b>
+              </div>
+              <div class="col-sm-3">
+                <input type="text" class="form form-control"
+                    ng-model="set.xTitle">
+              </div>
+            </div>
+            <div class="row table-padding">
+              <div class="col-sm-2">
+                <b>Y Axis</b>
+              </div>
+              <div class="col-sm-3">
+                <select
+                    ng-options="output.Key as port.getOutputDisplayFromKey(output.Key) for output in port.allOutputs"
+                    class="form form-control"
+                    ng-init="yKey = port.getKeyFrom(set.y);"
+                    ng-model="yKey"
+                    ng-change="set.y = port.buildOutputFromKey(yKey);set.yTitle = port.getOutputDisplayFromKey(yKey);"></select>
+              </div>
+              <div class="col-sm-2">
+                <b>Y Title</b>
+              </div>
+              <div class="col-sm-3">
+                <input type="text" class="form form-control"
+                    ng-model="set.yTitle">
+              </div>
+            </div>
+            <div class="row table-padding">
+              <div class="col-sm-2">
+                <b>Vertical Cut-off</b>
+              </div>
+              <div class="col-sm-3">
+                <input type="number" class="form form-control"
+                    ng-model="set.VerticalCutoff">
+              </div>
+
+              <div class="col-sm-2">
+                <b>Name</b>
+              </div>
+              <div class="col-sm-3">
+                <input type="text" class="form form-control"
+                    ng-model="set.name">
+              </div>
+
+              <div class="col-sm-1">
+                <button class="btn btn-danger"
+                    ng-click="port.deleteInnovationScreenItem($index);"><span
+                    class="glyphicon glyphicon-trash"></span></button>
+              </div>
+            </div>
+
+          </div><!-- end of ng-repeat -->
+          <div class="row table-padding">
+            <div class="col-sm-1">
+              <button class="btn btn-success"
+                  ng-click="port.addInnovationScreenItem();"><span
+                  class="glyphicon glyphicon-plus"></span></button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-sm-12" ng-show="port.selectedMenu.Command == 'SCATTER_PLOT'">
+        <div class="col-sm-12">
+          <div class="col-sm-6">
+            <h4>{{port.selectedMenu.Command}}</h4>
+          </div>
+          <div class="col-sm-6">
+            <h4>
+              <input type="checkbox" ng-model="port.selectedMenu.Visible">Visible
+            </h4>
+          </div>
+          <div class="row table-padding">
+            <div class="col-sm-2">
+              <b>Use Same Scale</b>
+            </div>
+            <div class="col-sm-3">
+              <input type="checkbox"
+                  ng-model="port.selectedMenu.Parameters.SameScale">
+            </div>
+          </div>
+          <div class="row table-padding">
+            <div class="col-sm-2">
+              <b>Min</b>
+            </div>
+            <div class="col-sm-3">
+              <input type="number" class="form form-control"
+                  ng-model="port.selectedMenu.Parameters.Min">
+            </div>
+            <div class="col-sm-2">
+              <b>Max</b>
+            </div>
+            <div class="col-sm-3">
+              <input type="number" class="form form-control"
+                  ng-model="port.selectedMenu.Parameters.Max">
+            </div>
+          </div>
+
+          <div ng-repeat="set in port.selectedMenu.Parameters.Sets">
+            <div class="row table-padding">
+              <div class="col-sm-2"><h3>Series {{$index + 1}}</h3></div>
+            </div>
+            <div class="row table-padding">
+              <div class="col-sm-2"><b>Name</b></div>
+              <div class="col-sm-3"
+                  ng-class="{'has-error': (set.name === undefined || set.name === '') && port.selectedMenu.Parameters.Sets.length > 1}">
+                <input type="text" class="form form-control"
+                    ng-model="set.name">
+              </div>
+            </div>
+            <div class="row table-padding">
+              <div class="col-sm-2">
+                <b>X Axis</b>
+              </div>
+              <div class="col-sm-3">
+                <select
+                    ng-options="output.Key as port.getOutputDisplayFromKey(output.Key) for output in port.allOutputs"
+                    class="form form-control"
+                    ng-init="xKey = port.getKeyFrom(set.x);"
+                    ng-model="xKey"
+                    ng-change="set.x = port.buildOutputFromKey(xKey);set.xTitle = port.getOutputDisplayFromKey(xKey);"></select>
+              </div>
+
+              <div class="col-sm-2">
+                <b>X Title</b>
+              </div>
+              <div class="col-sm-3">
+                <input type="text" class="form form-control"
+                    ng-model="set.xTitle">
+              </div>
+            </div>
+            <div class="row table-padding">
+              <div class="col-sm-2">
+                <b>Y Axis</b>
+              </div>
+              <div class="col-sm-3">
+                <select
+                    ng-options="output.Key as port.getOutputDisplayFromKey(output.Key) for output in port.allOutputs"
+                    class="form form-control"
+                    ng-init="yKey = port.getKeyFrom(set.y);"
+                    ng-model="yKey"
+                    ng-change="set.y = port.buildOutputFromKey(yKey);set.yTitle = port.getOutputDisplayFromKey(yKey);"></select>
+              </div>
+              <div class="col-sm-2">
+                <b>Y Title</b>
+              </div>
+              <div class="col-sm-3">
+                <input type="text" class="form form-control"
+                    ng-model="set.yTitle">
+              </div>
+              <div class="col-sm-2">
+                <button class="btn btn-danger"
+                    ng-click="port.deleteScatterPlotItem($index);"><span
+                    class="glyphicon glyphicon-trash"></span></button>
+              </div>
+            </div>
+          </div>
+          <div class="col-sm-2">
+            <button class="btn btn-success"
+                ng-click="port.addScatterPlotItem();"><span
+                class="glyphicon glyphicon-plus"></span></button>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-sm-12" ng-show="port.selectedMenu.Command == 'CFO_CHART'">
+        <div class="col-sm-12">
+          <div class="col-sm-6">
+            <h4>{{port.selectedMenu.Command}}</h4>
+          </div>
+          <div class="col-sm-6">
+            <h4>
+              <input type="checkbox" ng-model="port.selectedMenu.Visible">Visible
+            </h4>
+          </div>
+
+          <div ng-repeat="set in port.selectedMenu.Parameters.Sets">
+            <div class="col-sm-12">
+              <div class="row table-padding">
+                <div class="col-sm-3">
+                  <b>X Axis</b>
+                </div>
+                <div class="col-sm-3">
+                  <b>X Title</b>
+                </div>
+                <div class="col-sm-3">
+                  <b>Name</b>
+                </div>
+              </div>
+            </div>
+
+            <div class="row table-padding">
+              <div class="col-sm-3">
+                <select
+                    ng-options="output.Key as port.getOutputDisplayFromKey(output.Key) for output in port.allOutputs"
+                    class="form form-control"
+                    ng-init="xKey = port.getKeyFrom(set.AverageCost);"
+                    ng-model="xKey"
+                    ng-change="set.AverageCost = port.buildOutputFromKey(xKey);
+                                set.xTitle = port.getOutputDisplayFromKey(xKey);"></select>
+              </div>
+
+              <div class="col-sm-3">
+                <input type="text" class="form form-control"
+                    ng-model="set.xTitle">
+              </div>
+              <div class="col-sm-3">
+                <input type="text" class="form form-control"
+                    ng-model="set.name">
+              </div>
+            </div>
+
+            <div class="col-sm-12">
+              <div class="row table-padding">
+                <div class="col-sm-3">
+                  <b>Y Axis</b>
+                </div>
+                <div class="col-sm-3">
+                  <b>Y Title</b>
+                </div>
+              </div>
+            </div>
+            <div class="row table-padding">
+              <div class="col-sm-3">
+                <select
+                    ng-options="output.Key as port.getOutputDisplayFromKey(output.Key) for output in port.allOutputs"
+                    class="form form-control"
+                    ng-init="yKey = port.getKeyFrom(set.AverageValueMinusCost);"
+                    ng-model="yKey"
+                    ng-change="set.AverageValueMinusCost = port.buildOutputFromKey(yKey);set.yTitle = port.getOutputDisplayFromKey(yKey);"></select>
+              </div>
+              <div class="col-sm-3">
+                <input type="text" class="form form-control"
+                    ng-model="set.yTitle">
+              </div>
+              <div class="col-sm-1">
+                <button class="btn btn-danger"
+                    ng-click="port.deleteCFOChartItem($index);"><span
+                    class="glyphicon glyphicon-trash"></span></button>
+              </div>
+            </div>
+          </div>
+
+          <div class="row table-padding">
+            <div class="col-sm-1">
+              <button class="btn btn-success"
+                  ng-click="port.addCFOChartItem();"><span
+                  class="glyphicon glyphicon-plus"></span></button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-sm-12" ng-show="port.selectedMenu.Command == 'BUCKET_CHART'">
+        <div class="col-sm-12">
+          <div class="col-sm-6">
+            <h4>{{port.selectedMenu.Command}}</h4>
+          </div>
+          <div class="col-sm-6">
+            <h4>
+              <input type="checkbox" ng-model="port.selectedMenu.Visible">Visible
+            </h4>
+          </div>
+
+          <!--Below had ng-repeat, may need ng-repeat later-->
+          <!--class="panel"-->
+          <div ng-repeat="s in port.selectedMenu.Parameters.Sets track by $index">
+            <div>
+              <div class="row table-padding">
+                <div class="col-sm-2"
+                ng-class="{'has-error': (s.Title === undefined || s.Title === '') && port.selectedMenu.Parameters.Sets.length > 1}">
+                  <b>Title</b>
+                </div>
+                <div class="col-sm-3">
+                  <input type="text" class="form form-control"
+                      ng-model="s.Title">
+                </div>
+                <div class="col-sm-2">
+                  <b>Counts</b>
+                </div>
+                <div class="col-sm-3">
+                  <select type="text" class="form form-control"
+                      ng-model="s.Counts"
+                      ng-options="o.v as o.v for o in [{v:false}, {v:true}]">
+                  </select>
+                </div>
+              </div>
+              <div class="row table-padding">
+                <div class="col-sm-2">
+                  <b>X Axis</b>
+                </div>
+                <div class="col-sm-3">
+                  <select type="text" class="form form-control"
+                      ng-model="s.Key"
+                      ng-options="output.Key as port.getOutputDisplayFromKey(output.Key) for output in port.allOutputs">
+                  </select>
+                </div>
+                <div class="col-sm-2">
+                  <b>X Label</b>
+                </div>
+                <div class="col-sm-3">
+                  <input type="text" class="form form-control"
+                      ng-model="s.xTitle">
+                </div>
+              </div>
+              <div class="row table-padding">
+                <div class="col-sm-2">
+                  <b>Y Label</b>
+                </div>
+                <div class="col-sm-3">
+                  <input type="text" class="form form-control"
+                      ng-model="s.yTitle">
+                </div>
+              </div>
+
+              <!--&& port.bucketManagers[$index].indicator-->
+              <div class="row">&nbsp;</div>
+              <div class="row table-padding well"
+                  ng-if="s.xBuckets.length===0 && !port.bucketManagers[$index] ">
+                <div class="col-sm-2">
+                  Buckets<br/>
+                  <input type="number" min="1" class="form form-control"
+                      ng-init="s.xBuckets.length"
+                      ng-model="port.numBuckets">
+                </div>
+                <div class="col-sm-2">Low<br/><input type="text"
+                    class="form-control"
+                    ng-model="port.bucketLow">
+                </div>
+                <div class="col-sm-2">High<br/><input type="text"
+                    class="form-control"
+                    ng-model="port.bucketHigh">
+                </div>
+                <div class="col-sm-1">
+                  <br/>
+                  <button class="btn btn-primary"
+                      ng-click="port.generateBuckets($index);">Generate Buckets
+                  </button>
+                </div>
+              </div>
+
+              <div class="row table-padding"
+                  ng-if="port.bucketManagers[$index].editing===false">
+                <div class="col-md-9">
+                  <b>Buckets: <span
+                    ng-repeat="bucket in port.bucketManagers[$index].editableBuckets track by $index">{{bucket.Name}}<span
+                    ng-show="$index < port.bucketManagers[$parent.$index].editableBuckets.length-1">,</span>
+                   </span> <i class="pull-righ glyphicon glyphicon-pencil"
+                    ng-click="port.bucketManagers[$index].makeEditable()"></i></b>
+                </div>
+              </div>
+              <div class="row table-padding"
+                  ng-if="port.bucketManagers[$index].editing===true">
+                <div class="col-md-3"></div>
+                <div class="col-md-6">
+                  <table
+                      class="table table-bordered table-striped table-condensed">
+                    <thead>
+                    <th>Bucket Label</th>
+                    <th>Bucket Rule</th>
+                    </thead>
+                    <tbody>
+                    <tr ng-repeat="bucket in port.bucketManagers[$index].editableBuckets track by $index">
+
+                      <td>
+                        <div ng-if="bucket.nameEditable === true">
+                          <input class="form-control input-sm" type="text"
+                              ng-model="bucket.Name"
+                              ng-if="bucket.nameEditable === true"/>
+                          <span>
+                            <button class="btn btn-primary btn-sm"
+                                style="margin-top: 15px;"
+                                ng-click="port.toggleNameEdit(bucket, $parent.$parent.$index)">Done
+                          </button>
+                          </span>
+                        </div>
+                        <br/>
+                          <span
+                              ng-if="bucket.nameEditable===false || !bucket.nameEditable">{{bucket.Name}}
+                            <br/>
+                        <i class="pull-righ glyphicon glyphicon-pencil"
+                            ng-click="port.toggleNameEdit(bucket, $parent.$parent.$index)"></i></span>
+                      </td>
+                      <td>
+                        <!-- ng-if creates an extra scope on angular. -->
+                        <div ng-if="bucket.rulesEditable===true">
+                          <select
+                              class="form-control input-sm"
+                              ng-model="bucket.rule1Type"
+                              ng-options="rule as rule.Label for rule in port.bucketManagers[$parent.$parent.$index].rule1Options">
+                          </select>
+                          <input type="text" class="form-control input-sm"
+                              ng-model="bucket.rule1Value"
+                              ng-if="bucket.rule1Type.Value!=='NONE'"/><br/>
+                          <select
+                              class="form-control input-sm"
+                              ng-model="bucket.rule2Type"
+                              ng-options="rule as rule.Label for rule in port.bucketManagers[$parent.$parent.$index].rule2Options">
+                          </select>
+                          <input type="text" class="form-control input-sm"
+                              ng-model="bucket.rule2Value"
+                              ng-if="bucket.rule2Type.Value!=='NONE'"/><br/>
+
+                          <button class="btn btn-primary btn-sm"
+                              ng-click="port.toggleRuleEdit(bucket, $parent.$parent.$index)">
+                            Done
+                          </button>
+                        </div>
+                        <div
+                            ng-if="bucket.rulesEditable==false || !bucket.rulesEditable">
+                          {{bucket.rule1Type.Label}}&nbsp{{bucket.rule1Value}}<br/>
+                          {{bucket.rule2Type.Label}}&nbsp{{bucket.rule2Value}}<br/>
+                          <i class="pull-righ glyphicon glyphicon-pencil"
+                              ng-click="port.toggleRuleEdit(bucket, $parent.$parent.$index)"></i></span>
+                        </div>
+                      </td>
+                    </tr>
+                    </tbody>
+                  </table>
+                  <div style="text-align: center">
+                    <button class="btn btn-primary"
+                        ng-click="port.addBucket($index)">Add Bucket
+                    </button>
+                    <button class="btn btn-primary"
+                        ng-click="port.deleteBucket($index)"
+                        ng-disabled="port.bucketManagers[$index].editableBuckets.length === 0">Delete Bucket
+                    </button>
+                    <button class="btn btn-primary"
+                        ng-click="port.bucketManagers[$parent.$index].stopEditing()">
+                      Stop Editing
+                    </button>
+                  </div>
+
+                </div>
+              </div>
+            </div>
+
+
+            <div class="row table-padding">
+
+
+              <div class="col-sm-1">
+                <button class="btn btn-danger"
+                    ng-click="port.deleteBucketSet($index);"><span
+                    class="glyphicon glyphicon-trash"></span></button>
+              </div>
+            </div>
+            <hr>
+          </div>
+
+          <div class="row table-padding">
+            <div class="col-sm-1">
+              <button class="btn btn-success"
+                  ng-click="port.addBucketChartSet();"><span
+                  class="glyphicon glyphicon-plus"></span></button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="col-sm-12"
+           ng-show="port.selectedMenu.Command == 'PORTFOLIO_UNCERTAINTY'">
+        <div class="col-sm-12">
+          <div class="col-sm-6">
+            <h4>{{port.selectedMenu.Command}}</h4>
+          </div>
+          <div class="col-sm-6">
+            <h4>
+              <input type="checkbox" ng-model="port.selectedMenu.Visible">Visible
+            </h4>
+          </div>
+          <div class="row table-padding col-sm-12">
+            <div class="col-sm-2">
+              <b>Type</b>
+            </div>
+            <div class="col-sm-3">
+              <select class="form form-control"
+                      ng-model="port.selectedMenu.Parameters.MVSType">
+                <option value="">--select type--</option>
+                <option value="MVSFromFittedPoints">MVSFromFittedPoints</option>
+              </select>
+            </div>
+          </div>
+          <div class="row table-padding col-sm-12">
+            <div class="col-sm-2">
+              <b>Source</b>
+            </div>
+            <div class="col-sm-3">
+              <select class="form form-control"
+                      ng-model="port.selectedMenu.Parameters.Source"
+                      ng-options="x for x in port.getSourceFromAppStruMetalog()">
+                <option value="">--select source--</option>
+              </select>
+            </div>
+          </div>
+          <div class="row table-padding col-sm-12">
+            <div class="col-sm-2">
+              <b>Representation</b>
+            </div>
+            <div class="col-sm-3">
+              <select class="form form-control"
+                      ng-model="port.selectedMenu.Parameters.Representation">
+                <option value="">--slect representation--</option>
+                <option value="Curve">Curve</option>
+              </select>
+            </div>
+          </div>
+          <div class="row table-padding col-sm-12">
+            <div class="col-sm-2">
+              <b>Explanation</b>
+            </div>
+            <div class="col-sm-6">
+              <textarea class="form-control" rows="4"
+                        ng-model="port.selectedMenu.Parameters.PortfolioUncExplanation"></textarea>
+            </div>
+          </div>
+          <div class="row table-padding col-sm-12">
+            <div class="col-sm-6">
+              <h4>Included Keys</h4>
+            </div>
+            <div class="col-sm-6">
+              <h4>Excluded Keys</h4>
+            </div>
+            <div class="col-sm-6" style="overflow: auto;">
+              <div class="list-of-templates">
+                <ul class="list-group">
+                  <li class="list-group-item"
+                      ng-repeat="key in port.selectedMenu.Parameters.RollupKeys">
+                    <div class="no-wrap">
+                      <a class="text-danger">
+                        <i class="fa fa-minus-square fa-lg"
+                           ng-click="port.removeFromIncludedKeys(key)"></i>
+                      </a>
+                      {{port.findKey(port.outputs)(key).Display}}
+                    </div>
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <div class="col-sm-6" style="overflow: auto;">
+              <div class="list-of-templates">
+                <ul class="list-group">
+                  <li class="list-group-item"
+                      ng-repeat="key in port.getPortfolioUncKeyFromMetalogBySource()"
+                      ng-show="port.selectedMenu.Parameters.RollupKeys.indexOf(key)===-1">
+                    <div class="no-wrap">
+                      <a href="" class="text-success">
+                        <i class="fa fa-plus-square fa-lg"
+                           ng-click="port.addToRollupKeys(key)"></i>
+                      </a>
+                      {{port.findKey(port.outputs)(key).Display}}
+                    </div>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!--Right side-->
+  </div>
+
+
+  <div class="col-sm-12 text-center align-to-bottom">
+    <a href="#/appstructure/{{port.selectedTemplate}}"
+        class="btn btn-primary pull-left" role="button"><span
+        class="glyphicon glyphicon-chevron-left"></span> Previous: App
+      Structure</a>
+    <!--<a href="#/portfoliostructure/{{port.selectedTemplate}}" class="btn btn-primary pull-right" role="button">Next: Portfolio Structure <span class="glyphicon glyphicon-chevron-right"></span></a>-->
+    <button class="btn btn-danger"
+            data-toggle="modal"
+            data-target="#commitMessageModal"
+            ng-disabled="port.isUnchanged()"><i
+        class="fa fa-spinner fa-spin fa-lg"
+        ng-show="!port.saveComplete"></i><span
+        ng-show="port.saveComplete">save</span>
+    </button>
+    <div class="col-sm-12 save-alert">
+      <alert class="animated shake" ng-repeat="alert in port.saveAlerts"
+          type="{{alert.type}}"
+          close="port.closeAlert(port.saveAlerts,$index)"><i
+          class="fa fa-exclamation-triangle fa-lg"></i> <b>Saving
+        failed.</b> {{alert.msg}}
+      </alert>
+    </div>
+  </div>
+
+
+  <!-- Delete Modal -->
+  <div class="modal fade" id="deletePortfolioStructureModal" tabindex="-1"
+      role="dialog"
+      aria-labelledby="deletePortfolioStructureModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal"><span
+              aria-hidden="true">&times;</span><span
+              class="sr-only">Close</span></button>
+          <h4 class="modal-title">Delete Menu Item</h4>
+
+        </div>
+        <div class="modal-body">
+          <h4 class="modal-title" id="deletePortfolioStructureModalLabel">Are
+            you sure to delete <b>{{port.selectedMenu.Display}}</b>?
+          </h4>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-primary"
+              ng-click="port.deletePortfolioStructure()">Delete
+          </button>
+          <button type="button" class="btn btn-default" data-dismiss="modal">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Modal -->
+  <div class="modal fade" id="editPortfolioStructureModal" tabindex="-1"
+      role="dialog"
+      aria-labelledby="editPortfolioStructureModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal"><span
+              aria-hidden="true">&times;</span><span
+              class="sr-only">Close</span></button>
+          <h4 class="modal-title">Rename Menu Item</h4>
+
+        </div>
+        <div class="modal-body">
+          <h4>New Name:</h4>
+          <input type="text" ng-model="port.selectedMenu.Display"
+              class="form form-control"/>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-primary" ng-click="port.rename()">Rename
+          </button>
+          <button type="button" class="btn btn-default" data-dismiss="modal">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- New Modal -->
+  <div class="modal fade" id="newPortfolioStructureModal" tabindex="-1"
+      role="dialog"
+      aria-labelledby="newPortfolioStructureModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal"><span
+              aria-hidden="true">&times;</span><span
+              class="sr-only">Close</span></button>
+          <h4 class="modal-title">New Menu Item</h4>
+
+        </div>
+        <div class="modal-body">
+          <div class="container-fluid">
+            <div class="row table-padding">
+              <div class="col-sm-3 col-sm-offset-1 text-right">
+                <h4>Name</h4>
+              </div>
+              <div class="col-sm-6">
+                <input type="text" ng-model="display" class="form form-control"
+                    id="new-display">
+              </div>
+            </div>
+            <div class="row table-padding">
+              <div class="col-sm-3 col-sm-offset-1 text-right">
+                <h4>Command</h4>
+              </div>
+              <div class="col-sm-6">
+                <select ng-model="command" class="form form-control"
+                    id="new-command">
+                  <option value="COMPARE_VALUE">COMPARE_VALUE</option>
+                  <option value="COMPARE_UNCERTAINTY">COMPARE_UNCERTAINTY
+                  </option>
+                  <option value="CFO_CHART">CFO_CHART</option>
+                  <option value="INNOVATION_SCREEN">INNOVATION_SCREEN</option>
+                  <option value="ADD_TABLES">ADD_TABLES</option>
+                  <option value="SCATTER_PLOT">SCATTER_PLOT</option>
+                  <option value="BUCKET_CHART">BUCKET_CHART</option>
+                  <option value="PORTFOLIO_UNCERTAINTY">PORTFOLIO_UNCERTAINTY
+                  </option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-sm-12 save-alert text-center">
+          <alert class="animated shake"
+              ng-repeat="alert in port.newPortfolioStructureAlerts"
+              type="{{alert.type}}"
+              close="port.closeAlert(port.newPortfolioStructureAlerts,$index)">
+            <i class="fa fa-exclamation-triangle fa-lg"></i>
+            {{alert.msg}}
+          </alert>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-primary"
+              ng-click="port.addNewPortfolioStructure(display,command)"
+              data-dismiss="modal">
+            Add
+          </button>
+          <!--<button class= "btn btn-warning" ng-click="uploads.cancel()">Cancel</button>-->
+          <button type="button" class="btn btn-default" data-dismiss="modal">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  </div></div>
+
+<commit-message-modal save-function="port.saveWithCommit(commitMessage)"></commit-message-modal>

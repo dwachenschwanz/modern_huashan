@@ -1,0 +1,1 @@
+angular.module('rangal', ['ngRoute']).constant('mode', 'standalone');

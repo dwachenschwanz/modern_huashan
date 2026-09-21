@@ -1,0 +1,60 @@
+name: Manually Build and Push Docker Image
+
+on: 
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Select Branch to run the build from'
+        required: true
+        default: 'qa'
+  push:
+    branches:
+      - qa
+      - stage
+  pull_request:
+    branches:
+      - qa
+      - stage
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch }}
+
+      - name: Log in to Docker Hub
+        run: echo "${{ secrets.DOCKER_HUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_HUB_USERNAME }}" --password-stdin
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Extract short commit SHA
+        id: vars
+        run: echo "short_sha=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+
+      - name: Build and tag Docker image
+        env:
+          DOCKER_HUB_REPO: ${{ vars.DOCKER_HUB_REPO }}
+          SHORT_SHA: ${{ env.short_sha }}
+          BRANCH_NAME: ${{ github.event.inputs.branch || github.ref_name }}
+        run: |
+          docker build -t $DOCKER_HUB_REPO:$SHORT_SHA .
+          docker tag $DOCKER_HUB_REPO:$SHORT_SHA $DOCKER_HUB_REPO:$BRANCH_NAME
+
+      - name: Push Docker image
+        env:
+          DOCKER_HUB_REPO: ${{ vars.DOCKER_HUB_REPO }}
+        run: |
+          docker push --all-tags $DOCKER_HUB_REPO
+
+      - name: Notify Google Chat
+        env:
+          BRANCH_NAME: ${{ github.event.inputs.branch || github.ref_name }}
+        run : |
+          curl -X POST -H 'Content-Type: application/json' --data '{"text": "Successfully builded the image for ${{ github.repository }} from branch ${{ github.event.inputs.branch || github.ref_name }} and commit # ${{ env.short_sha }}.
+          To Deploy Access the server and run below commands 
+          cd /opt/docker-app/infra && docker compose pull && docker compose up -d "}' "https://chat.googleapis.com/v1/spaces/AAAAWUct2tk/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=dw6qyCaIhlzqjslT2fF_BVDk-gFbH5-YsufDLIqrkKo"

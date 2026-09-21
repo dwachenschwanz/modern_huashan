@@ -1,0 +1,20 @@
+{
+  "name": "huashan",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Huashan Wizard - Vite + vanilla JS",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "bootstrap": "^3.4.1",
+    "font-awesome": "^4.7.0",
+    "highcharts": "^12.5.0"
+  },
+  "devDependencies": {
+    "vite": "^5.4.0"
+  }
+}

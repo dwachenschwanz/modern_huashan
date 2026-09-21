@@ -1,0 +1,118 @@
+#choose-from{
+    width:20%;
+    position: absolute;
+}
+
+.select-template{
+    height:690px;
+    overflow: auto;
+    padding-right: 15px;
+    padding-left: 15px;
+    margin-bottom:50px;
+}
+
+#selected-template{
+    position: absolute;
+    left:22%;
+    width:77%;
+}
+#list-of-templates{
+    height:500px;
+    overflow: auto;
+}
+
+#list-of-portfolios{
+    height:250px;
+    overflow: auto;
+}
+
+.json-container{
+    height:350px;
+    border-radius: 4px;
+    border-color:transparent;
+}
+
+.json-container-revision{
+    height:170px;
+    border-radius: 4px;
+    border-color:transparent;
+}
+
+.revision-text{
+    width: 90%;
+    padding-left: 5px;
+    margin-left: 30px;
+    margin-right: 50px
+}
+
+.select-template-title{
+    height:45px;
+    padding-top: 9px;
+}
+
+.textarea-json{
+    float:left;
+    padding-right: 2%;
+    white-space: nowrap;
+}
+
+.align-to-bottom{
+    position:fixed;
+    bottom:0px;
+    background-color: white;
+    padding-bottom:10px;
+    padding-top: 10px;
+}
+
+@media only screen and (min-width : 768px) {
+    /* Make Navigation Toggle on Desktop Hover */
+    .dropdown:hover .dropdown-menu {
+        display: block;
+    }
+}
+
+.st-ipointer i {
+    cursor: pointer;
+}
+
+.st-highlighted {
+    color: #eea236;
+}
+
+.st-versionlog {
+    font-size: 14px;
+}
+
+.st-versionlog ul {
+    padding-left: 0;
+    list-style: none;
+}
+
+.st-versionlog h5 {
+    font-weight: bold;
+}
+
+.appStructList {
+    height: 10px !important;
+    text-align: left;
+}
+
+.smartogrifyButton {
+    margin-top: 15px !important;
+    margin-right: 190px;
+}
+
+.smartogrifyWarning {
+    margin-top: 20px !important;
+    text-align: center;
+}
+
+.loader-small {
+    border: 4px solid #f3f3f3; /* Light grey */
+    border-top: 4px solid #3498db; /* Blue */
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    animation: spin 2s linear infinite; /* Spin animation */
+    margin: 7px auto;
+  }

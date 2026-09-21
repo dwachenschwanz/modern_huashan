@@ -1,0 +1,173 @@
+<nav class="navbar navbar-inverse navbar-static-top" role="navigation">
+  <div class="container-fluid">
+    <!-- Brand and toggle get grouped for better mobile display -->
+    <div class="navbar-header">
+      <a class="navbar-brand">Huashan</a>
+    </div>
+
+    <!-- Collect the nav links, forms, and other content for toggling -->
+    <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+      <ul class="nav navbar-nav">
+        <li><a href="#">Home</a></li>
+        <li><a ng-if="json.isAdmin" href="#/admin">Admin</a></li>
+        <li><a href="#/selectTemplate">Select Template</a></li>
+        <li class="active" ng-hide="json.selectedTemplate === 'Not Selected'"><a
+            href="#/json/{{json.selectedTemplate}}">JSON</a></li>
+        <li class="dropdown" ng-hide="json.selectedTemplate === 'Not Selected'">
+          <a href="" class="dropdown-toggle" data-toggle="dropdown">Data
+            Structure <span class="caret"></span></a>
+          <ul class="dropdown-menu" role="menu">
+            <li><a href="#/datastructure/{{json.selectedTemplate}}">Project Data
+              Structure</a></li>
+            <!-- <li><a href="#/platformDataStructure/{{json.selectedTemplate}}">Platform
+              Data Structure</a></li> -->
+          </ul>
+        </li>
+        <li class="dropdown" ng-hide="json.selectedTemplate === 'Not Selected'">
+          <a href="" class="dropdown-toggle" data-toggle="dropdown">App
+            Structure <span class="caret"></span></a>
+          <ul class="dropdown-menu" role="menu">
+            <li><a href="#/appstructure/{{json.selectedTemplate}}">Project App
+              Structure</a></li>
+            <!-- <li><a href="#/platformAppStructure/{{json.selectedTemplate}}">Platform
+              App Structure</a></li> -->
+          </ul>
+        </li>
+        <li class="dropdown" ng-hide="json.selectedTemplate === 'Not Selected'">
+          <a href="" class="dropdown-toggle" data-toggle="dropdown">Portfolio
+            Structure <span class="caret"></span></a>
+          <ul class="dropdown-menu" role="menu">
+            <li><a href="#/portfoliostructure/{{json.selectedTemplate}}">Project
+              Portfolio Structure</a></li>
+            <!-- <li><a
+                href="#/platformPortfolioStructure/{{json.selectedTemplate}}">Platform
+              Portfolio Structure</a></li> -->
+          </ul>
+        </li>
+        <li>
+          <a href="#/revisions/{{json.selectedTemplate}}">Revisions</a>
+        </li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+      </ul>
+    </div><!-- /.navbar-collapse -->
+  </div><!-- /.container-fluid -->
+</nav>
+
+<div class="select-template fadeIn"
+     style="height:650px;background-color: #eee;margin-bottom: 60px;">
+  <div class="container-fluid">
+    <div class="col-sm-12">
+      <h3>{{json.selectedTemplate}}
+        <small>JSON</small>
+        <small><a target="_blank" class="pull-right"
+                  href="http://jsoneditoronline.org/">Open JSON Editor</a>
+        </small>
+      </h3>
+
+    </div>
+    <div id="json">
+      <div class="col-sm-4">
+        <accordion close-others="false">
+          <accordion-group is-open="status.isFirstOpen"
+                           ng-init="status.isFirstOpen=true;">
+            <accordion-heading>
+              Data Structure <i class="pull-right glyphicon"
+                                ng-class="{'glyphicon-chevron-down': status.isFirstOpen, 'glyphicon-chevron-left': !status.isFirstOpen}"></i>
+            </accordion-heading>
+            <textarea ng-model="json.data.dataStructure"
+                      class="json-container"></textarea>
+          </accordion-group>
+          <accordion-group is-open="status.isSecondOpen"
+                           ng-if="json.platformExists()">
+            <accordion-heading>
+              Platform Data Structure <i class="pull-right glyphicon"
+                                         ng-class="{'glyphicon-chevron-down': status.isSecondOpen, 'glyphicon-chevron-left': !status.isSecondOpen}"></i>
+            </accordion-heading>
+            <textarea ng-model="json.data.platformDataStructure"
+                      class="json-container"></textarea>
+          </accordion-group>
+        </accordion>
+      </div>
+
+      <div class="col-sm-4">
+        <accordion close-others="false">
+          <accordion-group is-open="status.isThirdOpen"
+                           ng-init="status.isThirdOpen=true;">
+            <accordion-heading>
+              App Structure <i class="pull-right glyphicon"
+                               ng-class="{'glyphicon-chevron-down': status.isThirdOpen, 'glyphicon-chevron-left': !status.isThirdOpen}"></i>
+            </accordion-heading>
+            <textarea ng-model="json.data.appStructure"
+                      class="json-container"></textarea>
+          </accordion-group>
+          <!-- <div ng-if="!json.platformExists()">
+            <button style="margin-left: 100px;margin-top: 10px;"
+                    class="btn btn-primary" align="center"
+                    ng-click="json.addPlatformStubs()">Add Platform
+            </button>
+            <p/>
+          </div> -->
+          <accordion-group is-open="status.isFourthOpen"
+                           ng-if="json.platformExists()">
+            <accordion-heading>
+              Platform App Structure <i class="pull-right glyphicon"
+                                        ng-class="{'glyphicon-chevron-down': status.isFourthOpen, 'glyphicon-chevron-left': !status.isFourthOpen}"></i>
+            </accordion-heading>
+            <textarea ng-model="json.data.platformAppStructure"
+                      class="json-container"></textarea>
+          </accordion-group>
+        </accordion>
+
+      </div>
+
+      <div class="col-sm-4">
+        <accordion close-others="false">
+          <accordion-group is-open="status.isFifthOpen"
+                           ng-init="status.isFifthOpen=true;">
+            <accordion-heading>
+              Portfolio Structure <i class="pull-right glyphicon"
+                                     ng-class="{'glyphicon-chevron-down': status.isFifthOpen, 'glyphicon-chevron-left': !status.isFifthOpen}"></i>
+            </accordion-heading>
+            <textarea ng-model="json.data.portfolioStructure"
+                      class="json-container"></textarea>
+          </accordion-group>
+          <accordion-group is-open="status.isSixthOpen"
+                           ng-if="json.platformExists()">
+            <accordion-heading>
+              Platform Portfolio Structure <i class="pull-right glyphicon"
+                                              ng-class="{'glyphicon-chevron-down': status.isSixthOpen, 'glyphicon-chevron-left': !status.isSixthOpen}"></i>
+            </accordion-heading>
+            <textarea ng-model="json.data.platformPortfolioStructure"
+                      class="json-container"></textarea>
+          </accordion-group>
+        </accordion>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<div class="col-sm-12 text-center align-to-bottom">
+  <button class="btn btn-link pull-left" ng-click="json.closeJSON()"><span
+      class="glyphicon glyphicon-chevron-left"></span> Back to Select Template
+  </button>
+  <button style="width:60px;"
+          class="btn btn-danger pull-right"
+          data-toggle="modal"
+          data-target="#commitMessageModal"
+          ng-disabled="json.isUnchanged()"><i
+      class="fa fa-spinner fa-spin fa-lg" ng-show="!json.saveComplete"></i><span
+      ng-show="json.saveComplete">save</span></button>
+
+  <div class="col-sm-12 save-alert">
+    <alert class="animated shake" ng-repeat="alert in json.alerts"
+           type="{{alert.type}}" close="json.closeAlert($index)"><i
+        class="fa fa-exclamation-triangle fa-lg"></i> <b>Saving failed.</b>
+      {{alert.msg}}
+    </alert>
+  </div>
+</div>
+
+<commit-message-modal
+    save-function="json.saveWithCommit(commitMessage)"></commit-message-modal>

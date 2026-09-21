@@ -1,0 +1,307 @@
+<nav class="navbar navbar-inverse navbar-static-top" role="navigation" style="margin-bottom: 10px;">
+  <div class="container-fluid">
+    <!-- Brand and toggle get grouped for better mobile display -->
+    <div class="navbar-header">
+      <a class="navbar-brand">Huashan</a>
+    </div>
+
+    <!-- Collect the nav links, forms, and other content for toggling -->
+    <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+      <ul class="nav navbar-nav">
+        <li><a href="#">Home</a></li>
+        <li class="active"><a href="#/admin">Admin</a></li>
+        <li><a href="#/selectTemplate">Select Template</a></li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+      </ul>
+    </div>
+    <!-- /.navbar-collapse -->
+  </div>
+  <!-- /.container-fluid -->
+</nav>
+
+<div class="admin-templates" class="animated fadeIn" style="height: 100%">
+
+  <h3>Admin</h3>
+
+  <div class="loader-container" ng-show="admin.loading">
+    <div class="loader"></div>
+  </div>
+
+  <div class="admin-container">
+
+    <!-- Tab and Search container -->
+    <div class="tab-search-container">
+
+      <!-- Tabs -->
+      <ul class="nav nav-tabs" style="margin-right: 20px;">
+        <li class="nav-item" ng-class="{ 'active': admin.activeTab === 'allTemplates' }">
+          <a class="nav-link" ng-click="admin.switchTab('allTemplates')">All Templates</a>
+        </li>
+        <li class="nav-item" ng-class="{ 'active': admin.activeTab === 'archive' }">
+          <a class="nav-link" ng-click="admin.switchTab('archive')">Archive</a>
+        </li>
+      </ul>
+
+      <!-- Search Input -->
+      <!-- <input type="text" ng-model="admin.searchText" class="search-input" placeholder="Search templates"> -->
+
+      <div class="search-box">
+        <input type="text" ng-model="admin.searchText" placeholder="Search templates">
+        <i class="fa fa-search search-icon"></i>
+      </div>
+
+      <div class="filter-box">
+        <button type="button" class="btn dropdown-toggle" data-toggle="dropdown" aria-haspopup="true"
+          aria-expanded="false">
+          <i class="fa fa-filter filter-icon"></i> Filter by groups
+        </button>
+        <span class="badge" ng-show="admin.selectedFilterCount() > 0">{{ admin.selectedFilterCount() }}</span>
+        <span class="clear-x" ng-show="admin.selectedFilterCount() > 0" ng-click="admin.resetFilter()">X</span>
+
+        <div class="dropdown-menu dropdown-admin" aria-labelledby="dropdownMenuButton"
+          ng-click="$event.stopPropagation()">
+          <label class="dropdown-item" ng-repeat="group in admin.filterGroups">
+            <input type="checkbox" ng-model="group.checked" ng-change="admin.applyFilter()"> {{group.groupname}}
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab content -->
+    <div class="tab-content">
+      <!-- All Templates tab -->
+      <div id="allTemplates" class="tab-pane" ng-class="{ 'show active': admin.activeTab === 'allTemplates' }">
+        <table class="astro-table">
+          <thead>
+            <tr>
+              <th class="sortable" ng-click="admin.changeSorting('name')">Template Name
+                <span ng-show="admin.sort.column === 'name'" class="fa"
+                  ng-class="{'fa-arrow-up': !admin.sort.descending, 'fa-arrow-down': admin.sort.descending}"></span>
+              </th>
+              <th class="sortable" ng-click="admin.changeSorting('creatorUsername')">Creator Name
+                <span ng-show="admin.sort.column === 'creatorUsername'" class="fa"
+                  ng-class="{'fa-arrow-up': !admin.sort.descending, 'fa-arrow-down': admin.sort.descending}"></span>
+              </th>
+              <th class="sortable" ng-click="admin.changeSorting('createdDate')">Creation Date
+                <span ng-show="admin.sort.column === 'createdDate'" class="fa"
+                  ng-class="{'fa-arrow-up': !admin.sort.descending, 'fa-arrow-down': admin.sort.descending}"></span>
+              </th>
+              <th class="sortable" ng-click="admin.changeSorting('modifiedDate')">Last Modified Date
+                <span ng-show="admin.sort.column === 'modifiedDate'" class="fa"
+                  ng-class="{'fa-arrow-up': !admin.sort.descending, 'fa-arrow-down': admin.sort.descending}"></span>
+              </th>
+              <th>Groups</th>
+              <th>Action</th>
+            </tr>
+
+          </thead>
+          <tbody>
+            <tr>
+              <td colspan="6" ng-show="admin.loadingTable">
+                <div class="loader"></div>
+              </td>
+            </tr>
+            <tr
+              ng-repeat="template in admin.astroTemplates | filter: admin.searchText | filter: admin.filterBySelectedGroups | orderBy: admin.sort.column: admin.sort.descending">
+              <td>{{ template.name }}</td>
+              <td>{{ template.creatorUsername }}</td>
+              <td>{{ template.createdDate | date:'shortDate' }}</td>
+              <td>{{ template.modifiedDate | date:'shortDate' }}</td>
+              <td>
+                <div class=" group-cloud">
+                  <div class="group-cloud-item" ng-repeat="group in template.groups.slice(0, 2)">
+                    {{ group.groupname }}
+                  </div>
+                  <div class="group-cloud-item group-cursor" ng-click="admin.selectTemplate(template)" ng-show="template.groups.length > 2">
+                    +{{ template.groups.length - 2 }}
+                  </div>
+                </div>
+              </td>
+              <td class="action-icons">
+                <span ng-click="admin.selectTemplate(template)"><i class="fa fa-share"></i></span>
+                <span ng-click="admin.deleteTemplate(template)"><i class="fa fa-trash"></i></span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <!-- Archive tab -->
+      <div id="archive" class="tab-pane" ng-class="{ 'show active': admin.activeTab === 'archive' }">
+        <table class="astro-table">
+          <thead>
+            <tr>
+              <th class="sortable" ng-click="admin.changeSorting('name')">Template Name
+                <span ng-show="admin.sort.column === 'name'" class="fa"
+                  ng-class="{'fa-arrow-up': !admin.sort.descending, 'fa-arrow-down': admin.sort.descending}"></span>
+              </th>
+              <th class="sortable" ng-click="admin.changeSorting('creatorUsername')">Creator Name
+                <span ng-show="admin.sort.column === 'creatorUsername'" class="fa"
+                  ng-class="{'fa-arrow-up': !admin.sort.descending, 'fa-arrow-down': admin.sort.descending}"></span>
+              </th>
+              <th class="sortable" ng-click="admin.changeSorting('createdDate')">Creation Date
+                <span ng-show="admin.sort.column === 'createdDate'" class="fa"
+                  ng-class="{'fa-arrow-up': !admin.sort.descending, 'fa-arrow-down': admin.sort.descending}"></span>
+              </th>
+              <th class="sortable" ng-click="admin.changeSorting('modifiedDate')">Last Modified Date
+                <span ng-show="admin.sort.column === 'modifiedDate'" class="fa"
+                  ng-class="{'fa-arrow-up': !admin.sort.descending, 'fa-arrow-down': admin.sort.descending}"></span>
+              </th>
+              <th>Groups</th>
+              <th>Action</th>
+            </tr>
+
+          </thead>
+          <tbody>
+            <tr>
+              <td colspan="6" ng-show="admin.loadingTable">
+                <div class="loader"></div>
+              </td>
+            </tr>
+            <tr
+              ng-repeat="template in admin.archivedAstroTemplates | filter: admin.searchText | filter: admin.filterBySelectedGroups | orderBy: admin.sort.column: admin.sort.descending">
+              <td>{{ template.name }}</td>
+              <td>{{ template.creatorUsername }}</td>
+              <td>{{ template.createdDate | date:'shortDate' }}</td>
+              <td>{{ template.modifiedDate | date:'shortDate' }}</td>
+              <td>
+                <div class="group-cloud">
+                  <div class="group-cloud-item" ng-repeat="group in template.groups.slice(0, 2)">
+                    {{ group.groupname }}
+                  </div>
+                  <div class="group-cloud-item" ng-show="template.groups.length > 2">
+                    +{{ template.groups.length - 2 }}
+                  </div>
+                </div>
+              </td>
+              <td class="action-icons">
+                <span ng-click="admin.unarchiveTemplate(template)">
+                  <i class="fa fa-undo"></i>
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  </hr>
+
+  <div class="editModal" tabindex="-1" role="dialog" ng-if="admin.showEditModal">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" ng-click="admin.closeEditModal()"><span
+              aria-hidden="true">&times;</span><span class="sr-only">Close</span>
+          </button>
+          <h3 class="modal-title">Share Template</h4>
+        </div>
+        <div class="modal-body">
+          <div class="owner-details-div">
+            <p><i style="margin: 3px" class="fa fa-file group-icon"></i>{{ admin.selectedTemplate.name }}</p>
+            <p>{{ admin.selectedTemplate.creatorUsername }} (Owner)</p>
+          </div>
+          <h3>Groups:</h3>
+          <div class="groups-list">
+            <div class="group-item" ng-repeat="group in admin.groups | orderBy:'sortOrder'"
+              ng-class="{'group-selected': admin.isGroupSelected(group), 'group-all': admin.isGroupSelected(group) && group.groupname == admin.allGroup}">
+              <span>
+                <i class="fa fa-users group-icon"></i>
+                <span class="group-name">{{ group.groupname }}</span>
+              </span>
+              <span ng-if="group.groupname !== admin.administrators">
+                <i class="fa"
+                ng-class="{'fa-plus': !admin.isGroupSelected(group), 'fa-minus': admin.isGroupSelected(group)}"
+                ng-click="admin.toggleGroupSelection(group)"></i>
+              </span>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-default" ng-click="admin.closeEditModal()">Close</button>
+          <button class="btn btn-primary" ng-click="admin.editAstroTemplate()">Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+
+  <div class="deleteModal" tabindex="-1" role="dialog" ng-if="admin.showDeleteModal">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" ng-click="admin.closeDeleteModal()"><span
+              aria-hidden="true">&times;</span><span class="sr-only">Close</span>
+          </button>
+          <h4 class="modal-title">Archive Template</h4>
+
+        </div>
+        <div class="modal-body">
+          <h4 class="modal-title" id="deleteModalLabel">Are you sure to archive
+            <b>{{admin.selectedTemplate.name}}</b>?
+          </h4>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-primary" ng-click="admin.deleteAstroTemplate()">Archive
+          </button>
+          <button class="btn btn-default" ng-click="admin.closeDeleteModal()">Close</button>
+
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="unarchiveModal" tabindex="-1" role="dialog" ng-if="admin.showUnarchiveModal">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" ng-click="admin.closeUnarchiveModal()"><span
+              aria-hidden="true">&times;</span><span class="sr-only">Close</span>
+          </button>
+          <h4 class="modal-title">Unarchive Template</h4>
+
+        </div>
+        <div class="modal-body">
+          <h4 class="modal-title" id="deleteModalLabel">Are you sure to unarchive
+            <b>{{admin.selectedTemplate.name}}</b>?
+          </h4>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-primary" ng-click="admin.unarchiveAstroTemplate()">Unarchive
+          </button>
+          <button class="btn btn-default" ng-click="admin.closeUnarchiveModal()">Close</button>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <div id="uploadSuccessAlert" class="text-center"
+    style="display:none;position:fixed; top:40%;left:35%;height:100px;width:30%;">
+    <alert type="success"><i class="fa fa-check fa-lg"></i> Successfully
+      Uploaded!
+    </alert>
+  </div>
+
+  <div id="infoMsgAlert" class="text-center"
+    style="display:none;position:fixed; top:40%;left:35%;height:100px;width:30%;">
+    <alert type="info">{{admin.alertMsg.msg}}
+    </alert>
+  </div>
+
+  <div id="errorMsgAlert" class="text-center"
+    style="display:none;position:fixed; top:40%;left:35%;height:100px;width:30%;">
+    <alert type="danger">{{admin.alertMsg.msg}}
+    </alert>
+  </div>
+
+  <div id="successMsgAlert" class="text-center"
+    style="display:none;position:fixed; top:40%;left:35%;height:100px;width:30%;">
+    <alert type="success"><i class="fa fa-check fa-lg"></i> {{admin.alertMsg.msg}}
+    </alert>
+  </div>
+
+</div>
