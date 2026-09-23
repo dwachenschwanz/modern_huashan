@@ -18,12 +18,31 @@ const dataStructure = {
   ID: 'smoke-data',
   Description: 'Smoke data structure',
   ExcelFile: 'SmokeTemplate.xlsx',
-  Inputs: [{ CellLink: "Sheet1!Input", Key: 'Input', Display: 'Input', Type: 'SCALAR', Val: 0, Units: '' }],
+  Inputs: [
+    { CellLink: 'Sheet1!Input', Key: 'Input', Display: 'Input', Description: 'Base input', Type: 'SCALAR', Val: 0, Units: '', Constraint: 'double', Inherited: false },
+    { CellLink: 'Sheet1!IncludedTable', Key: 'IncludedTable', Display: 'Included table', Description: '', Type: 'TABLE', Val: [], Units: '', Constraint: 'double', Inherited: false },
+  ],
   Outputs: [
-    { CellLink: 'Sheet1!Output', Key: 'Output', Display: 'Output', Units: 'USD' },
-    { CellLink: 'Sheet1!Growth', Key: 'Growth', Display: 'Growth', Units: '%' },
+    { CellLink: 'Sheet1!Output', Key: 'Output', Display: 'Output', Units: 'USD', UsePostProcessingOutputs: false },
+    { CellLink: 'Sheet1!Growth', Key: 'Growth', Display: 'Growth', Units: '%', UsePostProcessingOutputs: false },
   ],
 };
+
+const excludedDataStructure = {
+  Excluded: {
+    Inputs: [
+      { CellLink: 'Sheet1!ExcludedInput', Key: 'ExcludedInput', Display: 'Excluded input', Description: '', Type: 'DATE', Val: 'Jan 2025', Units: '', Constraint: 'date', Inherited: false },
+    ],
+    Outputs: [
+      { CellLink: 'Sheet1!ExcludedOutput', Key: 'ExcludedOutput', Display: 'Excluded output', Units: 'count', UsePostProcessingOutputs: false },
+    ],
+  },
+};
+
+const potentialTableInputs = [
+  { CellLink: 'Sheet1!IncludedTable', Key: 'IncludedTable', Display: 'Included table', Inherited: false, Type: 'TABLE', HtmlPreview: '<table><tr><td>Included preview</td></tr></table>' },
+  { CellLink: 'Sheet1!AvailableTable', Key: 'AvailableTable', Display: 'Available table', Inherited: false, Type: 'TABLE', HtmlPreview: '<table><tr><td>Available preview</td></tr></table>' },
+];
 
 const appStructure = {
   MENU: [
@@ -190,7 +209,7 @@ function commandResult(command, url) {
       timeStamp: '2026-01-01T00:00:00Z',
     }),
     GetDataStructure: dataStructure,
-    GetExcludedDataStructureComponents: { Excluded: { Inputs: [], Outputs: [] } },
+    GetExcludedDataStructureComponents: excludedDataStructure,
     GetAppStructure: url.searchParams.get('isPlatform') === 'true' ? platformAppStructure : appStructure,
     GetPortfolioStructure: portfolioStructure,
     GetPotentialTables: {
@@ -200,6 +219,7 @@ function commandResult(command, url) {
     GetTemplateJsonFiles: templateJson,
     SaveAppStructure: 'Saved',
     SavePortfolioStructure: 'Saved',
+    SaveDataStructure: 'Saved',
     RenameTemplate: 'Renamed',
     DeleteTemplate: 'Archived',
     UndeleteTemplate: 'Restored',
@@ -222,7 +242,7 @@ async function mockBackend(page, saveRequests, actionRequests, uploadRequests) {
       return;
     }
     if (url.pathname === `/kirk/wizard/potential-table-inputs/${TEMPLATE}`) {
-      await route.fulfill({ json: { data: { PotentialTableInputs: [] } } });
+      await route.fulfill({ json: { data: { PotentialTableInputs: structuredClone(potentialTableInputs) } } });
       return;
     }
     if (url.pathname === `/kirk/wizard/download/excel/${TEMPLATE}`) {
@@ -241,8 +261,12 @@ async function mockBackend(page, saveRequests, actionRequests, uploadRequests) {
     }
     if (url.pathname === '/kirk/wizard/main') {
       actionRequests.push(Object.fromEntries(url.searchParams));
-      if (['SaveAppStructure', 'SavePortfolioStructure'].includes(url.searchParams.get('command'))) {
-        saveRequests.push(route.request().postDataJSON());
+      if (['SaveAppStructure', 'SavePortfolioStructure', 'SaveDataStructure'].includes(url.searchParams.get('command'))) {
+        saveRequests.push({
+          ...route.request().postDataJSON(),
+          command: url.searchParams.get('command'),
+          isPlatform: url.searchParams.get('isPlatform'),
+        });
       }
       await route.fulfill({ json: commandEnvelope(commandResult(url.searchParams.get('command'), url)) });
       return;
@@ -458,6 +482,132 @@ test('left-column action buttons remain above the fixed footer', async ({ page }
   await page.goto('/#/selectTemplate');
   await expectAboveFixedFooter(page, '#st-archive-btn');
   await expectAboveFixedFooter(page, '#st-upload-btn');
+  assertNoPageErrors();
+});
+
+test('Data Structure edits inputs and outputs and saves a commit message', async ({ page }) => {
+  const assertNoPageErrors = failOnPageErrors(page);
+  await page.goto(`/#/datastructure/${TEMPLATE}`);
+  await expect(page.getByRole('heading', { name: 'Inputs' })).toBeVisible();
+
+  await page.locator('#ds-edit-toggle').click();
+  await page.locator('[data-input-display="Sheet1!Input"]').fill('Updated input');
+  await page.locator('[data-input-units="Sheet1!Input"]').fill('months');
+  await page.locator('[data-input-description="Sheet1!Input"]').fill('Updated input description');
+  await page.locator('[data-input-val="Sheet1!Input"]').fill('42');
+  await page.locator('[data-input-inherited="Sheet1!Input"]').check();
+
+  await page.locator('[data-tab="output"]').click();
+  await page.locator('[data-row-edit="Sheet1!Output"]').click();
+  await page.locator('[data-output-display="Sheet1!Output"]').fill('Updated output');
+  await page.locator('[data-output-units="Sheet1!Output"]').fill('EUR');
+  await page.locator('[data-output-postprocessing="Sheet1!Output"]').check();
+
+  page.once('dialog', async (dialog) => {
+    expect(dialog.message()).toContain('unsaved changes');
+    await dialog.dismiss();
+  });
+  await page.locator('.align-to-bottom a[href^="#/appstructure/"]').click();
+  await expect(page).toHaveURL(new RegExp(`/datastructure/${TEMPLATE}$`));
+
+  await expect(page.locator('#ds-save-open-btn')).toBeEnabled();
+  await page.locator('#ds-save-open-btn').click();
+  const commitDialog = page.getByRole('dialog', { name: 'Change Message' });
+  await commitDialog.locator('#commit-display').fill('Update data structure fields');
+  await commitDialog.getByRole('button', { name: 'Ok' }).click();
+
+  await expect.poll(() => saveRequests.filter((request) => request.command === 'SaveDataStructure').length).toBe(1);
+  const request = saveRequests.find((item) => item.command === 'SaveDataStructure');
+  expect(request.commitMessage).toBe('Update data structure fields');
+  expect(request.data.Inputs.find((input) => input.CellLink === 'Sheet1!Input')).toMatchObject({
+    Display: 'Updated input',
+    Units: 'months',
+    Description: 'Updated input description',
+    Val: '42',
+    Inherited: true,
+  });
+  expect(request.data.Outputs.find((output) => output.CellLink === 'Sheet1!Output')).toMatchObject({
+    Display: 'Updated output',
+    Units: 'EUR',
+    UsePostProcessingOutputs: true,
+  });
+  await expect(page.locator('#ds-save-open-btn')).toBeDisabled();
+  assertNoPageErrors();
+});
+
+test('Data Structure includes and removes inputs, table inputs, and outputs', async ({ page }) => {
+  const assertNoPageErrors = failOnPageErrors(page);
+  await page.goto(`/#/datastructure/${TEMPLATE}`);
+  await expect(page.getByRole('heading', { name: 'Inputs' })).toBeVisible();
+
+  await page.locator('[data-include-input="Sheet1!ExcludedInput"]').click();
+  await page.locator('[data-exclude-input="Sheet1!Input"]').click();
+
+  await page.locator('[data-tab="table"]').click();
+  await expect(page.getByText('Available preview', { exact: true })).toHaveCount(0);
+  await page.locator('[data-choose-pti="Sheet1!AvailableTable"]').click();
+  await expect(page.getByText('Available preview', { exact: true })).toBeVisible();
+  await page.locator('[data-include-pti="Sheet1!AvailableTable"]').click();
+  await expect(page.locator('[data-select-pti="Sheet1!AvailableTable"]')).toBeVisible();
+
+  await page.locator('[data-tab="output"]').click();
+  await page.locator('[data-include-output="Sheet1!ExcludedOutput"]').click();
+  await page.locator('[data-exclude-output="Sheet1!Growth"]').click();
+
+  await page.locator('#ds-save-open-btn').click();
+  const commitDialog = page.getByRole('dialog', { name: 'Change Message' });
+  await commitDialog.locator('#commit-display').fill('Change included data ranges');
+  await commitDialog.getByRole('button', { name: 'Ok' }).click();
+
+  await expect.poll(() => saveRequests.filter((request) => request.command === 'SaveDataStructure').length).toBe(1);
+  const request = saveRequests.find((item) => item.command === 'SaveDataStructure');
+  expect(request.data.Inputs.map((input) => input.CellLink)).toEqual([
+    'Sheet1!IncludedTable',
+    'Sheet1!ExcludedInput',
+    'Sheet1!AvailableTable',
+  ]);
+  expect(request.data.Outputs.map((output) => output.CellLink)).toEqual([
+    'Sheet1!Output',
+    'Sheet1!ExcludedOutput',
+  ]);
+  assertNoPageErrors();
+});
+
+test('Platform Data Structure enables save for checkbox-only changes', async ({ page }) => {
+  const assertNoPageErrors = failOnPageErrors(page);
+  await page.goto(`/#/platformDataStructure/${TEMPLATE}`);
+  await expect(page.getByRole('heading', { name: 'Platform Data Structure' })).toBeVisible();
+
+  await page.locator('#ds-edit-toggle').click();
+  await page.locator('[data-input-inherited="Sheet1!Input"]').check();
+  await expect(page.locator('#ds-save-open-btn')).toBeEnabled();
+  await page.locator('#ds-save-open-btn').click();
+  await page.getByRole('dialog', { name: 'Change Message' }).getByRole('button', { name: 'Ok' }).click();
+
+  await expect.poll(() => saveRequests.filter((request) => request.command === 'SaveDataStructure').length).toBe(1);
+  const request = saveRequests.find((item) => item.command === 'SaveDataStructure');
+  expect(request.isPlatform).toBe('true');
+  expect(request.data.Inputs.find((input) => input.CellLink === 'Sheet1!Input').Inherited).toBe(true);
+  assertNoPageErrors();
+});
+
+test('Data Structure exposes retry after a load failure', async ({ page }) => {
+  const assertNoPageErrors = failOnPageErrors(page);
+  let failDataStructure = true;
+  await page.route('**/kirk/wizard/main**', async (route) => {
+    const url = new URL(route.request().url());
+    if (failDataStructure && url.searchParams.get('command') === 'GetDataStructure') {
+      await route.fulfill({ status: 500, json: { message: 'Temporary data structure failure' } });
+      return;
+    }
+    await route.fallback();
+  });
+
+  await page.goto(`/#/datastructure/${TEMPLATE}`);
+  await expect(page.getByText(/GetDataStructure failed with HTTP 500/i).first()).toBeVisible();
+  failDataStructure = false;
+  await page.getByRole('button', { name: 'Retry' }).click();
+  await expect(page.getByRole('heading', { name: 'Inputs' })).toBeVisible();
   assertNoPageErrors();
 });
 

@@ -62,6 +62,7 @@ export function mount(container, params) {
     includedComponentsCopy: null,
     excludedComponents: null,
     potentialTableInputs: [],
+    potentialTableInputsLoaded: false,
     includedPotentialTableInputs: [],
     excludedPotentialTableInputs: [],
     potentialTableListsBuilt: false,
@@ -112,7 +113,7 @@ export function mount(container, params) {
 
   function buildPotentialTableLists() {
     if (state.potentialTableListsBuilt) return;
-    if (!state.includedComponents || !state.excludedComponents || !state.potentialTableInputs) return;
+    if (!state.includedComponents || !state.excludedComponents || !state.potentialTableInputsLoaded) return;
     state.potentialTableListsBuilt = true;
     state.includedPotentialTableInputs = [];
     getExcludedPotentialTableInputs(state.potentialTableInputs, state.includedPotentialTableInputs);
@@ -144,6 +145,7 @@ export function mount(container, params) {
       .fetchPotentialTableInputs(params.templateID)
       .then((ptInputs) => {
         state.potentialTableInputs = (ptInputs.data && ptInputs.data.PotentialTableInputs) || [];
+        state.potentialTableInputsLoaded = true;
         buildPotentialTableLists();
       })
       .catch(handleInitialLoadError);
@@ -185,6 +187,7 @@ export function mount(container, params) {
     state.includedComponentsCopy = null;
     state.excludedComponents = null;
     state.potentialTableInputs = [];
+    state.potentialTableInputsLoaded = false;
     state.includedPotentialTableInputs = [];
     state.excludedPotentialTableInputs = [];
     state.potentialTableListsBuilt = false;
@@ -823,6 +826,7 @@ ${commitMessageModalHtml()}`;
     container.querySelectorAll('[data-include-pti]').forEach((el) => {
       el.addEventListener('click', (evt) => {
         evt.preventDefault();
+        evt.stopPropagation();
         includePotentialTableInput(findByCellLink(state.excludedPotentialTableInputs, el.getAttribute('data-include-pti')));
       });
     });
@@ -877,6 +881,7 @@ ${commitMessageModalHtml()}`;
     container.querySelectorAll('[data-input-inherited]').forEach((el) => {
       el.addEventListener('change', (e) => {
         findByCellLink(state.includedComponents.Inputs, el.getAttribute('data-input-inherited')).Inherited = e.target.checked;
+        refreshSaveButton();
       });
     });
     container.querySelectorAll('[data-date-month]').forEach((el) => {
@@ -899,6 +904,7 @@ ${commitMessageModalHtml()}`;
     container.querySelectorAll('[data-pti-inherited]').forEach((el) => {
       el.addEventListener('change', (e) => {
         findByCellLink(state.includedComponents.Inputs, el.getAttribute('data-pti-inherited')).Inherited = e.target.checked;
+        refreshSaveButton();
       });
     });
 
@@ -908,6 +914,7 @@ ${commitMessageModalHtml()}`;
     container.querySelectorAll('[data-output-postprocessing]').forEach((el) => {
       el.addEventListener('change', (e) => {
         findByCellLink(state.includedComponents.Outputs, el.getAttribute('data-output-postprocessing')).UsePostProcessingOutputs = e.target.checked;
+        refreshSaveButton();
       });
     });
   }
