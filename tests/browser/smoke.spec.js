@@ -180,6 +180,7 @@ const templateJson = {
 function commandResult(command, url) {
   const results = {
     GetAstroTemplates: [{ name: TEMPLATE, history: { guid: 'commit-1' }, groups: [] }],
+    GetArchivedAstroTemplates: [{ name: 'ArchivedTemplate' }],
     FindAssociatedPortfolios: ['Smoke Portfolio'],
     GetRevisions: JSON.stringify({
       commitNum: 'commit-1',
@@ -199,12 +200,16 @@ function commandResult(command, url) {
     GetTemplateJsonFiles: templateJson,
     SaveAppStructure: 'Saved',
     SavePortfolioStructure: 'Saved',
+    RenameTemplate: 'Renamed',
+    DeleteTemplate: 'Archived',
+    UndeleteTemplate: 'Restored',
+    UpdateDataStructure: 'Updated',
   };
   if (!(command in results)) throw new Error(`Unhandled Wizard command: ${command}`);
   return results[command];
 }
 
-async function mockBackend(page, saveRequests) {
+async function mockBackend(page, saveRequests, actionRequests, uploadRequests) {
   await page.route('**/kirk/**', async (route) => {
     const url = new URL(route.request().url());
 
@@ -229,7 +234,13 @@ async function mockBackend(page, saveRequests) {
       });
       return;
     }
+    if (url.pathname.startsWith('/kirk/wizard/upload/')) {
+      uploadRequests.push({ path: url.pathname, method: route.request().method() });
+      await route.fulfill({ json: { data: { status: 1, message: 'Uploaded' } } });
+      return;
+    }
     if (url.pathname === '/kirk/wizard/main') {
+      actionRequests.push(Object.fromEntries(url.searchParams));
       if (['SaveAppStructure', 'SavePortfolioStructure'].includes(url.searchParams.get('command'))) {
         saveRequests.push(route.request().postDataJSON());
       }
@@ -273,10 +284,14 @@ async function expectAboveFixedFooter(page, buttonSelector) {
 }
 
 let saveRequests;
+let actionRequests;
+let uploadRequests;
 
 test.beforeEach(async ({ page }) => {
   saveRequests = [];
-  await mockBackend(page, saveRequests);
+  actionRequests = [];
+  uploadRequests = [];
+  await mockBackend(page, saveRequests, actionRequests, uploadRequests);
   await authenticate(page);
 });
 
@@ -299,6 +314,114 @@ test('select template supports modal interaction and Excel download', async ({ p
   await page.getByRole('button', { name: 'Download Excel model' }).click();
   const download = await downloadPromise;
   expect(download.suggestedFilename()).toBe(`${TEMPLATE}.xlsx`);
+  assertNoPageErrors();
+});
+
+test('Select Template keeps Data Structure update available without associated portfolios', async ({ page }) => {
+  const assertNoPageErrors = failOnPageErrors(page);
+  await page.route('**/kirk/wizard/main**', async (route) => {
+    const url = new URL(route.request().url());
+    if (url.searchParams.get('command') === 'FindAssociatedPortfolios') {
+      await route.fulfill({ json: commandEnvelope([]) });
+      return;
+    }
+    await route.fallback();
+  });
+
+  await page.goto('/#/selectTemplate');
+  await page.getByText(TEMPLATE, { exact: true }).click();
+  const updateButton = page.getByRole('button', { name: 'Update Data Structure' });
+  await expect(updateButton).toBeVisible();
+  await updateButton.click();
+
+  const dialog = page.getByRole('dialog', { name: 'Update Data Structure' });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByText('No associated portfolios found.')).toBeVisible();
+  await expect(dialog.getByRole('button', { name: 'Run' })).toHaveCount(0);
+  assertNoPageErrors();
+});
+
+test('Select Template renames, archives, and restores templates', async ({ page }) => {
+  const assertNoPageErrors = failOnPageErrors(page);
+  await page.goto('/#/selectTemplate');
+  await page.locator('#st-template-list [data-template-index="0"]').click();
+
+  await page.locator('[data-target="#renameModal"]').click();
+  const renameDialog = page.getByRole('dialog', { name: `Rename ${TEMPLATE}` });
+  await renameDialog.locator('#st-rename-input').fill('Renamed Template');
+  await renameDialog.getByRole('button', { name: 'Rename' }).click();
+  await expect(renameDialog).toBeHidden();
+  await expect.poll(() => actionRequests.some((request) => request.command === 'RenameTemplate' && request.newTemplateName === 'Renamed_Template')).toBe(true);
+
+  await page.locator('[data-target="#deleteModal"]').click();
+  const deleteDialog = page.getByRole('dialog', { name: /Are you sure to delete/ });
+  await deleteDialog.getByRole('button', { name: 'Delete' }).click();
+  await expect(deleteDialog).toBeHidden();
+  await expect.poll(() => actionRequests.some((request) => request.command === 'DeleteTemplate' && request.templateName === TEMPLATE)).toBe(true);
+
+  await page.getByRole('button', { name: 'Archive' }).click();
+  const archiveDialog = page.getByRole('dialog', { name: 'Templates in Archive:' });
+  await expect(archiveDialog).toBeVisible();
+  await archiveDialog.getByText('ArchivedTemplate', { exact: true }).click();
+  await archiveDialog.getByRole('button', { name: 'Unarchive' }).click();
+  await expect.poll(() => actionRequests.some((request) => request.command === 'UndeleteTemplate' && request.templateName === 'ArchivedTemplate')).toBe(true);
+  assertNoPageErrors();
+});
+
+test('Select Template validates and uploads an Excel template', async ({ page }) => {
+  const assertNoPageErrors = failOnPageErrors(page);
+  await page.goto('/#/selectTemplate');
+  await page.locator('#st-upload-btn').click();
+  const dialog = page.getByRole('dialog', { name: 'Select a Template to upload' });
+
+  await dialog.getByRole('button', { name: 'Upload' }).click();
+  await expect(dialog.locator('#st-submit-alerts')).toContainText('Please select a file.');
+
+  await dialog.locator('#FileToUploadID').setInputFiles({ name: 'Bad_Name.xlsx', mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', buffer: Buffer.from('bad') });
+  await dialog.getByRole('button', { name: 'Upload' }).click();
+  await expect(dialog.locator('#st-submit-alerts')).toContainText('No underscore allowed in file name.');
+
+  await dialog.locator('#FileToUploadID').setInputFiles({ name: 'GoodTemplate.xlsx', mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', buffer: Buffer.from('workbook') });
+  await dialog.getByRole('button', { name: 'Upload' }).click();
+  await expect(dialog).toBeHidden();
+  expect(uploadRequests).toEqual([{ path: '/kirk/wizard/upload/GoodTemplate.xlsx', method: 'POST' }]);
+  assertNoPageErrors();
+});
+
+test('Select Template runs a Data Structure update with selected options', async ({ page }) => {
+  const assertNoPageErrors = failOnPageErrors(page);
+  await page.goto('/#/selectTemplate');
+  await page.getByText(TEMPLATE, { exact: true }).click();
+  await page.getByRole('button', { name: 'Update Data Structure' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Update Data Structure' });
+  await dialog.getByText('Smoke Portfolio', { exact: true }).click();
+  await dialog.getByRole('checkbox', { name: 'Leaf' }).uncheck();
+  await dialog.getByRole('checkbox', { name: 'Platform' }).check();
+  await dialog.getByRole('button', { name: 'Run' }).click();
+
+  await expect(dialog).toBeHidden();
+  await expect(page.getByText(/updated successfully/i)).toBeVisible();
+  await expect.poll(() => actionRequests.some((request) => request.command === 'UpdateDataStructure' && request.runLeaf === 'false' && request.runPlatform === 'true')).toBe(true);
+  assertNoPageErrors();
+});
+
+test('Select Template exposes retry after the template list fails', async ({ page }) => {
+  const assertNoPageErrors = failOnPageErrors(page);
+  let failTemplates = true;
+  await page.route('**/kirk/wizard/main**', async (route) => {
+    const url = new URL(route.request().url());
+    if (failTemplates && url.searchParams.get('command') === 'GetAstroTemplates') {
+      await route.fulfill({ status: 500, json: { message: 'Temporary template failure' } });
+      return;
+    }
+    await route.fallback();
+  });
+
+  await page.goto('/#/selectTemplate');
+  await expect(page.getByText(/GetAstroTemplates failed with HTTP 500/i).first()).toBeVisible();
+  failTemplates = false;
+  await page.getByRole('button', { name: 'Retry' }).click();
+  await expect(page.getByText(TEMPLATE, { exact: true })).toBeVisible();
   assertNoPageErrors();
 });
 

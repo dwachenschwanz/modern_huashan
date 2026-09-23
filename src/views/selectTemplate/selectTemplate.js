@@ -31,10 +31,24 @@ import { SERVER_URL, TOKEN_KEY } from '../../core/config.js';
 import { getRouteSignal, navigate } from '../../core/router.js';
 import { TheUte } from '../../core/textUtils.js';
 import { appNavHtml } from '../../components/appNav.js';
-import { showModal, hideModal, flashAlert, initTooltips } from '../../components/uiInteractions.js';
-import { renderAlerts, wireAlertClose } from '../../components/alerts.js';
+import { hideModal, flashAlert } from '../../components/uiInteractions.js';
 import { loadErrorMessage } from '../../components/loadError.js';
 import { escapeHtml } from '../../core/html.js';
+import { renderTemplateList, templateListHtml } from './templateList.js';
+import {
+  deleteDialogHtml,
+  refreshDeleteDialog,
+  refreshRenameDialog,
+  refreshTrashDialog,
+  refreshUpdateDataStructureDialog,
+  refreshUploadDialogAlerts,
+  renameDialogHtml,
+  trashDialogHtml,
+  updateDataStructureDialogHtml,
+  uploadDialogHtml,
+  wireUpdateDataStructureDialog,
+  wireUploadDialog,
+} from './dialogs.js';
 
 function escapeAttr(str) {
   return escapeHtml(str);
@@ -96,6 +110,8 @@ export function mount(container) {
     saveAlerts: [],
     fileToUpload: null,
     portfolioNameList: [],
+    loadingPortfolioNames: false,
+    portfolioNameLoadError: '',
     selectedPortfolioName: '',
     updateDataStructure: { Leaf: true, Platform: false },
     runningUpdateDataStructure: null, // null | 'Running' | 'Success' | 'Failure'
@@ -114,23 +130,6 @@ export function mount(container) {
   // ---------------------------------------------------------------------
   // helpers
   // ---------------------------------------------------------------------
-
-  function matchesSearch(template, text) {
-    if (!text) return true;
-    return (template.name || '').toLowerCase().includes(text.toLowerCase());
-  }
-
-  function filteredSortedTemplates() {
-    const filtered = state.templates.filter((t) => matchesSearch(t, state.searchText));
-    const { column, descending } = state.sort;
-    return [...filtered].sort((a, b) => {
-      const av = a[column];
-      const bv = b[column];
-      if (av === bv) return 0;
-      const cmp = av > bv ? 1 : -1;
-      return descending ? -cmp : cmp;
-    });
-  }
 
   function addAlert(list, type, msg) {
     list.push({ type, msg });
@@ -242,17 +241,31 @@ export function mount(container) {
   }
 
   function findAssociatedPortfolios() {
-    huashan.findAssociatedPortfolios(session.getCredentials(), state.selectedTemplate).then((response) => {
-      if (response.status) {
+    const templateName = state.selectedTemplate;
+    state.portfolioNameList = [];
+    state.selectedPortfolioName = '';
+    state.loadingPortfolioNames = true;
+    state.portfolioNameLoadError = '';
+    refreshUdsInner();
+
+    huashan.findAssociatedPortfolios(session.getCredentials(), templateName).then((response) => {
+      if (disposed || state.selectedTemplate !== templateName) return;
+      state.loadingPortfolioNames = false;
+      if (response.status && Array.isArray(response.result)) {
         state.portfolioNameList = response.result;
       } else {
-        alert('Some error happened: ' + response.msg);
+        state.portfolioNameLoadError = response.status
+          ? 'The associated portfolio response was invalid.'
+          : (response.msg || 'Associated portfolios could not be loaded.');
       }
-      renderRight();
+      refreshUdsInner();
     }).catch((error) => {
-      if (disposed || isRequestAborted(error)) return;
+      if (disposed || isRequestAborted(error) || state.selectedTemplate !== templateName) return;
+      state.loadingPortfolioNames = false;
+      state.portfolioNameLoadError = loadErrorMessage(error, 'Associated portfolios could not be loaded.');
       state.alertMsg.type = 'danger';
-      state.alertMsg.msg = loadErrorMessage(error, 'Associated portfolios could not be loaded.');
+      state.alertMsg.msg = state.portfolioNameLoadError;
+      refreshUdsInner();
       showFlashAlert('errorMsgAlert', 5000);
     });
   }
@@ -263,6 +276,8 @@ export function mount(container) {
 
   function selectRow(template) {
     state.portfolioNameList = [];
+    state.loadingPortfolioNames = true;
+    state.portfolioNameLoadError = '';
     state.selectedTemplate = template.name;
     localStorage.setItem('selectedTemplate', JSON.stringify(template));
     state.selected = template;
@@ -615,48 +630,8 @@ export function mount(container) {
     renderDeleteModal();
   }
 
-  function templateListHtml() {
-    if (state.loadingTable) return `<div class="loader-small"></div>`;
-    if (state.tableLoadError) {
-      return `<div class="alert alert-danger" role="alert">${escapeHtml(state.tableLoadError)}</div>
-        <button type="button" class="btn btn-primary" id="st-template-retry">Retry</button>`;
-    }
-    return filteredSortedTemplates()
-      .map(
-        (t, i) => `
-      <a href="" class="list-group-item ${state.selectedTemplate === t.name ? 'active' : ''}" data-template-index="${i}" data-toggle="tooltip" title="${escapeAttr(t.name)}">
-        <table>
-          <tr>
-            <td class="appStructList">${escapeHtml(t.name)}</td>
-            <td class="appStructList" style="width:60px">
-              ${
-                state.selectedTemplate === t.name && state.isAdmin
-                  ? `<span data-toggle="modal" data-target="#deleteModal" class="inline-icon pull-right glyphicon glyphicon-trash" title="Delete"></span>
-              <span data-toggle="modal" data-target="#renameModal" class="inline-icon pull-right glyphicon glyphicon-pencil" title="Rename"></span>`
-                  : ''
-              }
-            </td>
-          </tr>
-        </table>
-      </a>`
-      )
-      .join('');
-  }
-
   function renderList() {
-    const listEl = container.querySelector('#st-template-list');
-    if (!listEl) return;
-    listEl.innerHTML = templateListHtml();
-    const retry = listEl.querySelector('#st-template-retry');
-    if (retry) retry.addEventListener('click', getTemplates);
-    const rows = filteredSortedTemplates();
-    listEl.querySelectorAll('[data-template-index]').forEach((el) => {
-      el.addEventListener('click', (evt) => {
-        evt.preventDefault();
-        selectRow(rows[Number(el.getAttribute('data-template-index'))]);
-      });
-    });
-    initTooltips(listEl);
+    renderTemplateList({ container, state, onRetry: getTemplates, onSelect: selectRow });
   }
 
   function renderNav() {
@@ -753,16 +728,11 @@ export function mount(container) {
     <br />
     <a href="#/json/${encodeURIComponent(state.selectedTemplate)}" class="btn btn-primary" role="button">View JSON</a>
     <a href="" id="st-download-btn" class="btn btn-primary" role="button">Download Excel model</a>
-    ${
-      state.portfolioNameList.length > 0
-        ? `
     <div>
       <br>
       <a href="" class="btn btn-primary" id="st-update-ds-trigger" data-toggle="modal" data-target="#updateDataStructureModal" role="button">Update Data Structure</a>
-      ${udsModalHtml()}
-    </div>`
-        : ''
-    }`;
+      ${updateDataStructureDialogHtml(state)}
+    </div>`;
   }
 
   function rightPanelHtml() {
@@ -802,7 +772,7 @@ export function mount(container) {
         // No preventDefault: this anchor also carries data-toggle="modal",
         // handled by the app-wide delegated listener from uiInteractions.js.
         initializeUpdateDataStructure();
-        renderRight();
+        refreshUdsInner();
       });
     }
     wireUdsInner();
@@ -810,312 +780,57 @@ export function mount(container) {
 
   // ---- Update Data Structure modal (nested in the description column) ----
 
-  function udsListHtml() {
-    return state.portfolioNameList
-      .map(
-        (name, i) => `
-      <a href="" class="list-group-item ${state.selectedPortfolioName === name ? 'active' : ''}" data-portfolio-index="${i}" data-toggle="tooltip" title="${escapeAttr(name)}">${escapeHtml(name)}</a>`
-      )
-      .join('');
-  }
-
-  function udsFooterHtml() {
-    return `
-    ${state.selectedPortfolioName !== '' ? `<button class="btn btn-primary" id="st-uds-run">Run</button>` : ''}
-    <button class="btn btn-default" id="st-uds-close">Close</button>`;
-  }
-
-  function udsModalHtml() {
-    return `
-    <div class="modal fade" id="updateDataStructureModal" role="dialog">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h4 class="modal-title">Update Data Structure</h4>
-          </div>
-          <div class="modal-body">
-            <h4>Select a Portfolio </h4>
-            <div class="list-of-portfolios">
-              <div class="list-group" id="st-uds-list">${udsListHtml()}</div>
-            </div>
-            <h4>Select Leaf / Platform </h4>
-            <label><input type="checkbox" id="st-uds-leaf" ${state.updateDataStructure.Leaf ? 'checked' : ''}> Leaf</label><br />
-            <label><input type="checkbox" id="st-uds-platform" ${state.updateDataStructure.Platform ? 'checked' : ''}> Platform</label><br />
-          </div>
-          <div class="modal-footer" id="st-uds-footer">${udsFooterHtml()}</div>
-        </div>
-      </div>
-    </div>`;
+  function updateDialogCallbacks() {
+    return {
+      container,
+      state,
+      onSelect: selectPortfolioName,
+      onRetry: findAssociatedPortfolios,
+      onRun: () => {
+        hideModal('updateDataStructureModal');
+        runUpdateDataStructure();
+      },
+      onClose: () => {
+        hideModal('updateDataStructureModal');
+        resetPortfolioName();
+      },
+    };
   }
 
   function refreshUdsInner() {
-    const modal = document.getElementById('updateDataStructureModal');
-    const listEl = modal && modal.querySelector('#st-uds-list');
-    if (listEl) {
-      listEl.innerHTML = udsListHtml();
-      wireUdsList(listEl);
-      initTooltips(listEl);
-    }
-    const footerEl = modal && modal.querySelector('#st-uds-footer');
-    if (footerEl) {
-      footerEl.innerHTML = udsFooterHtml();
-      wireUdsFooter(footerEl);
-    }
-  }
-
-  function wireUdsList(scope) {
-    const list = state.portfolioNameList;
-    (scope || container).querySelectorAll('[data-portfolio-index]').forEach((el) => {
-      el.addEventListener('click', (evt) => {
-        evt.preventDefault();
-        selectPortfolioName(list[Number(el.getAttribute('data-portfolio-index'))]);
-      });
-    });
-  }
-
-  function wireUdsFooter(scope) {
-    const runBtn = (scope || container).querySelector('#st-uds-run');
-    if (runBtn) runBtn.addEventListener('click', () => {
-      hideModal('updateDataStructureModal');
-      runUpdateDataStructure();
-    });
-    const closeBtn = (scope || container).querySelector('#st-uds-close');
-    if (closeBtn) closeBtn.addEventListener('click', () => {
-      hideModal('updateDataStructureModal');
-      resetPortfolioName();
-    });
+    refreshUpdateDataStructureDialog(updateDialogCallbacks());
   }
 
   function wireUdsInner() {
-    const modal = document.getElementById('updateDataStructureModal');
-    if (!modal) return;
-    const leafCb = modal.querySelector('#st-uds-leaf');
-    if (leafCb) leafCb.addEventListener('change', (e) => { state.updateDataStructure.Leaf = e.target.checked; });
-    const platformCb = modal.querySelector('#st-uds-platform');
-    if (platformCb) platformCb.addEventListener('change', (e) => { state.updateDataStructure.Platform = e.target.checked; });
-    wireUdsList(modal.querySelector('#st-uds-list'));
-    wireUdsFooter(modal.querySelector('#st-uds-footer'));
-    const listEl = modal.querySelector('#st-uds-list');
-    if (listEl) initTooltips(listEl);
-  }
-
-  // ---- Rename modal ----
-
-  function renameModalHtml() {
-    return `
-    <div class="modal fade" id="renameModal" tabindex="-1" role="dialog" aria-labelledby="renameModalLabel" aria-hidden="true">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
-            <h4 class="modal-title" id="renameModalLabel"><span id="st-rename-title">Rename ${escapeHtml(state.selectedTemplate)}</span></h4>
-          </div>
-          <div class="modal-body">
-            <h4>New Name:</h4>
-            <input type="text" id="st-rename-input" class="form form-control" value="${escapeAttr(state.newTemplateName)}" />
-            <div class="col-sm-12 save-alert text-center" id="st-rename-alerts">${renderAlerts(state.renameAlerts)}</div>
-          </div>
-          <div class="modal-footer">
-            <button class="btn btn-primary" id="st-rename-confirm">Rename</button>
-            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-          </div>
-        </div>
-      </div>
-    </div>`;
+    wireUpdateDataStructureDialog(updateDialogCallbacks());
   }
 
   function renderRenameModal() {
-    const titleEl = container.querySelector('#st-rename-title');
-    if (titleEl) titleEl.textContent = `Rename ${state.selectedTemplate}`;
-    const input = container.querySelector('#st-rename-input');
-    if (input) input.value = state.newTemplateName;
-    const alertsBox = container.querySelector('#st-rename-alerts');
-    if (alertsBox) {
-      alertsBox.innerHTML = renderAlerts(state.renameAlerts);
-      wireAlertClose(alertsBox, state.renameAlerts, renderRenameModal);
-    }
-  }
-
-  // ---- Delete modal ----
-
-  function deleteModalHtml() {
-    return `
-    <div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
-            <h4 class="modal-title">Delete Template</h4>
-          </div>
-          <div class="modal-body">
-            <h4 class="modal-title" id="deleteModalLabel">Are you sure to delete <b id="st-delete-name">${escapeHtml(state.selectedTemplate)}</b>?</h4>
-            <div class="col-sm-12 save-alert text-center" id="st-delete-alerts">${renderAlerts(state.deleteAlerts)}</div>
-          </div>
-          <div class="modal-footer">
-            <button class="btn btn-primary" id="st-delete-confirm">Delete</button>
-            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-          </div>
-        </div>
-      </div>
-    </div>`;
+    refreshRenameDialog({ container, state, onAlertClose: renderRenameModal });
   }
 
   function renderDeleteModal() {
-    const nameEl = container.querySelector('#st-delete-name');
-    if (nameEl) nameEl.textContent = state.selectedTemplate;
-    const alertsBox = container.querySelector('#st-delete-alerts');
-    if (alertsBox) {
-      alertsBox.innerHTML = renderAlerts(state.deleteAlerts);
-      wireAlertClose(alertsBox, state.deleteAlerts, renderDeleteModal);
-    }
-  }
-
-  // ---- Trash (archive) modal ----
-
-  function trashListHtml() {
-    if (state.loadingDeleteList) return `<div class="loader-small"></div>`;
-    return `
-    <div class="list-of-templates">
-      <div class="list-group">
-        ${state.deletedTemplates
-          .map(
-            (deleted, i) => `
-        <a href="" class="list-group-item ${state.selectedDeletedTemplate === deleted ? 'active' : ''}" data-deleted-index="${i}" data-toggle="tooltip" title="${escapeAttr(deleted)}">${escapeHtml(deleted)}</a>`
-          )
-          .join('')}
-      </div>
-    </div>`;
-  }
-
-  function trashModalHtml() {
-    return `
-    <div class="modal fade" id="trashModal" tabindex="-1" role="dialog" aria-labelledby="trashModalLabel" aria-hidden="true">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
-            <h4 class="modal-title" id="trashModalLabel">Templates in Archive:</h4>
-          </div>
-          <div class="modal-body">
-            <div id="st-trash-list">${trashListHtml()}</div>
-            <div class="col-sm-12 save-alert text-center" id="st-undelete-alerts">${renderAlerts(state.undeleteAlerts)}</div>
-          </div>
-          <div class="modal-footer">
-            <button class="btn btn-primary" id="st-undelete-confirm" ${state.selectedDeletedTemplate === 'Not Selected' ? 'disabled' : ''}>Unarchive</button>
-            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-          </div>
-        </div>
-      </div>
-    </div>`;
+    refreshDeleteDialog({ container, state, onAlertClose: renderDeleteModal });
   }
 
   function renderTrashModal() {
-    const listWrap = container.querySelector('#st-trash-list');
-    if (listWrap) {
-      listWrap.innerHTML = trashListHtml();
-      listWrap.querySelectorAll('[data-deleted-index]').forEach((el) => {
-        el.addEventListener('click', (evt) => {
-          evt.preventDefault();
-          selectDeleted(state.deletedTemplates[Number(el.getAttribute('data-deleted-index'))]);
-        });
-      });
-      initTooltips(listWrap);
-    }
-    const alertsBox = container.querySelector('#st-undelete-alerts');
-    if (alertsBox) {
-      alertsBox.innerHTML = renderAlerts(state.undeleteAlerts);
-      wireAlertClose(alertsBox, state.undeleteAlerts, renderTrashModal);
-    }
-    const confirmBtn = container.querySelector('#st-undelete-confirm');
-    if (confirmBtn) confirmBtn.disabled = state.selectedDeletedTemplate === 'Not Selected';
-  }
-
-  // ---- Upload modal ----
-
-  function uploadModalHtml() {
-    // `state.ogre` never becomes true in this app (see file header), so this
-    // header/body pair is effectively static and only ever renders the
-    // `ogre===false` branch; it's still switched on `state.ogre`/
-    // `state.ogreStage` for fidelity with the legacy view.
-    let header;
-    let body;
-    if (state.ogre === false) {
-      header = `<h4 class="modal-title" id="uploadModalLabel">Select a Template to upload</h4>`;
-      body = `
-      <h4>Please choose an Excel file.</h4>
-      <p class="text-danger">No spaces or underscores allowed in file name.</p>
-      <input type="file" name="zFileToUpload" id="FileToUploadID" />`;
-    } else if (state.ogreStage === 'SelectModel') {
-      header = `<h2 class="modal-title" id="uploadModalLabel">Help the Smart Ogre out</h2>`;
-      body = `
-      <h4>What evaluation model is this?</h4>
-      <table class="table">
-        <tr>
-          <td class="centeredText">
-            <img src="images/cube.png" align="middle" id="st-ogre-product" /><br />
-            Product Portfolio (R&amp;D)
-          </td>
-          <td align="center">
-            <img src="images/complexCrystal.png" align="middle" id="st-ogre-platform" /><br />
-            Platform Product Portfolio (R&amp;D)
-          </td>
-        </tr>
-      </table>`;
-    } else {
-      header = `<h2 class="modal-title" id="uploadModalLabel">Smart Ogre is doing its thing...</h2>`;
-      body = `
-      <h4>Building ${escapeHtml(state.templateName)} with a ${escapeHtml(state.selectedOgreModel)} model</h4>
-      ${state.ogreBuildCompleted === false ? '<i class="fa fa-circle-o-notch fa-spin"></i>' : '<span>Build completed! Check your template.</span>'}`;
-    }
-    return `
-    <div class="modal fade" id="uploadModal" tabindex="-1" role="dialog" aria-labelledby="uploadModalLabel" aria-hidden="true">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
-            ${header}
-          </div>
-          <div class="modal-body">${body}</div>
-          <div class="col-sm-12 save-alert text-center" id="st-submit-alerts">${renderAlerts(state.submitAlerts)}</div>
-          <div class="modal-footer">
-            ${
-              state.ogre === false
-                ? `<button class="btn btn-primary" id="st-upload-confirm">Upload</button>
-            <button class="btn btn-default" data-dismiss="modal">Close</button>`
-                : ''
-            }
-          </div>
-        </div>
-      </div>
-    </div>`;
+    refreshTrashDialog({ container, state, onSelect: selectDeleted, onAlertClose: renderTrashModal });
   }
 
   function renderUploadModalAlerts() {
-    const alertsBox = container.querySelector('#st-submit-alerts');
-    if (alertsBox) {
-      alertsBox.innerHTML = renderAlerts(state.submitAlerts);
-      wireAlertClose(alertsBox, state.submitAlerts, renderUploadModalAlerts);
-    }
+    refreshUploadDialogAlerts({ container, state, onAlertClose: renderUploadModalAlerts });
   }
 
-  function wireUploadModal() {
-    const fileInput = container.querySelector('#FileToUploadID');
-    if (fileInput) {
-      fileInput.addEventListener('change', (e) => {
-        state.fileToUpload = e.target.files[0] || null;
-      });
-    }
-    const uploadConfirm = container.querySelector('#st-upload-confirm');
-    if (uploadConfirm) uploadConfirm.addEventListener('click', () => submit());
-    const ogreProduct = container.querySelector('#st-ogre-product');
-    if (ogreProduct) ogreProduct.addEventListener('click', () => generateProductPortfolio('Product Portfolio'));
-    const ogrePlatform = container.querySelector('#st-ogre-platform');
-    if (ogrePlatform) ogrePlatform.addEventListener('click', () => generateProductPortfolio('Platform Portfolio'));
-    renderUploadModalAlerts();
+  function wireUploadModalEvents() {
+    wireUploadDialog({
+      container,
+      state,
+      onSubmit: submit,
+      onProduct: () => generateProductPortfolio('Product Portfolio'),
+      onPlatform: () => generateProductPortfolio('Platform Portfolio'),
+      onAlertClose: renderUploadModalAlerts,
+    });
   }
-
-  // ---- alert boxes (fixed, flash-in/out) ----
-
   function renderAlertBoxes() {
     const infoBox = container.querySelector('#infoMsgAlert .alert-body');
     const errorBox = container.querySelector('#errorMsgAlert .alert-body');
@@ -1143,7 +858,7 @@ export function mount(container) {
     </div>
     <div class="panel panel-primary template-menu-panel">
       <div class="list-of-templates height-for-list" style="height: 100%">
-        <div class="list-group" id="st-template-list" style="height: 100%">${templateListHtml()}</div>
+        <div class="list-group" id="st-template-list" style="height: 100%">${templateListHtml(state)}</div>
       </div>
     </div>
     <div class="template-actions">
@@ -1157,10 +872,10 @@ export function mount(container) {
 
 <div class="col-sm-12 text-center align-to-bottom" id="st-bottom-nav">${bottomNavHtml()}</div>
 
-${renameModalHtml()}
-${deleteModalHtml()}
-${trashModalHtml()}
-${uploadModalHtml()}
+${renameDialogHtml(state)}
+${deleteDialogHtml(state)}
+${trashDialogHtml(state)}
+${uploadDialogHtml(state)}
 
 <div id="uploadSuccessAlert" class="text-center" style="display:none;position:fixed; top:40%;left:35%;height:100px;width:30%;">
   <div class="alert alert-success"><i class="fa fa-check fa-lg"></i> Successfully Uploaded!</div>
@@ -1199,7 +914,7 @@ ${uploadModalHtml()}
     if (undeleteConfirm) undeleteConfirm.addEventListener('click', () => doUndelete());
     renderTrashModal();
 
-    wireUploadModal();
+    wireUploadModalEvents();
 
     renderAlertBoxes();
   }
