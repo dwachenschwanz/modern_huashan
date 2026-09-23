@@ -19,7 +19,7 @@ application remains under `legacy/` as a reference only.
 
 ## Technology
 
-- Vite 5
+- Vite 8
 - Vanilla JavaScript ES modules
 - CodeMirror 6 for JSON editing
 - Highcharts for chart previews
@@ -31,7 +31,7 @@ application.
 
 ## Prerequisites
 
-- Node.js 18 or newer
+- Node.js 20.19 or newer within the 20.x line, or Node.js 22.12 or newer
 - npm
 - Network access to the configured SmartOrg/Kirk backend
 - A valid Huashan account
@@ -69,8 +69,10 @@ backend configured in `vite.config.js`.
 
 The automated tests cover API transport, command-response parsing, session
 restoration, navigation cancellation, hard-refresh route loading, modal
-interaction, and Excel downloads. Install the Playwright browser once after
-installing dependencies:
+interaction, Excel downloads, and the main Data, App, Portfolio, and Select
+Template workflows. The browser suite uses a mocked backend and validates
+saved request payloads as well as visible behavior. Install the Playwright
+browser once after installing dependencies:
 
 ```bash
 npx playwright install chromium
@@ -145,9 +147,19 @@ location /kirk/ {
 
 Adjust the upstream host and path for the target environment.
 
-> **Docker status:** the checked-in `Dockerfile` still references the retired
-> Angular application paths and scripts. It is not a supported build path for
-> the current Vite application until it is updated.
+### Docker Image
+
+The checked-in multi-stage `Dockerfile` builds the Vite application with
+Node.js and serves `dist/` from Nginx:
+
+```bash
+docker build -t huashan-wizard .
+docker run --rm -p 8080:80 huashan-wizard
+```
+
+The image serves only the frontend. Its deployment environment or ingress
+must still reverse-proxy `/kirk` to the backend; otherwise API requests from
+the containerized application will return 404 responses.
 
 ## Application Routes
 
@@ -185,9 +197,17 @@ current navigation menu exposes only project structure links.
 |   |-- core/                  Router, session, configuration, and utilities
 |   |-- lib/                   Local third-party compatibility code
 |   |-- styles/                Global and view-specific CSS
-|   |-- views/                 Route-level screens
+|   |-- views/                 Route-level screens and editor modules
+|   |   |-- appStructure/      App Structure coordinator and command editors
+|   |   |-- dataStructure/     Input, table-input, and output editors
+|   |   |-- portfolioStructure/ Portfolio coordinator and command editors
+|   |   `-- selectTemplate/    Template list and dialog modules
 |   `-- main.js                Route registration and app startup
 |-- legacy/                    Read-only reference AngularJS application
+|-- test/                      Node API-client tests
+|-- tests/browser/             Playwright workflow tests
+|-- Dockerfile                 Production frontend image
+|-- playwright.config.js       Browser-test server and Chromium configuration
 |-- vite.config.js             Development and preview proxy configuration
 `-- package.json               Dependencies and npm scripts
 ```
@@ -206,6 +226,15 @@ current navigation menu exposes only project structure links.
   popovers, and transient alerts without Bootstrap JavaScript.
 - `src/components/loadingOverlay.js` provides the shared loading indicator.
 - `src/components/jsonEditor.js` configures CodeMirror for JSON documents.
+- `src/views/dataStructure/dataStructure.js` coordinates Data Structure
+  loading, saving, navigation guards, and shared editor state.
+- `src/views/dataStructure/inputEditor.js`, `tableInputEditor.js`, and
+  `outputEditor.js` render and wire their respective editor tabs.
+- `src/views/appStructure/commandEditors.js` and
+  `src/views/portfolioStructure/commandEditors.js` contain command-specific
+  forms used by their structure coordinators.
+- `src/views/selectTemplate/templateList.js` and `dialogs.js` isolate template
+  list rendering and modal workflows.
 
 ## Authentication and Session Data
 
@@ -231,9 +260,25 @@ data redirects the user to `#/login`.
 
 ### Data Structure
 
-The Data Structure screen loads included and excluded components, supports
-component configuration and ordering, previews table outputs, and saves with a
-commit message.
+The Data Structure screen loads included and excluded inputs and outputs,
+supports field editing and include/remove workflows, previews table inputs,
+and saves changes with a commit message. Project and platform Data Structures
+share the same editor modules.
+
+The Table Inputs tab combines two backend datasets:
+
+- The right-side **Table Inputs** list is authoritative from included
+  `GetDataStructure` inputs whose `Type` is `TABLE`.
+- The left-side **Choose From** list contains potential table inputs whose cell
+  links are not currently included.
+- Potential-table records enrich included rows with HTML or image preview
+  metadata when the backend provides it. An included table remains visible
+  even when it is absent from the potential-table response.
+
+Adding or removing a table moves it between these lists immediately and marks
+the Data Structure as changed. Input, table-input, and output behavior lives in
+separate modules under `src/views/dataStructure/`; the route module owns API
+loading, save state, and navigation protection.
 
 ### App Structure
 
@@ -305,7 +350,8 @@ body. Responses are converted to the shared shape:
 }
 ```
 
-File upload uses `/kirk/fileD`. Excel download uses
+Template Excel upload uses `/kirk/wizard/upload/:fileName`; the lower-level API
+client also retains a multipart `/kirk/fileD` helper. Excel download uses
 `/kirk/wizard/download/excel/:templateName` and validates the HTTP status,
 content type, and response size before creating the browser download.
 
@@ -345,6 +391,14 @@ Inspect the failed `/kirk/wizard/main` request in browser developer tools. A
 successful response must contain the expected structure and a `MENU` array.
 Data Structure, App Structure, and Portfolio Structure display a retryable
 error for invalid or failed responses.
+
+### Table Inputs Are Missing
+
+Check both `GetDataStructure` and the potential-table-inputs request. Included
+rows on the right must be present in `GetDataStructure.Inputs` with
+`Type: "TABLE"`. Available rows on the left come from `PotentialTableInputs`
+and are omitted only when their `CellLink` is already included. Preview HTML or
+images are optional and do not control whether an included row is displayed.
 
 ### Login Works Until the Page Is Refreshed
 
