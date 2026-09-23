@@ -32,6 +32,7 @@ const excludedDataStructure = {
   Excluded: {
     Inputs: [
       { CellLink: 'Sheet1!ExcludedInput', Key: 'ExcludedInput', Display: 'Excluded input', Description: '', Type: 'DATE', Val: 'Jan 2025', Units: '', Constraint: 'date', Inherited: false },
+      { CellLink: 'Sheet1!ExcludedTable', Key: 'ExcludedTable', Display: 'Excluded table', Description: '', Type: 'TABLE', Val: [], Units: '', Constraint: 'double', Inherited: false },
     ],
     Outputs: [
       { CellLink: 'Sheet1!ExcludedOutput', Key: 'ExcludedOutput', Display: 'Excluded output', Units: 'count', UsePostProcessingOutputs: false },
@@ -40,8 +41,8 @@ const excludedDataStructure = {
 };
 
 const potentialTableInputs = [
-  { CellLink: 'Sheet1!IncludedTable', Key: 'IncludedTable', Display: 'Included table', Inherited: false, Type: 'TABLE', HtmlPreview: '<table><tr><td>Included preview</td></tr></table>' },
   { CellLink: 'Sheet1!AvailableTable', Key: 'AvailableTable', Display: 'Available table', Inherited: false, Type: 'TABLE', HtmlPreview: '<table><tr><td>Available preview</td></tr></table>' },
+  { CellLink: 'Sheet1!ExcludedTable', Key: 'ExcludedTable', Display: 'Excluded table', Inherited: false, Type: 'TABLE', HtmlPreview: '<table><tr><td>Excluded preview</td></tr></table>' },
 ];
 
 const appStructure = {
@@ -544,11 +545,16 @@ test('Data Structure includes and removes inputs, table inputs, and outputs', as
   await page.locator('[data-exclude-input="Sheet1!Input"]').click();
 
   await page.locator('[data-tab="table"]').click();
+  await expect(page.locator('[data-select-pti="Sheet1!IncludedTable"]')).toBeVisible();
+  await expect(page.locator('[data-choose-pti="Sheet1!AvailableTable"]')).toBeVisible();
+  await expect(page.locator('[data-choose-pti="Sheet1!ExcludedTable"]')).toBeVisible();
+  await page.locator('[data-exclude-pti="Sheet1!IncludedTable"]').click();
+  await expect(page.locator('[data-choose-pti="Sheet1!IncludedTable"]')).toBeVisible();
   await expect(page.getByText('Available preview', { exact: true })).toHaveCount(0);
-  await page.locator('[data-choose-pti="Sheet1!AvailableTable"]').click();
-  await expect(page.getByText('Available preview', { exact: true })).toBeVisible();
-  await page.locator('[data-include-pti="Sheet1!AvailableTable"]').click();
-  await expect(page.locator('[data-select-pti="Sheet1!AvailableTable"]')).toBeVisible();
+  await page.locator('[data-choose-pti="Sheet1!ExcludedTable"]').click();
+  await expect(page.getByText('Excluded preview', { exact: true })).toBeVisible();
+  await page.locator('[data-include-pti="Sheet1!ExcludedTable"]').click();
+  await expect(page.locator('[data-select-pti="Sheet1!ExcludedTable"]')).toBeVisible();
 
   await page.locator('[data-tab="output"]').click();
   await page.locator('[data-include-output="Sheet1!ExcludedOutput"]').click();
@@ -562,9 +568,8 @@ test('Data Structure includes and removes inputs, table inputs, and outputs', as
   await expect.poll(() => saveRequests.filter((request) => request.command === 'SaveDataStructure').length).toBe(1);
   const request = saveRequests.find((item) => item.command === 'SaveDataStructure');
   expect(request.data.Inputs.map((input) => input.CellLink)).toEqual([
-    'Sheet1!IncludedTable',
     'Sheet1!ExcludedInput',
-    'Sheet1!AvailableTable',
+    'Sheet1!ExcludedTable',
   ]);
   expect(request.data.Outputs.map((output) => output.CellLink)).toEqual([
     'Sheet1!Output',

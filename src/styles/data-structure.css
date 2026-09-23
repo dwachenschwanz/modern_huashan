@@ -101,3 +101,10 @@ html, body{
     color:white;
     font-weight:bold;
 }
+
+.table-input-add {
+    appearance: none;
+    background: transparent;
+    border: 0;
+    padding: 0;
+}
