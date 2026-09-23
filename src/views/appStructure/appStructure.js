@@ -17,9 +17,13 @@ import { makeActionIDFrom, isActionIDDuplicate } from '../../core/common.js';
 import {
   BucketManager,
   bindBucketChartEditor,
+  bindMetalogEditor,
+  bindSeriesEditor,
   bindTornadoEditor,
   bindWaterfallEditor,
   renderBucketChartEditor,
+  renderMetalogEditor,
+  renderSeriesEditor,
   renderTornadoEditor,
   renderWaterfallEditor,
 } from './commandEditors.js';
@@ -1047,33 +1051,6 @@ export function mount(container, params) {
       <button class="btn btn-success" id="as-cv-add"><span class="glyphicon glyphicon-plus"></span></button>`;
   }
 
-  function metalogFormHtml(menu) {
-    const p = menu.Parameters;
-    const included = p.MetaLogKeys || (p.MetaLogKeys = []);
-    const available = state.tornadoValueMetricKeys.filter((key) => !included.includes(key));
-    const failure = p.FailureBranch;
-    return `${commandHeaderHtml(menu)}
-      <ul class="nav nav-tabs"><li class="${state.metalogTab === 'metalogKeys' ? 'active' : ''}"><a href="" data-metalog-tab="metalogKeys">MetalogKeys</a></li><li class="${state.metalogTab === 'explanation' ? 'active' : ''}"><a href="" data-metalog-tab="explanation">Explanation</a></li><li class="${state.metalogTab === 'failure' ? 'active' : ''}"><a href="" data-metalog-tab="failure">FailureBranch</a></li><li class="${state.metalogTab === 'simulation' ? 'active' : ''}"><a href="" data-metalog-tab="simulation">Simulation</a></li></ul>
-      ${state.metalogTab === 'metalogKeys' ? `<div><div class="col-sm-6"><h4>Included MetalogKeys</h4></div><div class="col-sm-6"><h4>Excluded MetalogKeys</h4></div><div class="col-sm-6" style="height:420px;overflow:auto"><ul class="list-group">${included.map((key) => `<li class="list-group-item"><a class="text-danger"><i class="fa fa-minus-square fa-lg" data-metalog-key="${escapeAttr(key)}"></i></a> ${escapeHtml((findKey(state.outputs)(key) || {}).Display || key)}</li>`).join('')}</ul></div><div class="col-sm-6" style="height:420px;overflow:auto"><ul class="list-group">${available.map((key) => `<li class="list-group-item"><a class="text-success"><i class="fa fa-plus-square fa-lg" data-metalog-key="${escapeAttr(key)}"></i></a> ${escapeHtml((findKey(state.outputs)(key) || {}).Display || key)}</li>`).join('')}</ul></div></div>` : ''}
-      ${state.metalogTab === 'explanation' ? `<div class="container-fluid"><div class="row table-padding"><div class="col-sm-8"><p>The text entered here will be used to explain the metalog in the system.</p><textarea rows="10" class="form-control" data-field="Parameters.FittedPointExplanation">${escapeHtml(p.FittedPointExplanation || '')}</textarea></div></div></div>` : ''}
-      ${state.metalogTab === 'failure' ? `<div class="container-fluid">${failure ? failure.Stages.map((stage, i) => `<div class="row table-padding"><div class="col-sm-2"><b>Probability of Failure of Stage Key</b></div><div class="col-sm-3"><select class="form-control" data-failure-field="ProbabilityFailureOfStageKey:${i}">${optionHtml(state.outputs, stage.ProbabilityFailureOfStageKey, (x) => x.Key, (x) => x.Key)}</select></div><div class="col-sm-2"><b>Cumulative Cost of Stage Key</b></div><div class="col-sm-3"><select class="form-control" data-failure-field="CumeCostOfStageKey:${i}">${optionHtml(state.outputs, stage.CumeCostOfStageKey, (x) => x.Key, (x) => x.Key)}</select></div><div class="col-sm-1"><button class="btn btn-danger" data-failure-delete="${i}"><span class="glyphicon glyphicon-trash"></span></button></div></div>`).join('') : ''}<button class="btn btn-success" id="as-failure-add"><span class="glyphicon glyphicon-plus"></span></button></div>` : ''}
-      ${state.metalogTab === 'simulation' ? `<div class="container-fluid"><div class="row table-padding"><div class="col-sm-8"><label><input type="checkbox" data-field="Parameters.CalcMVSFromFittedPoints" ${p.CalcMVSFromFittedPoints ? 'checked' : ''}> <b>Calculate Mean, Variance and Skewness from Fitted Points</b></label></div></div></div>` : ''}`;
-  }
-
-  function seriesFormHtml(menu, kind) {
-    const sets = menu.Parameters.Sets || [];
-    const definitions = {
-      CFO_CHART: { x: 'AverageCost', y: 'AverageValueMinusCost', add: 'as-cfo-add', del: 'data-cfo-delete' },
-      INNOVATION_SCREEN: { x: 'x', y: 'y', add: 'as-innovation-add', del: 'data-innovation-delete' },
-      SCATTER_PLOT: { x: 'x', y: 'y', add: 'as-scatter-add', del: 'data-scatter-delete' },
-    };
-    const def = definitions[kind];
-    return `${commandHeaderHtml(menu)}
-      ${kind === 'SCATTER_PLOT' ? `<div class="row table-padding"><div class="col-sm-2"><b>Use Same Scale</b></div><div class="col-sm-2"><input type="checkbox" data-field="Parameters.SameScale" ${menu.Parameters.SameScale ? 'checked' : ''}></div><div class="col-sm-1"><b>Min</b></div><div class="col-sm-2"><input type="number" class="form-control" data-field="Parameters.Min" value="${menu.Parameters.Min ?? ''}"></div><div class="col-sm-1"><b>Max</b></div><div class="col-sm-2"><input type="number" class="form-control" data-field="Parameters.Max" value="${menu.Parameters.Max ?? ''}"></div></div>` : ''}
-      ${sets.map((set, i) => `<div class="well"><div class="row table-padding"><div class="col-sm-2"><b>${kind === 'SCATTER_PLOT' ? `Series ${i + 1}` : 'Name'}</b></div><div class="col-sm-3"><input class="form-control" data-set-field="name:${i}" value="${escapeAttr(set.name || '')}"></div></div><div class="row table-padding"><div class="col-sm-2"><b>X Axis</b></div><div class="col-sm-3"><select class="form-control" data-set-field="${def.x}:${i}">${optionHtml(state.allOutputs, getKeyFrom(set[def.x]), (x) => x.Key, (x) => getOutputDisplayFromKey(x.Key))}</select></div><div class="col-sm-2"><b>X Title</b></div><div class="col-sm-3"><input class="form-control" data-set-field="xTitle:${i}" value="${escapeAttr(set.xTitle || '')}"></div></div><div class="row table-padding"><div class="col-sm-2"><b>Y Axis</b></div><div class="col-sm-3"><select class="form-control" data-set-field="${def.y}:${i}">${optionHtml(state.allOutputs, getKeyFrom(set[def.y]), (x) => x.Key, (x) => getOutputDisplayFromKey(x.Key))}</select></div><div class="col-sm-2"><b>Y Title</b></div><div class="col-sm-3"><input class="form-control" data-set-field="yTitle:${i}" value="${escapeAttr(set.yTitle || '')}"></div><div class="col-sm-1"><button class="btn btn-danger" ${def.del}="${i}"><span class="glyphicon glyphicon-trash"></span></button></div></div>${kind === 'INNOVATION_SCREEN' ? `<div class="row table-padding"><div class="col-sm-2"><b>Vertical Cut-off</b></div><div class="col-sm-3"><input type="number" class="form-control" data-set-field="VerticalCutoff:${i}" value="${set.VerticalCutoff ?? ''}"></div></div>` : ''}</div>`).join('')}
-      <button class="btn btn-success" id="${def.add}"><span class="glyphicon glyphicon-plus"></span></button>`;
-  }
-
   function editorHtml() {
     if (!state.selectedMenu) {
       return '<div class="panel panel-default panel-body">No app structure items are available.</div>';
@@ -1087,11 +1064,12 @@ export function mount(container, params) {
       case 'ADD_TABLES': return addTablesFormHtml(menu);
       case 'COMPARE_VALUE': return compareValueFormHtml(menu);
       case 'TORNADODIST': return renderTornadoEditor({ menu, state, commandHeaderHtml, findKey, optionHtml });
-      case 'METALOG_DISPLAY': return metalogFormHtml(menu);
+      case 'METALOG_DISPLAY': return renderMetalogEditor({ menu, state, commandHeaderHtml, findKey, optionHtml });
       case 'COMPARE_UNCERTAINTY': return `${commandHeaderHtml(menu)}<h4>There's nothing to customize in this menu item</h4>`;
-      case 'CFO_CHART': return seriesFormHtml(menu, 'CFO_CHART');
-      case 'INNOVATION_SCREEN': return seriesFormHtml(menu, 'INNOVATION_SCREEN');
-      case 'SCATTER_PLOT': return seriesFormHtml(menu, 'SCATTER_PLOT');
+      case 'CFO_CHART':
+      case 'INNOVATION_SCREEN':
+      case 'SCATTER_PLOT':
+        return renderSeriesEditor({ menu, state, commandHeaderHtml, optionHtml, getKeyFrom, getOutputDisplayFromKey });
       case 'BUCKET_CHART': return renderBucketChartEditor({ menu, state, commandHeaderHtml, optionHtml, getOutputDisplayFromKey });
       case 'WATERFALL': return renderWaterfallEditor({ menu, state, commandHeaderHtml, previewHtml });
       default: return `${commandHeaderHtml(menu)}<p>This command has no configurable fields.</p>`;
@@ -1214,25 +1192,16 @@ export function mount(container, params) {
     if (cvAdd) cvAdd.addEventListener('click', () => { addCompareValueItem(); render(); });
     bindAll('[data-cv-delete]', 'click', (event) => { deleteCompareValueItem(Number(event.currentTarget.dataset.cvDelete)); render(); });
 
-    bindAll('[data-metalog-tab]', 'click', (event) => { event.preventDefault(); state.metalogTab = event.currentTarget.dataset.metalogTab; render(); });
-    bindAll('[data-metalog-key]', 'click', (event) => { selectWithinMetalog(event.currentTarget.dataset.metalogKey); render(); });
-    const failureAdd = container.querySelector('#as-failure-add');
-    if (failureAdd) failureAdd.addEventListener('click', () => { addFailurebranch(); render(); });
-    bindAll('[data-failure-delete]', 'click', (event) => { deleteFailurebranchStage(Number(event.currentTarget.dataset.failureDelete)); render(); });
-    bindAll('[data-failure-field]', 'change', (event) => { const [field, index] = event.currentTarget.dataset.failureField.split(':'); menu.Parameters.FailureBranch.Stages[Number(index)][field] = event.currentTarget.value; });
-
-    bindAll('[data-set-field]', 'change', (event) => { const [field, indexText] = event.currentTarget.dataset.setField.split(':'); const index = Number(indexText); const isAxis = ['x','y','AverageCost','AverageValueMinusCost'].includes(field); menu.Parameters.Sets[index][field] = isAxis ? buildOutputFromKey(event.currentTarget.value) : inputValue(event.currentTarget); if (isAxis) { menu.Parameters.Sets[index][field === 'x' || field === 'AverageCost' ? 'xTitle' : 'yTitle'] = getOutputDisplayFromKey(event.currentTarget.value) || ''; render(); } });
-    bindAll('input[data-set-field]', 'input', (event) => { const [field, index] = event.currentTarget.dataset.setField.split(':'); menu.Parameters.Sets[Number(index)][field] = inputValue(event.currentTarget); });
-    const setActions = [
-      ['#as-cfo-add', addCFOChartItem], ['#as-innovation-add', addInnovationScreenItem], ['#as-scatter-add', addScatterPlotItem],
-    ];
-    setActions.forEach(([selector, action]) => { const el = container.querySelector(selector); if (el) el.addEventListener('click', () => { action(); render(); }); });
-    bindAll('[data-cfo-delete]', 'click', (event) => { deleteCFOChartItem(Number(event.currentTarget.dataset.cfoDelete)); render(); });
-    bindAll('[data-innovation-delete]', 'click', (event) => { deleteInnovationScreenItem(Number(event.currentTarget.dataset.innovationDelete)); render(); });
-    bindAll('[data-scatter-delete]', 'click', (event) => { deleteScatterPlotItem(Number(event.currentTarget.dataset.scatterDelete)); render(); });
-
     if (menu.Command === 'TORNADODIST') {
       bindTornadoEditor({ root: container, state, render, selectTornado, addSendBack, deleteSendBack, selectSendBackTo, selectSendBackTornado });
+    } else if (menu.Command === 'METALOG_DISPLAY') {
+      bindMetalogEditor({ root: container, menu, state, render, selectWithinMetalog, addFailurebranch, deleteFailurebranchStage });
+    } else if (menu.Command === 'CFO_CHART') {
+      bindSeriesEditor({ root: container, menu, render, inputValue, buildOutputFromKey, getOutputDisplayFromKey, addItem: addCFOChartItem, deleteItem: deleteCFOChartItem });
+    } else if (menu.Command === 'INNOVATION_SCREEN') {
+      bindSeriesEditor({ root: container, menu, render, inputValue, buildOutputFromKey, getOutputDisplayFromKey, addItem: addInnovationScreenItem, deleteItem: deleteInnovationScreenItem });
+    } else if (menu.Command === 'SCATTER_PLOT') {
+      bindSeriesEditor({ root: container, menu, render, inputValue, buildOutputFromKey, getOutputDisplayFromKey, addItem: addScatterPlotItem, deleteItem: deleteScatterPlotItem });
     } else if (menu.Command === 'BUCKET_CHART') {
       bindBucketChartEditor({ root: container, menu, state, render, inputValue, generateBuckets, addBucket, deleteBucket, deleteBucketSet, addBucketChartSet, selectMenu });
     } else if (menu.Command === 'WATERFALL') {

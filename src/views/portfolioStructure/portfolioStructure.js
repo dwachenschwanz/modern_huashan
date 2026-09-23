@@ -10,9 +10,25 @@ import { loadingOverlayHtml } from '../../components/loadingOverlay.js';
 import { handleLoadError, loadErrorHtml, loadErrorMessage, requireResponseResult } from '../../components/loadError.js';
 import { onModalShown, hideModal } from '../../components/uiInteractions.js';
 import { makeSortable } from '../../components/sortable.js';
-import { scrollElementIntoView } from '../../components/scrollTo.js';
-import { escapeHtml, extractTablePreviewHtml } from '../../core/html.js';
+import { escapeHtml } from '../../core/html.js';
 import { makeActionIDFrom } from '../../core/common.js';
+import {
+  bindCfoChartEditor,
+  bindAddTablesEditor,
+  bindBucketChartEditor,
+  bindCompareValueEditor,
+  bindInnovationScreenEditor,
+  bindPortfolioUncertaintyEditor,
+  bindScatterPlotEditor,
+  renderAddTablesEditor,
+  renderBucketChartEditor,
+  renderCfoChartEditor,
+  renderCompareUncertaintyEditor,
+  renderCompareValueEditor,
+  renderInnovationScreenEditor,
+  renderPortfolioUncertaintyEditor,
+  renderScatterPlotEditor,
+} from './commandEditors.js';
 
 function escapeAttr(str) {
   return escapeHtml(str);
@@ -841,433 +857,6 @@ export function mount(container, params) {
     <div class="col-sm-6"><h4><input type="checkbox" id="ps-visible-toggle" ${menu.Visible ? 'checked' : ''}> Visible</h4></div>`;
   }
 
-  function addTablesFormHtml(menu) {
-    const preview = state.selectedPotentialTable;
-    let previewHtml = '';
-    if (preview && preview.HtmlPreview) {
-      previewHtml = `<div style="width:100%; overflow:auto;">${extractTablePreviewHtml(preview.HtmlPreview)}</div>`;
-    } else if (preview) {
-      previewHtml = `<img src="${escapeAttr(state.server)}${escapeAttr(preview.PreviewURL || '')}" alt="${escapeAttr(preview.CellLink || '')}" width="100%">`;
-    }
-    return `
-    ${commandHeaderHtml(menu)}
-    <div class="col-sm-4">
-      <div class="list-group" id="ps-tables-list">
-        ${state.tables
-          .map(
-            (table, i) => `
-        <a href="" id="table${i}" class="list-group-item ${state.selectedTable === table ? 'active' : ''}" data-table-index="${i}">
-          ${escapeHtml(table.Display)}
-        </a>`
-          )
-          .join('')}
-      </div>
-    </div>
-    <div class="col-sm-8">${previewHtml}</div>
-    <div class="col-sm-12">
-      <div class="row table-padding col-sm-4">
-        <div class="col-sm-6 text-right"><b>PNL</b></div>
-        <div class="col-sm-6"><input type="checkbox" id="ps-add-tables-pnl" ${menu.Parameters.Pnl ? 'checked' : ''}></div>
-      </div>
-    </div>
-    <div class="col-sm-12">
-      <div class="row table-padding col-sm-4">
-        <div class="col-sm-6 text-right" style="padding-top: 2%"><b>Precision Options</b></div>
-      </div>
-    </div>
-    <div class="col-sm-12">
-      <div class="row table-padding col-sm-4">
-        <div class="col-sm-6 text-right" style="padding-top: 2%"><b>Min</b></div>
-        <div class="col-sm-6"><input type="number" class="form form-control" id="ps-min-precision" min="0" value="${numOrEmpty(state.minPrecision)}"></div>
-      </div>
-      <div class="row table-padding col-sm-4">
-        <div class="col-sm-6 text-right" style="padding-top: 2%"><b>Max</b></div>
-        <div class="col-sm-6"><input type="number" class="form form-control" id="ps-max-precision" min="0" value="${numOrEmpty(state.maxPrecision)}"></div>
-      </div>
-      <div class="row table-padding col-sm-4">
-        <div class="col-sm-6 text-right"><b>Default Precision</b></div>
-        <div class="col-sm-6">
-          <select class="btn btn-default form-control" id="ps-default-precision">
-            ${(menu.Parameters.PrecisionOptions || [])
-              .map((opt) => `<option value="${opt}" ${menu.Parameters.DefaultPrecision === opt ? 'selected' : ''}>${opt}</option>`)
-              .join('')}
-          </select>
-        </div>
-      </div>
-    </div>
-    ${(menu.Parameters.Keys || [])
-      .map(
-        (key, i) => `
-    <div class="row table-padding">
-      <div class="col-sm-3"><select class="form form-control" data-special-key-index="${i}">${outputOptionsHtml(key)}</select></div>
-    </div>`
-      )
-      .join('')}
-    <div class="col-sm-12">
-      <div class="row table-padding col-sm-4">
-        <div class="col-sm-6 text-right"><b>Special Rules</b></div>
-        <div class="col-sm-6">
-          <select class="btn btn-default form-control">
-            <option value="1">None</option>
-            <option value="2">Ignore</option>
-            <option value="3">IRR</option>
-            <option value="4">MVSto Range</option>
-            <option value="5">Year</option>
-            <option value="6">Tooltip</option>
-          </select>
-        </div>
-      </div>
-    </div>`;
-  }
-
-  function compareValueFormHtml(menu) {
-    const keys = menu.Parameters.Keys || [];
-    return `
-    ${commandHeaderHtml(menu)}
-    <div class="row table-padding">
-      <div class="col-sm-2"><b>Total</b></div>
-      <div class="col-sm-3"><input type="checkbox" id="ps-cv-total" ${menu.Parameters.Total ? 'checked' : ''}></div>
-    </div>
-    <div class="row table-padding">
-      <div class="col-sm-2"><b>Min</b></div>
-      <div class="col-sm-3"><input type="number" class="form form-control" id="ps-cv-min" value="${numOrEmpty(menu.Parameters.Min)}"></div>
-      <div class="col-sm-2"><b>Max</b></div>
-      <div class="col-sm-3"><input type="number" class="form form-control" id="ps-cv-max" value="${numOrEmpty(menu.Parameters.Max)}"></div>
-    </div>
-    <div class="row table-padding">
-      <div class="col-sm-3"><b>Key</b></div>
-      <div class="col-sm-3"><b>Unit</b></div>
-      <div class="col-sm-3"><b>Title</b></div>
-    </div>
-    ${keys
-      .map(
-        (key, i) => `
-    <div class="row table-padding">
-      <div class="col-sm-3"><select class="form form-control" data-cv-key-index="${i}">${outputOptionsHtml(key)}</select></div>
-      <div class="col-sm-3"><input type="text" class="form form-control" data-cv-unit-index="${i}" value="${escapeAttr(menu.Parameters.Units[i])}"></div>
-      <div class="col-sm-3"><input type="text" class="form form-control" data-cv-title-index="${i}" value="${escapeAttr(menu.Parameters.Titles[i])}"></div>
-      <div class="col-sm-1"><button class="btn btn-danger" data-cv-delete-index="${i}"><span class="glyphicon glyphicon-trash"></span></button></div>
-    </div>`
-      )
-      .join('')}
-    <div class="row table-padding">
-      <div class="col-sm-1"><button class="btn btn-success" id="ps-cv-add"><span class="glyphicon glyphicon-plus"></span></button></div>
-    </div>`;
-  }
-
-  function compareUncertaintyFormHtml(menu) {
-    return `
-    <div class="col-sm-6">
-      <h4>${escapeHtml(menu.Command)}</h4>
-      <div><h4>There's nothing to customize in this menu item</h4></div>
-    </div>
-    <div class="col-sm-6"><h4><input type="checkbox" id="ps-visible-toggle" ${menu.Visible ? 'checked' : ''}> Visible</h4></div>`;
-  }
-
-  function innovationScreenFormHtml(menu) {
-    return `
-    ${commandHeaderHtml(menu)}
-    ${menu.Parameters.Sets.map(
-      (set, i) => `
-    <div>
-      <div class="row table-padding">
-        <div class="col-sm-2"><b>X Axis</b></div>
-        <div class="col-sm-3"><select class="form form-control" data-is-xkey-index="${i}">${outputOptionsHtml(getKeyFrom(set.x))}</select></div>
-        <div class="col-sm-2"><b>X Title</b></div>
-        <div class="col-sm-3"><input type="text" class="form form-control" data-is-xtitle-index="${i}" value="${escapeAttr(set.xTitle)}"></div>
-      </div>
-      <div class="row table-padding">
-        <div class="col-sm-2"><b>Y Axis</b></div>
-        <div class="col-sm-3"><select class="form form-control" data-is-ykey-index="${i}">${outputOptionsHtml(getKeyFrom(set.y))}</select></div>
-        <div class="col-sm-2"><b>Y Title</b></div>
-        <div class="col-sm-3"><input type="text" class="form form-control" data-is-ytitle-index="${i}" value="${escapeAttr(set.yTitle)}"></div>
-      </div>
-      <div class="row table-padding">
-        <div class="col-sm-2"><b>Vertical Cut-off</b></div>
-        <div class="col-sm-3"><input type="number" class="form form-control" data-is-vcutoff-index="${i}" value="${numOrEmpty(set.VerticalCutoff)}"></div>
-        <div class="col-sm-2"><b>Name</b></div>
-        <div class="col-sm-3"><input type="text" class="form form-control" data-is-name-index="${i}" value="${escapeAttr(set.name)}"></div>
-        <div class="col-sm-1"><button class="btn btn-danger" data-is-delete-index="${i}"><span class="glyphicon glyphicon-trash"></span></button></div>
-      </div>
-    </div>`
-    ).join('')}
-    <div class="row table-padding">
-      <div class="col-sm-1"><button class="btn btn-success" id="ps-is-add"><span class="glyphicon glyphicon-plus"></span></button></div>
-    </div>`;
-  }
-
-  function cfoChartFormHtml(menu) {
-    return `
-    ${commandHeaderHtml(menu)}
-    ${menu.Parameters.Sets.map(
-      (set, i) => `
-    <div>
-      <div class="col-sm-12">
-        <div class="row table-padding">
-          <div class="col-sm-3"><b>X Axis</b></div>
-          <div class="col-sm-3"><b>X Title</b></div>
-          <div class="col-sm-3"><b>Name</b></div>
-        </div>
-      </div>
-      <div class="row table-padding">
-        <div class="col-sm-3"><select class="form form-control" data-cfo-xkey-index="${i}">${outputOptionsHtml(getKeyFrom(set.AverageCost))}</select></div>
-        <div class="col-sm-3"><input type="text" class="form form-control" data-cfo-xtitle-index="${i}" value="${escapeAttr(set.xTitle)}"></div>
-        <div class="col-sm-3"><input type="text" class="form form-control" data-cfo-name-index="${i}" value="${escapeAttr(set.name)}"></div>
-      </div>
-      <div class="col-sm-12">
-        <div class="row table-padding">
-          <div class="col-sm-3"><b>Y Axis</b></div>
-          <div class="col-sm-3"><b>Y Title</b></div>
-        </div>
-      </div>
-      <div class="row table-padding">
-        <div class="col-sm-3"><select class="form form-control" data-cfo-ykey-index="${i}">${outputOptionsHtml(getKeyFrom(set.AverageValueMinusCost))}</select></div>
-        <div class="col-sm-3"><input type="text" class="form form-control" data-cfo-ytitle-index="${i}" value="${escapeAttr(set.yTitle)}"></div>
-        <div class="col-sm-1"><button class="btn btn-danger" data-cfo-delete-index="${i}"><span class="glyphicon glyphicon-trash"></span></button></div>
-      </div>
-    </div>`
-    ).join('')}
-    <div class="row table-padding">
-      <div class="col-sm-1"><button class="btn btn-success" id="ps-cfo-add"><span class="glyphicon glyphicon-plus"></span></button></div>
-    </div>`;
-  }
-
-  function scatterPlotFormHtml(menu) {
-    return `
-    ${commandHeaderHtml(menu)}
-    <div class="row table-padding">
-      <div class="col-sm-2"><b>Use Same Scale</b></div>
-      <div class="col-sm-3"><input type="checkbox" id="ps-sp-samescale" ${menu.Parameters.SameScale ? 'checked' : ''}></div>
-    </div>
-    <div class="row table-padding">
-      <div class="col-sm-2"><b>Min</b></div>
-      <div class="col-sm-3"><input type="number" class="form form-control" id="ps-sp-min" value="${numOrEmpty(menu.Parameters.Min)}"></div>
-      <div class="col-sm-2"><b>Max</b></div>
-      <div class="col-sm-3"><input type="number" class="form form-control" id="ps-sp-max" value="${numOrEmpty(menu.Parameters.Max)}"></div>
-    </div>
-    ${menu.Parameters.Sets.map((set, i) => {
-      const hasError = (set.name === undefined || set.name === '') && menu.Parameters.Sets.length > 1;
-      return `
-    <div>
-      <div class="row table-padding"><div class="col-sm-2"><h3>Series ${i + 1}</h3></div></div>
-      <div class="row table-padding">
-        <div class="col-sm-2"><b>Name</b></div>
-        <div class="col-sm-3 ${hasError ? 'has-error' : ''}" data-sp-name-wrapper="${i}">
-          <input type="text" class="form form-control" data-sp-name-index="${i}" value="${escapeAttr(set.name)}">
-        </div>
-      </div>
-      <div class="row table-padding">
-        <div class="col-sm-2"><b>X Axis</b></div>
-        <div class="col-sm-3"><select class="form form-control" data-sp-xkey-index="${i}">${outputOptionsHtml(getKeyFrom(set.x))}</select></div>
-        <div class="col-sm-2"><b>X Title</b></div>
-        <div class="col-sm-3"><input type="text" class="form form-control" data-sp-xtitle-index="${i}" value="${escapeAttr(set.xTitle)}"></div>
-      </div>
-      <div class="row table-padding">
-        <div class="col-sm-2"><b>Y Axis</b></div>
-        <div class="col-sm-3"><select class="form form-control" data-sp-ykey-index="${i}">${outputOptionsHtml(getKeyFrom(set.y))}</select></div>
-        <div class="col-sm-2"><b>Y Title</b></div>
-        <div class="col-sm-3"><input type="text" class="form form-control" data-sp-ytitle-index="${i}" value="${escapeAttr(set.yTitle)}"></div>
-        <div class="col-sm-2"><button class="btn btn-danger" data-sp-delete-index="${i}"><span class="glyphicon glyphicon-trash"></span></button></div>
-      </div>
-    </div>`;
-    }).join('')}
-    <div class="col-sm-2"><button class="btn btn-success" id="ps-sp-add"><span class="glyphicon glyphicon-plus"></span></button></div>`;
-  }
-
-  function bucketRowHtml(b, bi, setIndex) {
-    const rule1Editable = b.rulesEditable === true;
-    return `
-    <tr>
-      <td>
-        ${
-          b.nameEditable === true
-            ? `<div>
-          <input class="form-control input-sm" type="text" data-bucket-name-edit="${setIndex}:${bi}" value="${escapeAttr(b.Name)}">
-          <span><button class="btn btn-primary btn-sm" style="margin-top:15px;" data-bucket-name-done="${setIndex}:${bi}">Done</button></span>
-        </div><br/>`
-            : `<span>${escapeHtml(b.Name)}<br/>
-        <i class="pull-righ glyphicon glyphicon-pencil" data-bucket-name-edit-toggle="${setIndex}:${bi}"></i></span>`
-        }
-      </td>
-      <td>
-        ${
-          rule1Editable
-            ? `<div>
-          <select class="form-control input-sm" data-bucket-rule1-type="${setIndex}:${bi}">${ruleOptionsHtml(RULE1_OPTIONS, b.rule1Type)}</select>
-          ${b.rule1Type.Value !== 'NONE' ? `<input type="text" class="form-control input-sm" data-bucket-rule1-value="${setIndex}:${bi}" value="${escapeAttr(b.rule1Value)}"/>` : ''}<br/>
-          <select class="form-control input-sm" data-bucket-rule2-type="${setIndex}:${bi}">${ruleOptionsHtml(RULE2_OPTIONS, b.rule2Type)}</select>
-          ${b.rule2Type.Value !== 'NONE' ? `<input type="text" class="form-control input-sm" data-bucket-rule2-value="${setIndex}:${bi}" value="${escapeAttr(b.rule2Value)}"/>` : ''}<br/>
-          <button class="btn btn-primary btn-sm" data-bucket-rules-done="${setIndex}:${bi}">Done</button>
-        </div>`
-            : `<div>
-          ${escapeHtml(b.rule1Type.Label || '')}&nbsp;${escapeHtml(numOrEmpty(b.rule1Value))}<br/>
-          ${escapeHtml(b.rule2Type.Label || '')}&nbsp;${escapeHtml(numOrEmpty(b.rule2Value))}<br/>
-          <i class="pull-righ glyphicon glyphicon-pencil" data-bucket-rules-edit-toggle="${setIndex}:${bi}"></i>
-        </div>`
-        }
-      </td>
-    </tr>`;
-  }
-
-  function ruleOptionsHtml(options, current) {
-    const currentValue = current ? current.Value : undefined;
-    return options.map((o) => `<option value="${o.Value}" ${o.Value === currentValue ? 'selected' : ''}>${escapeHtml(o.Label)}</option>`).join('');
-  }
-
-  function bucketSetHtml(s, i, menu) {
-    const manager = state.bucketManagers[i];
-    const titleError = (s.Title === undefined || s.Title === '') && menu.Parameters.Sets.length > 1;
-    return `
-    <div>
-      <div class="row table-padding">
-        <div class="col-sm-2 ${titleError ? 'has-error' : ''}" data-bc-title-wrapper="${i}"><b>Title</b></div>
-        <div class="col-sm-3"><input type="text" class="form form-control" data-bc-title-index="${i}" value="${escapeAttr(s.Title)}"></div>
-        <div class="col-sm-2"><b>Counts</b></div>
-        <div class="col-sm-3">
-          <select class="form form-control" data-bc-counts-index="${i}">
-            <option value="false" ${!s.Counts ? 'selected' : ''}>false</option>
-            <option value="true" ${s.Counts ? 'selected' : ''}>true</option>
-          </select>
-        </div>
-      </div>
-      <div class="row table-padding">
-        <div class="col-sm-2"><b>X Axis</b></div>
-        <div class="col-sm-3"><select class="form form-control" data-bc-key-index="${i}">${outputOptionsHtml(s.Key)}</select></div>
-        <div class="col-sm-2"><b>X Label</b></div>
-        <div class="col-sm-3"><input type="text" class="form form-control" data-bc-xtitle-index="${i}" value="${escapeAttr(s.xTitle)}"></div>
-      </div>
-      <div class="row table-padding">
-        <div class="col-sm-2"><b>Y Label</b></div>
-        <div class="col-sm-3"><input type="text" class="form form-control" data-bc-ytitle-index="${i}" value="${escapeAttr(s.yTitle)}"></div>
-      </div>
-      <div class="row">&nbsp;</div>
-      ${
-        s.xBuckets.length === 0 && !manager
-          ? `
-      <div class="row table-padding well">
-        <div class="col-sm-2">Buckets<br/><input type="number" min="1" class="form form-control" data-bc-numbuckets-index="${i}" value="${state.numBuckets === '' || state.numBuckets === null || state.numBuckets === undefined ? '' : state.numBuckets}"></div>
-        <div class="col-sm-2">Low<br/><input type="text" class="form-control" data-bc-low-index="${i}" value="${escapeAttr(state.bucketLow)}"></div>
-        <div class="col-sm-2">High<br/><input type="text" class="form-control" data-bc-high-index="${i}" value="${escapeAttr(state.bucketHigh)}"></div>
-        <div class="col-sm-1"><br/><button class="btn btn-primary" data-bc-generate-index="${i}">Generate Buckets</button></div>
-      </div>`
-          : ''
-      }
-      ${
-        manager && manager.editing === false
-          ? `
-      <div class="row table-padding">
-        <div class="col-md-9">
-          <b>Buckets: ${manager.editableBuckets.map((b, bi) => `${escapeHtml(b.Name)}${bi < manager.editableBuckets.length - 1 ? ',' : ''}`).join(' ')}
-          <i class="pull-righ glyphicon glyphicon-pencil" data-bc-makeeditable-index="${i}"></i></b>
-        </div>
-      </div>`
-          : ''
-      }
-      ${
-        manager && manager.editing === true
-          ? `
-      <div class="row table-padding">
-        <div class="col-md-3"></div>
-        <div class="col-md-6">
-          <table class="table table-bordered table-striped table-condensed">
-            <thead><th>Bucket Label</th><th>Bucket Rule</th></thead>
-            <tbody>${manager.editableBuckets.map((b, bi) => bucketRowHtml(b, bi, i)).join('')}</tbody>
-          </table>
-          <div style="text-align:center">
-            <button class="btn btn-primary" data-bc-addbucket-index="${i}">Add Bucket</button>
-            <button class="btn btn-primary" data-bc-deletebucket-index="${i}" ${manager.editableBuckets.length === 0 ? 'disabled' : ''}>Delete Bucket</button>
-            <button class="btn btn-primary" data-bc-stopediting-index="${i}">Stop Editing</button>
-          </div>
-        </div>
-      </div>`
-          : ''
-      }
-    </div>
-    <div class="row table-padding">
-      <div class="col-sm-1"><button class="btn btn-danger" data-bc-deleteset-index="${i}"><span class="glyphicon glyphicon-trash"></span></button></div>
-    </div>
-    <hr>`;
-  }
-
-  function bucketChartFormHtml(menu) {
-    return `
-    ${commandHeaderHtml(menu)}
-    ${menu.Parameters.Sets.map((s, i) => bucketSetHtml(s, i, menu)).join('')}
-    <div class="row table-padding">
-      <div class="col-sm-1"><button class="btn btn-success" id="ps-bc-add-set"><span class="glyphicon glyphicon-plus"></span></button></div>
-    </div>`;
-  }
-
-  function portfolioUncertaintyFormHtml(menu) {
-    const includedKeys = menu.Parameters.RollupKeys;
-    const availableKeys = getPortfolioUncKeyFromMetalogBySource().filter((k) => includedKeys.indexOf(k) === -1);
-    return `
-    ${commandHeaderHtml(menu)}
-    <div class="row table-padding col-sm-12">
-      <div class="col-sm-2"><b>Type</b></div>
-      <div class="col-sm-3">
-        <select class="form form-control" id="ps-pu-mvstype">
-          <option value="" ${!menu.Parameters.MVSType ? 'selected' : ''}>--select type--</option>
-          <option value="MVSFromFittedPoints" ${menu.Parameters.MVSType === 'MVSFromFittedPoints' ? 'selected' : ''}>MVSFromFittedPoints</option>
-        </select>
-      </div>
-    </div>
-    <div class="row table-padding col-sm-12">
-      <div class="col-sm-2"><b>Source</b></div>
-      <div class="col-sm-3">
-        <select class="form form-control" id="ps-pu-source">
-          <option value="" ${!menu.Parameters.Source ? 'selected' : ''}>--select source--</option>
-          ${getSourceFromAppStruMetalog()
-            .map((x) => `<option value="${escapeAttr(x)}" ${menu.Parameters.Source === x ? 'selected' : ''}>${escapeHtml(x)}</option>`)
-            .join('')}
-        </select>
-      </div>
-    </div>
-    <div class="row table-padding col-sm-12">
-      <div class="col-sm-2"><b>Representation</b></div>
-      <div class="col-sm-3">
-        <select class="form form-control" id="ps-pu-representation">
-          <option value="" ${!menu.Parameters.Representation ? 'selected' : ''}>--slect representation--</option>
-          <option value="Curve" ${menu.Parameters.Representation === 'Curve' ? 'selected' : ''}>Curve</option>
-        </select>
-      </div>
-    </div>
-    <div class="row table-padding col-sm-12">
-      <div class="col-sm-2"><b>Explanation</b></div>
-      <div class="col-sm-6"><textarea class="form-control" rows="4" id="ps-pu-explanation">${escapeHtml(menu.Parameters.PortfolioUncExplanation)}</textarea></div>
-    </div>
-    <div class="row table-padding col-sm-12">
-      <div class="col-sm-6"><h4>Included Keys</h4></div>
-      <div class="col-sm-6"><h4>Excluded Keys</h4></div>
-      <div class="col-sm-6" style="overflow: auto;">
-        <div class="list-of-templates"><ul class="list-group">
-          ${includedKeys
-            .map(
-              (key) => `
-          <li class="list-group-item"><div class="no-wrap">
-            <a class="text-danger"><i class="fa fa-minus-square fa-lg" data-pu-remove-key="${escapeAttr(key)}"></i></a>
-            ${escapeHtml((findKey(state.outputs)(key) || {}).Display)}
-          </div></li>`
-            )
-            .join('')}
-        </ul></div>
-      </div>
-      <div class="col-sm-6" style="overflow: auto;">
-        <div class="list-of-templates"><ul class="list-group">
-          ${availableKeys
-            .map(
-              (key) => `
-          <li class="list-group-item"><div class="no-wrap">
-            <a href="" class="text-success"><i class="fa fa-plus-square fa-lg" data-pu-add-key="${escapeAttr(key)}"></i></a>
-            ${escapeHtml((findKey(state.outputs)(key) || {}).Display)}
-          </div></li>`
-            )
-            .join('')}
-        </ul></div>
-      </div>
-    </div>`;
-  }
-
   function renderActionForm() {
     const formEl = container.querySelector('#ps-action-form');
     const titleEl = container.querySelector('#ps-selected-title');
@@ -1281,28 +870,34 @@ export function mount(container, params) {
     let html = '';
     switch (menu.Command) {
       case 'ADD_TABLES':
-        html = addTablesFormHtml(menu);
+        html = renderAddTablesEditor({ menu, state, commandHeaderHtml, outputOptionsHtml });
         break;
       case 'COMPARE_VALUE':
-        html = compareValueFormHtml(menu);
+        html = renderCompareValueEditor({ menu, commandHeaderHtml, outputOptionsHtml });
         break;
       case 'COMPARE_UNCERTAINTY':
-        html = compareUncertaintyFormHtml(menu);
+        html = renderCompareUncertaintyEditor(menu);
         break;
       case 'INNOVATION_SCREEN':
-        html = innovationScreenFormHtml(menu);
+        html = renderInnovationScreenEditor({ menu, commandHeaderHtml, outputOptionsHtml, getKeyFrom });
         break;
       case 'SCATTER_PLOT':
-        html = scatterPlotFormHtml(menu);
+        html = renderScatterPlotEditor({ menu, commandHeaderHtml, outputOptionsHtml, getKeyFrom });
         break;
       case 'CFO_CHART':
-        html = cfoChartFormHtml(menu);
+        html = renderCfoChartEditor({ menu, commandHeaderHtml, outputOptionsHtml, getKeyFrom });
         break;
       case 'BUCKET_CHART':
-        html = bucketChartFormHtml(menu);
+        html = renderBucketChartEditor({ menu, state, commandHeaderHtml, outputOptionsHtml, rule1Options: RULE1_OPTIONS, rule2Options: RULE2_OPTIONS });
         break;
       case 'PORTFOLIO_UNCERTAINTY':
-        html = portfolioUncertaintyFormHtml(menu);
+        html = renderPortfolioUncertaintyEditor({
+          menu,
+          commandHeaderHtml,
+          sourceIds: getSourceFromAppStruMetalog(),
+          availableKeys: getPortfolioUncKeyFromMetalogBySource().filter((key) => menu.Parameters.RollupKeys.indexOf(key) === -1),
+          outputsByKey: findKey(state.outputs),
+        });
         break;
       default:
         html = '';
@@ -1331,406 +926,30 @@ export function mount(container, params) {
     }
     switch (menu.Command) {
       case 'ADD_TABLES':
-        wireAddTablesForm(formEl, menu);
+        bindAddTablesEditor({ formEl, state, selectTable, render: renderActionForm, changePrecisionOptions, refreshDefaultPrecisionOptions, refreshSaveButton, getOutputUnitFromKey, getOutputDisplayFromKey });
         break;
       case 'COMPARE_VALUE':
-        wireCompareValueForm(formEl, menu);
+        bindCompareValueEditor({ formEl, menu, refreshSaveButton, getOutputUnitFromKey, getOutputDisplayFromKey, addItem: addCompareValueItem, deleteItem: deleteCompareValueItem });
         break;
       case 'INNOVATION_SCREEN':
-        wireInnovationScreenForm(formEl, menu);
+        bindInnovationScreenEditor({ formEl, menu, refreshSaveButton, buildOutputFromKey, getOutputDisplayFromKey, addItem: addInnovationScreenItem, deleteItem: deleteInnovationScreenItem });
         break;
       case 'SCATTER_PLOT':
-        wireScatterPlotForm(formEl, menu);
+        bindScatterPlotEditor({ formEl, menu, refreshSaveButton, buildOutputFromKey, getOutputDisplayFromKey, addItem: addScatterPlotItem, deleteItem: deleteScatterPlotItem });
         break;
       case 'CFO_CHART':
-        wireCfoChartForm(formEl, menu);
+        bindCfoChartEditor({ formEl, menu, refreshSaveButton, buildOutputFromKey, getOutputDisplayFromKey, addItem: addCFOChartItem, deleteItem: deleteCFOChartItem });
         break;
       case 'BUCKET_CHART':
-        wireBucketChartForm(formEl, menu);
+        bindBucketChartEditor({ formEl, menu, state, render: renderActionForm, refreshSaveButton, generateBuckets, makeEditable, addBucket, deleteBucket, stopEditing, deleteBucketSet, addBucketChartSet, toggleNameEdit, toggleRuleEdit, rule1Options: RULE1_OPTIONS, rule2Options: RULE2_OPTIONS });
         break;
       case 'PORTFOLIO_UNCERTAINTY':
-        wirePortfolioUncertaintyForm(formEl, menu);
+        bindPortfolioUncertaintyEditor({ formEl, menu, render: renderActionForm, refreshSaveButton, addKey: addToRollupKeys, removeKey: removeFromIncludedKeys });
         break;
       default:
         break;
     }
   }
-
-  function wireAddTablesForm(formEl) {
-    formEl.querySelectorAll('[data-table-index]').forEach((el) => {
-      el.addEventListener('click', (evt) => {
-        evt.preventDefault();
-        selectTable(state.tables[Number(el.getAttribute('data-table-index'))]);
-        renderActionForm();
-      });
-    });
-    const pnl = formEl.querySelector('#ps-add-tables-pnl');
-    if (pnl) {
-      pnl.addEventListener('change', (e) => {
-        state.selectedMenu.Parameters.Pnl = e.target.checked;
-        refreshSaveButton();
-      });
-    }
-    const minEl = formEl.querySelector('#ps-min-precision');
-    const maxEl = formEl.querySelector('#ps-max-precision');
-    if (minEl) {
-      minEl.addEventListener('input', (e) => {
-        state.minPrecision = e.target.value === '' ? null : Number(e.target.value);
-        changePrecisionOptions();
-        refreshDefaultPrecisionOptions();
-        refreshSaveButton();
-      });
-    }
-    if (maxEl) {
-      maxEl.addEventListener('input', (e) => {
-        state.maxPrecision = e.target.value === '' ? null : Number(e.target.value);
-        changePrecisionOptions();
-        refreshDefaultPrecisionOptions();
-        refreshSaveButton();
-      });
-    }
-    const defPrec = formEl.querySelector('#ps-default-precision');
-    if (defPrec) {
-      defPrec.addEventListener('change', (e) => {
-        state.selectedMenu.Parameters.DefaultPrecision = Number(e.target.value);
-        refreshSaveButton();
-      });
-    }
-    formEl.querySelectorAll('[data-special-key-index]').forEach((el) => {
-      el.addEventListener('change', (e) => {
-        const i = Number(el.getAttribute('data-special-key-index'));
-        state.selectedMenu.Parameters.Keys[i] = e.target.value;
-        state.selectedMenu.Parameters.Units[i] = getOutputUnitFromKey(e.target.value);
-        state.selectedMenu.Parameters.Titles[i] = getOutputDisplayFromKey(e.target.value);
-        refreshSaveButton();
-      });
-    });
-    if (state.selectedTable) {
-      const idx = state.tables.indexOf(state.selectedTable);
-      if (idx !== -1) {
-        const listEl = formEl.querySelector('#ps-tables-list');
-        const itemEl = formEl.querySelector(`#table${idx}`);
-        if (listEl && itemEl) scrollElementIntoView(listEl, itemEl, 300);
-      }
-    }
-  }
-
-  function wireCompareValueForm(formEl, menu) {
-    const total = formEl.querySelector('#ps-cv-total');
-    if (total) total.addEventListener('change', (e) => { menu.Parameters.Total = e.target.checked; refreshSaveButton(); });
-    const minEl = formEl.querySelector('#ps-cv-min');
-    const maxEl = formEl.querySelector('#ps-cv-max');
-    if (minEl) minEl.addEventListener('input', (e) => { menu.Parameters.Min = e.target.value === '' ? null : Number(e.target.value); refreshSaveButton(); });
-    if (maxEl) maxEl.addEventListener('input', (e) => { menu.Parameters.Max = e.target.value === '' ? null : Number(e.target.value); refreshSaveButton(); });
-    formEl.querySelectorAll('[data-cv-key-index]').forEach((el) => {
-      el.addEventListener('change', (e) => {
-        const i = Number(el.getAttribute('data-cv-key-index'));
-        menu.Parameters.Keys[i] = e.target.value;
-        menu.Parameters.Units[i] = getOutputUnitFromKey(e.target.value);
-        menu.Parameters.Titles[i] = getOutputDisplayFromKey(e.target.value);
-        const unitInput = formEl.querySelector(`[data-cv-unit-index="${i}"]`);
-        const titleInput = formEl.querySelector(`[data-cv-title-index="${i}"]`);
-        if (unitInput) unitInput.value = menu.Parameters.Units[i];
-        if (titleInput) titleInput.value = menu.Parameters.Titles[i];
-        refreshSaveButton();
-      });
-    });
-    formEl.querySelectorAll('[data-cv-unit-index]').forEach((el) => {
-      el.addEventListener('input', (e) => { menu.Parameters.Units[Number(el.getAttribute('data-cv-unit-index'))] = e.target.value; refreshSaveButton(); });
-    });
-    formEl.querySelectorAll('[data-cv-title-index]').forEach((el) => {
-      el.addEventListener('input', (e) => { menu.Parameters.Titles[Number(el.getAttribute('data-cv-title-index'))] = e.target.value; refreshSaveButton(); });
-    });
-    formEl.querySelectorAll('[data-cv-delete-index]').forEach((el) => {
-      el.addEventListener('click', () => deleteCompareValueItem(Number(el.getAttribute('data-cv-delete-index'))));
-    });
-    const addBtn = formEl.querySelector('#ps-cv-add');
-    if (addBtn) addBtn.addEventListener('click', addCompareValueItem);
-  }
-
-  function wireInnovationScreenForm(formEl, menu) {
-    formEl.querySelectorAll('[data-is-xkey-index]').forEach((el) => {
-      el.addEventListener('change', (e) => {
-        const i = Number(el.getAttribute('data-is-xkey-index'));
-        const set = menu.Parameters.Sets[i];
-        set.x = buildOutputFromKey(e.target.value);
-        set.xTitle = getOutputDisplayFromKey(e.target.value);
-        const xTitleInput = formEl.querySelector(`[data-is-xtitle-index="${i}"]`);
-        if (xTitleInput) xTitleInput.value = set.xTitle;
-        refreshSaveButton();
-      });
-    });
-    formEl.querySelectorAll('[data-is-ykey-index]').forEach((el) => {
-      el.addEventListener('change', (e) => {
-        const i = Number(el.getAttribute('data-is-ykey-index'));
-        const set = menu.Parameters.Sets[i];
-        set.y = buildOutputFromKey(e.target.value);
-        set.yTitle = getOutputDisplayFromKey(e.target.value);
-        const yTitleInput = formEl.querySelector(`[data-is-ytitle-index="${i}"]`);
-        if (yTitleInput) yTitleInput.value = set.yTitle;
-        refreshSaveButton();
-      });
-    });
-    formEl.querySelectorAll('[data-is-xtitle-index]').forEach((el) => {
-      el.addEventListener('input', (e) => { menu.Parameters.Sets[Number(el.getAttribute('data-is-xtitle-index'))].xTitle = e.target.value; refreshSaveButton(); });
-    });
-    formEl.querySelectorAll('[data-is-ytitle-index]').forEach((el) => {
-      el.addEventListener('input', (e) => { menu.Parameters.Sets[Number(el.getAttribute('data-is-ytitle-index'))].yTitle = e.target.value; refreshSaveButton(); });
-    });
-    formEl.querySelectorAll('[data-is-vcutoff-index]').forEach((el) => {
-      el.addEventListener('input', (e) => {
-        menu.Parameters.Sets[Number(el.getAttribute('data-is-vcutoff-index'))].VerticalCutoff = e.target.value === '' ? null : Number(e.target.value);
-        refreshSaveButton();
-      });
-    });
-    formEl.querySelectorAll('[data-is-name-index]').forEach((el) => {
-      el.addEventListener('input', (e) => { menu.Parameters.Sets[Number(el.getAttribute('data-is-name-index'))].name = e.target.value; refreshSaveButton(); });
-    });
-    formEl.querySelectorAll('[data-is-delete-index]').forEach((el) => {
-      el.addEventListener('click', () => deleteInnovationScreenItem(Number(el.getAttribute('data-is-delete-index'))));
-    });
-    const addBtn = formEl.querySelector('#ps-is-add');
-    if (addBtn) addBtn.addEventListener('click', addInnovationScreenItem);
-  }
-
-  function wireCfoChartForm(formEl, menu) {
-    formEl.querySelectorAll('[data-cfo-xkey-index]').forEach((el) => {
-      el.addEventListener('change', (e) => {
-        const i = Number(el.getAttribute('data-cfo-xkey-index'));
-        const set = menu.Parameters.Sets[i];
-        set.AverageCost = buildOutputFromKey(e.target.value);
-        set.xTitle = getOutputDisplayFromKey(e.target.value);
-        const xTitleInput = formEl.querySelector(`[data-cfo-xtitle-index="${i}"]`);
-        if (xTitleInput) xTitleInput.value = set.xTitle;
-        refreshSaveButton();
-      });
-    });
-    formEl.querySelectorAll('[data-cfo-ykey-index]').forEach((el) => {
-      el.addEventListener('change', (e) => {
-        const i = Number(el.getAttribute('data-cfo-ykey-index'));
-        const set = menu.Parameters.Sets[i];
-        set.AverageValueMinusCost = buildOutputFromKey(e.target.value);
-        set.yTitle = getOutputDisplayFromKey(e.target.value);
-        const yTitleInput = formEl.querySelector(`[data-cfo-ytitle-index="${i}"]`);
-        if (yTitleInput) yTitleInput.value = set.yTitle;
-        refreshSaveButton();
-      });
-    });
-    formEl.querySelectorAll('[data-cfo-xtitle-index]').forEach((el) => {
-      el.addEventListener('input', (e) => { menu.Parameters.Sets[Number(el.getAttribute('data-cfo-xtitle-index'))].xTitle = e.target.value; refreshSaveButton(); });
-    });
-    formEl.querySelectorAll('[data-cfo-ytitle-index]').forEach((el) => {
-      el.addEventListener('input', (e) => { menu.Parameters.Sets[Number(el.getAttribute('data-cfo-ytitle-index'))].yTitle = e.target.value; refreshSaveButton(); });
-    });
-    formEl.querySelectorAll('[data-cfo-name-index]').forEach((el) => {
-      el.addEventListener('input', (e) => { menu.Parameters.Sets[Number(el.getAttribute('data-cfo-name-index'))].name = e.target.value; refreshSaveButton(); });
-    });
-    formEl.querySelectorAll('[data-cfo-delete-index]').forEach((el) => {
-      el.addEventListener('click', () => deleteCFOChartItem(Number(el.getAttribute('data-cfo-delete-index'))));
-    });
-    const addBtn = formEl.querySelector('#ps-cfo-add');
-    if (addBtn) addBtn.addEventListener('click', addCFOChartItem);
-  }
-
-  function wireScatterPlotForm(formEl, menu) {
-    const same = formEl.querySelector('#ps-sp-samescale');
-    if (same) same.addEventListener('change', (e) => { menu.Parameters.SameScale = e.target.checked; refreshSaveButton(); });
-    const minEl = formEl.querySelector('#ps-sp-min');
-    const maxEl = formEl.querySelector('#ps-sp-max');
-    if (minEl) minEl.addEventListener('input', (e) => { menu.Parameters.Min = e.target.value === '' ? null : Number(e.target.value); refreshSaveButton(); });
-    if (maxEl) maxEl.addEventListener('input', (e) => { menu.Parameters.Max = e.target.value === '' ? null : Number(e.target.value); refreshSaveButton(); });
-    formEl.querySelectorAll('[data-sp-xkey-index]').forEach((el) => {
-      el.addEventListener('change', (e) => {
-        const i = Number(el.getAttribute('data-sp-xkey-index'));
-        const set = menu.Parameters.Sets[i];
-        set.x = buildOutputFromKey(e.target.value);
-        set.xTitle = getOutputDisplayFromKey(e.target.value);
-        const xTitleInput = formEl.querySelector(`[data-sp-xtitle-index="${i}"]`);
-        if (xTitleInput) xTitleInput.value = set.xTitle;
-        refreshSaveButton();
-      });
-    });
-    formEl.querySelectorAll('[data-sp-ykey-index]').forEach((el) => {
-      el.addEventListener('change', (e) => {
-        const i = Number(el.getAttribute('data-sp-ykey-index'));
-        const set = menu.Parameters.Sets[i];
-        set.y = buildOutputFromKey(e.target.value);
-        set.yTitle = getOutputDisplayFromKey(e.target.value);
-        const yTitleInput = formEl.querySelector(`[data-sp-ytitle-index="${i}"]`);
-        if (yTitleInput) yTitleInput.value = set.yTitle;
-        refreshSaveButton();
-      });
-    });
-    formEl.querySelectorAll('[data-sp-xtitle-index]').forEach((el) => {
-      el.addEventListener('input', (e) => { menu.Parameters.Sets[Number(el.getAttribute('data-sp-xtitle-index'))].xTitle = e.target.value; refreshSaveButton(); });
-    });
-    formEl.querySelectorAll('[data-sp-ytitle-index]').forEach((el) => {
-      el.addEventListener('input', (e) => { menu.Parameters.Sets[Number(el.getAttribute('data-sp-ytitle-index'))].yTitle = e.target.value; refreshSaveButton(); });
-    });
-    formEl.querySelectorAll('[data-sp-name-index]').forEach((el) => {
-      el.addEventListener('input', (e) => {
-        const i = Number(el.getAttribute('data-sp-name-index'));
-        const set = menu.Parameters.Sets[i];
-        set.name = e.target.value;
-        const wrapper = formEl.querySelector(`[data-sp-name-wrapper="${i}"]`);
-        if (wrapper) {
-          const hasError = (set.name === undefined || set.name === '') && menu.Parameters.Sets.length > 1;
-          wrapper.classList.toggle('has-error', hasError);
-        }
-        refreshSaveButton();
-      });
-    });
-    formEl.querySelectorAll('[data-sp-delete-index]').forEach((el) => {
-      el.addEventListener('click', () => deleteScatterPlotItem(Number(el.getAttribute('data-sp-delete-index'))));
-    });
-    const addBtn = formEl.querySelector('#ps-sp-add');
-    if (addBtn) addBtn.addEventListener('click', addScatterPlotItem);
-  }
-
-  function wireBucketChartForm(formEl, menu) {
-    formEl.querySelectorAll('[data-bc-title-index]').forEach((el) => {
-      el.addEventListener('input', (e) => {
-        const i = Number(el.getAttribute('data-bc-title-index'));
-        const s = menu.Parameters.Sets[i];
-        s.Title = e.target.value;
-        const wrapper = formEl.querySelector(`[data-bc-title-wrapper="${i}"]`);
-        if (wrapper) wrapper.classList.toggle('has-error', (s.Title === undefined || s.Title === '') && menu.Parameters.Sets.length > 1);
-        refreshSaveButton();
-      });
-    });
-    formEl.querySelectorAll('[data-bc-counts-index]').forEach((el) => {
-      el.addEventListener('change', (e) => { menu.Parameters.Sets[Number(el.getAttribute('data-bc-counts-index'))].Counts = e.target.value === 'true'; refreshSaveButton(); });
-    });
-    formEl.querySelectorAll('[data-bc-key-index]').forEach((el) => {
-      el.addEventListener('change', (e) => { menu.Parameters.Sets[Number(el.getAttribute('data-bc-key-index'))].Key = e.target.value; refreshSaveButton(); });
-    });
-    formEl.querySelectorAll('[data-bc-xtitle-index]').forEach((el) => {
-      el.addEventListener('input', (e) => { menu.Parameters.Sets[Number(el.getAttribute('data-bc-xtitle-index'))].xTitle = e.target.value; refreshSaveButton(); });
-    });
-    formEl.querySelectorAll('[data-bc-ytitle-index]').forEach((el) => {
-      el.addEventListener('input', (e) => { menu.Parameters.Sets[Number(el.getAttribute('data-bc-ytitle-index'))].yTitle = e.target.value; refreshSaveButton(); });
-    });
-    formEl.querySelectorAll('[data-bc-numbuckets-index]').forEach((el) => {
-      el.addEventListener('input', (e) => { state.numBuckets = e.target.value; });
-    });
-    formEl.querySelectorAll('[data-bc-low-index]').forEach((el) => {
-      el.addEventListener('input', (e) => { state.bucketLow = e.target.value; });
-    });
-    formEl.querySelectorAll('[data-bc-high-index]').forEach((el) => {
-      el.addEventListener('input', (e) => { state.bucketHigh = e.target.value; });
-    });
-    formEl.querySelectorAll('[data-bc-generate-index]').forEach((el) => {
-      el.addEventListener('click', () => generateBuckets(Number(el.getAttribute('data-bc-generate-index'))));
-    });
-    formEl.querySelectorAll('[data-bc-makeeditable-index]').forEach((el) => {
-      el.addEventListener('click', () => makeEditable(Number(el.getAttribute('data-bc-makeeditable-index'))));
-    });
-    formEl.querySelectorAll('[data-bc-addbucket-index]').forEach((el) => {
-      el.addEventListener('click', () => addBucket(Number(el.getAttribute('data-bc-addbucket-index'))));
-    });
-    formEl.querySelectorAll('[data-bc-deletebucket-index]').forEach((el) => {
-      el.addEventListener('click', () => deleteBucket(Number(el.getAttribute('data-bc-deletebucket-index'))));
-    });
-    formEl.querySelectorAll('[data-bc-stopediting-index]').forEach((el) => {
-      el.addEventListener('click', () => stopEditing(Number(el.getAttribute('data-bc-stopediting-index'))));
-    });
-    formEl.querySelectorAll('[data-bc-deleteset-index]').forEach((el) => {
-      el.addEventListener('click', () => deleteBucketSet(Number(el.getAttribute('data-bc-deleteset-index'))));
-    });
-    const addSetBtn = formEl.querySelector('#ps-bc-add-set');
-    if (addSetBtn) addSetBtn.addEventListener('click', addBucketChartSet);
-
-    formEl.querySelectorAll('[data-bucket-name-edit-toggle]').forEach((el) => {
-      el.addEventListener('click', () => {
-        const [si, bi] = el.getAttribute('data-bucket-name-edit-toggle').split(':').map(Number);
-        toggleNameEdit(state.bucketManagers[si].editableBuckets[bi], si);
-      });
-    });
-    formEl.querySelectorAll('[data-bucket-name-done]').forEach((el) => {
-      el.addEventListener('click', () => {
-        const [si, bi] = el.getAttribute('data-bucket-name-done').split(':').map(Number);
-        toggleNameEdit(state.bucketManagers[si].editableBuckets[bi], si);
-      });
-    });
-    formEl.querySelectorAll('[data-bucket-name-edit]').forEach((el) => {
-      el.addEventListener('input', (e) => {
-        const [si, bi] = el.getAttribute('data-bucket-name-edit').split(':').map(Number);
-        state.bucketManagers[si].editableBuckets[bi].Name = e.target.value;
-        refreshSaveButton();
-      });
-    });
-    formEl.querySelectorAll('[data-bucket-rules-edit-toggle]').forEach((el) => {
-      el.addEventListener('click', () => {
-        const [si, bi] = el.getAttribute('data-bucket-rules-edit-toggle').split(':').map(Number);
-        toggleRuleEdit(state.bucketManagers[si].editableBuckets[bi], si);
-      });
-    });
-    formEl.querySelectorAll('[data-bucket-rules-done]').forEach((el) => {
-      el.addEventListener('click', () => {
-        const [si, bi] = el.getAttribute('data-bucket-rules-done').split(':').map(Number);
-        toggleRuleEdit(state.bucketManagers[si].editableBuckets[bi], si);
-      });
-    });
-    formEl.querySelectorAll('[data-bucket-rule1-type]').forEach((el) => {
-      el.addEventListener('change', (e) => {
-        const [si, bi] = el.getAttribute('data-bucket-rule1-type').split(':').map(Number);
-        state.bucketManagers[si].editableBuckets[bi].rule1Type = RULE1_OPTIONS.find((o) => o.Value === e.target.value) || '';
-        renderActionForm();
-      });
-    });
-    formEl.querySelectorAll('[data-bucket-rule2-type]').forEach((el) => {
-      el.addEventListener('change', (e) => {
-        const [si, bi] = el.getAttribute('data-bucket-rule2-type').split(':').map(Number);
-        state.bucketManagers[si].editableBuckets[bi].rule2Type = RULE2_OPTIONS.find((o) => o.Value === e.target.value) || '';
-        renderActionForm();
-      });
-    });
-    formEl.querySelectorAll('[data-bucket-rule1-value]').forEach((el) => {
-      el.addEventListener('input', (e) => {
-        const [si, bi] = el.getAttribute('data-bucket-rule1-value').split(':').map(Number);
-        state.bucketManagers[si].editableBuckets[bi].rule1Value = e.target.value;
-        refreshSaveButton();
-      });
-    });
-    formEl.querySelectorAll('[data-bucket-rule2-value]').forEach((el) => {
-      el.addEventListener('input', (e) => {
-        const [si, bi] = el.getAttribute('data-bucket-rule2-value').split(':').map(Number);
-        state.bucketManagers[si].editableBuckets[bi].rule2Value = e.target.value;
-        refreshSaveButton();
-      });
-    });
-  }
-
-  function wirePortfolioUncertaintyForm(formEl, menu) {
-    const mvs = formEl.querySelector('#ps-pu-mvstype');
-    if (mvs) mvs.addEventListener('change', (e) => { menu.Parameters.MVSType = e.target.value; refreshSaveButton(); });
-    const source = formEl.querySelector('#ps-pu-source');
-    if (source) {
-      source.addEventListener('change', (e) => {
-        menu.Parameters.Source = e.target.value;
-        renderActionForm();
-      });
-    }
-    const rep = formEl.querySelector('#ps-pu-representation');
-    if (rep) rep.addEventListener('change', (e) => { menu.Parameters.Representation = e.target.value; refreshSaveButton(); });
-    const explanation = formEl.querySelector('#ps-pu-explanation');
-    if (explanation) explanation.addEventListener('input', (e) => { menu.Parameters.PortfolioUncExplanation = e.target.value; refreshSaveButton(); });
-    formEl.querySelectorAll('[data-pu-remove-key]').forEach((el) => {
-      el.addEventListener('click', () => {
-        removeFromIncludedKeys(el.getAttribute('data-pu-remove-key'));
-        renderActionForm();
-      });
-    });
-    formEl.querySelectorAll('[data-pu-add-key]').forEach((el) => {
-      el.addEventListener('click', (evt) => {
-        evt.preventDefault();
-        addToRollupKeys(el.getAttribute('data-pu-add-key'));
-        renderActionForm();
-      });
-    });
-  }
-
-  // ---- rendering: bottom bar / modals ----
 
   function refreshSaveButton() {
     const btn = container.querySelector('#ps-save-btn');

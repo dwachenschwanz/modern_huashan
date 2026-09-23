@@ -56,36 +56,116 @@ const appStructure = {
         Sets: [{ CellLink: 'Sheet1!Table', OutputKey: 'Table', Units: 'USD', name: 'Base', yTitle: 'Value' }],
       },
     },
+    {
+      ID: 'metalog',
+      Display: 'Metalog',
+      Command: 'METALOG_DISPLAY',
+      Parameters: {
+        MetaLogKeys: [],
+        FittedPointExplanation: '',
+        CalcMVSFromFittedPoints: false,
+      },
+    },
+    {
+      ID: 'portfolio-source',
+      Display: 'Portfolio Source',
+      Command: 'METALOG_DISPLAY',
+      Parameters: { MetaLogKeys: ['Output', 'Growth'] },
+    },
+    {
+      ID: 'portfolio-table',
+      Display: 'Portfolio Table',
+      Command: 'TABLE',
+      Parameters: { OutputKey: 'Table', CellLink: 'Sheet1!Table' },
+    },
   ],
   PostProcessingOutputsForPortfolio: [],
 };
 
 const platformAppStructure = {
-  MENU: [{
-    ID: 'bucket-chart',
-    Display: 'Bucket Chart',
-    Command: 'BUCKET_CHART',
-    Parameters: {
-      Sets: [{
-        Title: 'Distribution',
-        xTitle: 'Value',
-        yTitle: 'Percentage',
-        Key: 'Output',
-        Counts: false,
-        xBuckets: [{ GE: '0', LT: '10', Name: '0-10' }],
-      }],
+  MENU: [
+    {
+      ID: 'bucket-chart',
+      Display: 'Bucket Chart',
+      Command: 'BUCKET_CHART',
+      Parameters: {
+        Sets: [{
+          Title: 'Distribution',
+          xTitle: 'Value',
+          yTitle: 'Percentage',
+          Key: 'Output',
+          Counts: false,
+          xBuckets: [{ GE: '0', LT: '10', Name: '0-10' }],
+        }],
+      },
     },
-  }],
+    {
+      ID: 'cfo-chart',
+      Display: 'CFO Chart',
+      Command: 'CFO_CHART',
+      Parameters: { Sets: [{ AverageCost: '', xTitle: '', AverageValueMinusCost: '', yTitle: '', name: 'CFOChart1' }] },
+    },
+    {
+      ID: 'innovation-screen',
+      Display: 'Innovation Screen',
+      Command: 'INNOVATION_SCREEN',
+      Parameters: { Sets: [{ x: '', xTitle: '', y: '', yTitle: '', VerticalCutoff: null, name: 'Innovation Screen1' }] },
+    },
+    {
+      ID: 'scatter-plot',
+      Display: 'Scatter Plot',
+      Command: 'SCATTER_PLOT',
+      Parameters: { Sets: [{ x: '', y: '', xTitle: '', yTitle: '', name: 'Series 1' }], SameScale: false, Min: null, Max: null },
+    },
+  ],
   PostProcessingOutputsForPortfolio: [],
 };
 
 const portfolioStructure = {
-  MENU: [{
-    ID: 'compare-value',
-    Display: 'Compare Value',
-    Command: 'COMPARE_VALUE',
-    Parameters: { Keys: [], PrecisionOptions: [], DefaultPrecision: 0, Total: false },
-  }],
+  MENU: [
+    {
+      ID: 'compare-value',
+      Display: 'Compare Value',
+      Command: 'COMPARE_VALUE',
+      Parameters: { Keys: [], Units: [], Titles: [], PrecisionOptions: [], DefaultPrecision: 0, Total: false, Min: null, Max: null },
+    },
+    {
+      ID: 'portfolio-cfo',
+      Display: 'Portfolio CFO',
+      Command: 'CFO_CHART',
+      Parameters: { Sets: [{ AverageCost: '', xTitle: '', AverageValueMinusCost: '', yTitle: '', name: 'CFOChart1' }] },
+    },
+    {
+      ID: 'portfolio-innovation',
+      Display: 'Portfolio Innovation',
+      Command: 'INNOVATION_SCREEN',
+      Parameters: { Sets: [{ x: '', xTitle: '', y: '', yTitle: '', VerticalCutoff: null, name: 'Innovation Screen1' }] },
+    },
+    {
+      ID: 'portfolio-scatter',
+      Display: 'Portfolio Scatter',
+      Command: 'SCATTER_PLOT',
+      Parameters: { Sets: [{ x: '', y: '', xTitle: '', yTitle: '', name: 'Series 1' }], SameScale: false, Min: null, Max: null },
+    },
+    {
+      ID: 'portfolio-table-view',
+      Display: 'Portfolio Table View',
+      Command: 'ADD_TABLES',
+      Parameters: { Key: 'Table', NodeLookup: 'Outputs', Pnl: false, PrecisionOptions: [0, 1, 2], DefaultPrecision: 2, Keys: [], Units: [], Titles: [] },
+    },
+    {
+      ID: 'portfolio-buckets',
+      Display: 'Portfolio Buckets',
+      Command: 'BUCKET_CHART',
+      Parameters: { Sets: [{ Title: 'Distribution', xTitle: 'Value', yTitle: 'Percentage', Key: 'Output', Counts: false, xBuckets: [{ GE: '0', LT: '10', Name: '0-10' }] }] },
+    },
+    {
+      ID: 'portfolio-uncertainty',
+      Display: 'Portfolio Uncertainty',
+      Command: 'PORTFOLIO_UNCERTAINTY',
+      Parameters: { Source: '', MVSType: '', RollupKeys: [], PortfolioUncExplanation: '', Representation: '' },
+    },
+  ],
 };
 
 const templateJson = {
@@ -118,6 +198,7 @@ function commandResult(command, url) {
     GetCharts: { Charts: [] },
     GetTemplateJsonFiles: templateJson,
     SaveAppStructure: 'Saved',
+    SavePortfolioStructure: 'Saved',
   };
   if (!(command in results)) throw new Error(`Unhandled Wizard command: ${command}`);
   return results[command];
@@ -149,7 +230,7 @@ async function mockBackend(page, saveRequests) {
       return;
     }
     if (url.pathname === '/kirk/wizard/main') {
-      if (url.searchParams.get('command') === 'SaveAppStructure') {
+      if (['SaveAppStructure', 'SavePortfolioStructure'].includes(url.searchParams.get('command'))) {
         saveRequests.push(route.request().postDataJSON());
       }
       await route.fulfill({ json: commandEnvelope(commandResult(url.searchParams.get('command'), url)) });
@@ -308,6 +389,54 @@ test('App Structure adds and removes Waterfall rows', async ({ page }) => {
   assertNoPageErrors();
 });
 
+test('App Structure edits Metalog keys, failure stages, and simulation settings', async ({ page }) => {
+  const assertNoPageErrors = failOnPageErrors(page);
+  await page.goto(`/#/appstructure/${TEMPLATE}`);
+
+  await page.getByText('Metalog', { exact: true }).click();
+  await page.locator('[data-metalog-key="Output"]').click();
+  await expect(page.getByText('Output', { exact: true }).last()).toBeVisible();
+
+  await page.getByText('Explanation', { exact: true }).click();
+  await page.locator('[data-field="Parameters.FittedPointExplanation"]').fill('Updated fitted-point guidance');
+
+  await page.getByText('FailureBranch', { exact: true }).click();
+  await page.locator('#as-failure-add').click();
+  await page.locator('[data-failure-field="ProbabilityFailureOfStageKey:0"]').selectOption('Output');
+  await page.locator('[data-failure-field="CumeCostOfStageKey:0"]').selectOption('Growth');
+  await page.locator('#as-failure-add').click();
+  await expect(page.locator('[data-failure-delete]')).toHaveCount(2);
+  await page.locator('[data-failure-delete="1"]').click();
+  await expect(page.locator('[data-failure-delete]')).toHaveCount(1);
+
+  await page.getByText('Simulation', { exact: true }).click();
+  await page.locator('[data-field="Parameters.CalcMVSFromFittedPoints"]').check();
+
+  await page.locator('#as-save-btn').click();
+  const commitDialog = page.getByRole('dialog', { name: 'Change Message' });
+  await commitDialog.locator('#commit-display').fill('Update Metalog settings');
+  await commitDialog.getByRole('button', { name: 'Ok' }).click();
+
+  await expect.poll(() => saveRequests.length).toBe(1);
+  const savedMetalog = saveRequests[0].data.MENU.find((menu) => menu.ID === 'metalog');
+  const savedTornado = saveRequests[0].data.MENU.find((menu) => menu.ID === 'tornado');
+  expect(savedMetalog.Parameters).toMatchObject({
+    MetaLogKeys: ['Output'],
+    FittedPointExplanation: 'Updated fitted-point guidance',
+    CalcMVSFromFittedPoints: true,
+    FailureBranch: {
+      Stages: [{
+        NodeLookup: 'Outputs',
+        ProbabilityFailureOfStageKey: 'Output',
+        CumeCostOfStageKey: 'Growth',
+      }],
+      SubtractCostGivenSuccess: true,
+    },
+  });
+  expect(savedTornado.Parameters.MetaLogKeys).toEqual(['Output']);
+  assertNoPageErrors();
+});
+
 test('Platform App Structure edits and generates Bucket Chart buckets', async ({ page }) => {
   const assertNoPageErrors = failOnPageErrors(page);
   await page.goto(`/#/platformAppStructure/${TEMPLATE}`);
@@ -327,6 +456,197 @@ test('Platform App Structure edits and generates Bucket Chart buckets', async ({
   await page.locator('[data-bucket-generate="1"]').click();
   await expect(page.locator('[data-bucket-name^="1:"]')).toHaveCount(2);
   await expect(page.locator('[data-bucket-name="1:0"]')).toHaveValue('0.00-5.00');
+  assertNoPageErrors();
+});
+
+test('Platform App Structure edits CFO, Innovation, and Scatter series', async ({ page }) => {
+  const assertNoPageErrors = failOnPageErrors(page);
+  await page.goto(`/#/platformAppStructure/${TEMPLATE}`);
+
+  await page.getByText('CFO Chart', { exact: true }).click();
+  await page.locator('[data-set-field="AverageCost:0"]').selectOption('Output');
+  await page.locator('[data-set-field="AverageValueMinusCost:0"]').selectOption('Growth');
+  await page.locator('#as-cfo-add').click();
+  await expect(page.locator('[data-set-field^="name:"]')).toHaveCount(2);
+  await page.locator('[data-cfo-delete="1"]').click();
+
+  await page.getByText('Innovation Screen', { exact: true }).click();
+  await page.locator('[data-set-field="x:0"]').selectOption('Output');
+  await page.locator('[data-set-field="y:0"]').selectOption('Growth');
+  await page.locator('[data-set-field="VerticalCutoff:0"]').fill('25');
+  await page.locator('#as-innovation-add').click();
+  await expect(page.locator('[data-set-field^="name:"]')).toHaveCount(2);
+  await page.locator('[data-innovation-delete="1"]').click();
+
+  await page.getByText('Scatter Plot', { exact: true }).click();
+  await page.locator('[data-field="Parameters.SameScale"]').check();
+  await page.locator('[data-field="Parameters.Min"]').fill('0');
+  await page.locator('[data-field="Parameters.Max"]').fill('100');
+  await page.locator('[data-set-field="x:0"]').selectOption('Output');
+  await page.locator('[data-set-field="y:0"]').selectOption('Growth');
+  await page.locator('#as-scatter-add').click();
+  await expect(page.locator('[data-set-field^="name:"]')).toHaveCount(2);
+  await page.locator('[data-scatter-delete="1"]').click();
+
+  await page.locator('#as-save-btn').click();
+  const commitDialog = page.getByRole('dialog', { name: 'Change Message' });
+  await commitDialog.locator('#commit-display').fill('Update series charts');
+  await commitDialog.getByRole('button', { name: 'Ok' }).click();
+
+  await expect.poll(() => saveRequests.length).toBe(1);
+  const menus = saveRequests[0].data.MENU;
+  expect(menus.find((menu) => menu.ID === 'cfo-chart').Parameters.Sets[0]).toMatchObject({
+    AverageCost: "Outputs['Output']",
+    AverageValueMinusCost: "Outputs['Growth']",
+    xTitle: 'Output',
+    yTitle: 'Growth',
+  });
+  expect(menus.find((menu) => menu.ID === 'innovation-screen').Parameters.Sets[0]).toMatchObject({
+    x: "Outputs['Output']",
+    y: "Outputs['Growth']",
+    xTitle: 'Output',
+    yTitle: 'Growth',
+    VerticalCutoff: 25,
+  });
+  expect(menus.find((menu) => menu.ID === 'scatter-plot').Parameters).toMatchObject({
+    SameScale: true,
+    Min: 0,
+    Max: 100,
+    Sets: [{
+      x: "Outputs['Output']",
+      y: "Outputs['Growth']",
+      xTitle: 'Output',
+      yTitle: 'Growth',
+      name: 'Series 1',
+    }],
+  });
+  assertNoPageErrors();
+});
+
+test('Portfolio Structure edits command forms and saves their settings', async ({ page }) => {
+  const assertNoPageErrors = failOnPageErrors(page);
+  await page.goto(`/#/portfoliostructure/${TEMPLATE}`);
+
+  await page.locator('#ps-cv-add').click();
+  await page.locator('[data-cv-key-index="0"]').selectOption('Output');
+  await expect(page.locator('[data-cv-unit-index="0"]')).toHaveValue('USD');
+  await expect(page.locator('[data-cv-title-index="0"]')).toHaveValue('Output');
+  await page.locator('#ps-cv-total').check();
+  await page.locator('#ps-cv-min').fill('10');
+  await page.locator('#ps-cv-max').fill('90');
+
+  await page.getByText('Portfolio CFO', { exact: true }).first().click();
+  await page.locator('[data-cfo-xkey-index="0"]').selectOption('Output');
+  await page.locator('[data-cfo-ykey-index="0"]').selectOption('Growth');
+  await page.locator('#ps-cfo-add').click();
+  await expect(page.locator('[data-cfo-name-index]')).toHaveCount(2);
+  await page.locator('[data-cfo-delete-index="1"]').click();
+
+  await page.getByText('Portfolio Innovation', { exact: true }).first().click();
+  await page.locator('[data-is-xkey-index="0"]').selectOption('Output');
+  await page.locator('[data-is-ykey-index="0"]').selectOption('Growth');
+  await page.locator('[data-is-vcutoff-index="0"]').fill('25');
+
+  await page.getByText('Portfolio Scatter', { exact: true }).first().click();
+  await page.locator('#ps-sp-samescale').check();
+  await page.locator('#ps-sp-min').fill('0');
+  await page.locator('#ps-sp-max').fill('100');
+  await page.locator('[data-sp-xkey-index="0"]').selectOption('Output');
+  await page.locator('[data-sp-ykey-index="0"]').selectOption('Growth');
+
+  await page.locator('#ps-save-btn').click();
+  const commitDialog = page.getByRole('dialog', { name: 'Change Message' });
+  await commitDialog.locator('#commit-display').fill('Update portfolio charts');
+  await commitDialog.getByRole('button', { name: 'Ok' }).click();
+
+  await expect.poll(() => saveRequests.length).toBe(1);
+  expect(saveRequests[0].commitMessage).toBe('Update portfolio charts');
+  const menus = saveRequests[0].data.MENU;
+  expect(menus.find((menu) => menu.ID === 'compare-value').Parameters).toMatchObject({
+    Keys: ['Output'],
+    Units: ['USD'],
+    Titles: ['Output'],
+    Total: true,
+    Min: 10,
+    Max: 90,
+  });
+  expect(menus.find((menu) => menu.ID === 'portfolio-cfo').Parameters.Sets[0]).toMatchObject({
+    AverageCost: "Outputs['Output']",
+    AverageValueMinusCost: "Outputs['Growth']",
+    xTitle: 'Output',
+    yTitle: 'Growth',
+  });
+  expect(menus.find((menu) => menu.ID === 'portfolio-innovation').Parameters.Sets[0]).toMatchObject({
+    x: "Outputs['Output']",
+    y: "Outputs['Growth']",
+    VerticalCutoff: 25,
+  });
+  expect(menus.find((menu) => menu.ID === 'portfolio-scatter').Parameters).toMatchObject({
+    SameScale: true,
+    Min: 0,
+    Max: 100,
+    Sets: [{ x: "Outputs['Output']", y: "Outputs['Growth']", name: 'Series 1' }],
+  });
+  assertNoPageErrors();
+});
+
+test('Portfolio Structure edits tables, buckets, and uncertainty settings', async ({ page }) => {
+  const assertNoPageErrors = failOnPageErrors(page);
+  await page.goto(`/#/portfoliostructure/${TEMPLATE}`);
+
+  await page.getByText('Portfolio Table View', { exact: true }).first().click();
+  await expect(page.locator('[data-table-index="0"]')).toHaveText('Portfolio Table');
+  await page.locator('[data-table-index="0"]').click();
+  await page.locator('#ps-add-tables-pnl').check();
+  await page.locator('#ps-min-precision').fill('1');
+  await page.locator('#ps-max-precision').fill('3');
+  await page.locator('#ps-default-precision').selectOption('3');
+
+  await page.getByText('Portfolio Buckets', { exact: true }).first().click();
+  await page.locator('[data-bc-makeeditable-index="0"]').click();
+  await page.locator('[data-bucket-name-edit-toggle="0:0"]').click();
+  await page.locator('[data-bucket-name-edit="0:0"]').fill('Low');
+  await page.locator('[data-bucket-name-done="0:0"]').click();
+  await page.locator('#ps-bc-add-set').click();
+  await page.locator('[data-bc-title-index="1"]').fill('Second distribution');
+  await page.locator('[data-bc-numbuckets-index="1"]').fill('2');
+  await page.locator('[data-bc-low-index="1"]').fill('0');
+  await page.locator('[data-bc-high-index="1"]').fill('20');
+  await page.locator('[data-bc-generate-index="1"]').click();
+  await page.locator('[data-bc-makeeditable-index="1"]').click();
+  await expect(page.locator('[data-bucket-name-edit-toggle^="1:"]')).toHaveCount(2);
+
+  await page.getByText('Portfolio Uncertainty', { exact: true }).first().click();
+  await page.locator('#ps-pu-source').selectOption('portfolio-source');
+  await page.locator('#ps-pu-mvstype').selectOption('MVSFromFittedPoints');
+  await page.locator('#ps-pu-representation').selectOption('Curve');
+  await page.locator('#ps-pu-explanation').fill('Portfolio uncertainty guidance');
+  await page.locator('[data-pu-add-key="Output"]').click();
+
+  await page.locator('#ps-save-btn').click();
+  const commitDialog = page.getByRole('dialog', { name: 'Change Message' });
+  await commitDialog.locator('#commit-display').fill('Update portfolio configuration');
+  await commitDialog.getByRole('button', { name: 'Ok' }).click();
+
+  await expect.poll(() => saveRequests.length).toBe(1);
+  const menus = saveRequests[0].data.MENU;
+  expect(menus.find((menu) => menu.ID === 'portfolio-table-view').Parameters).toMatchObject({
+    Key: 'Table',
+    Pnl: true,
+    PrecisionOptions: [1, 2, 3],
+    DefaultPrecision: 3,
+  });
+  expect(menus.find((menu) => menu.ID === 'portfolio-buckets').Parameters.Sets).toMatchObject([
+    { xBuckets: [{ Name: 'Low' }] },
+    { Title: 'Second distribution', xBuckets: [{ Name: '0.00-10.00' }, { Name: '10.00-20.00' }] },
+  ]);
+  expect(menus.find((menu) => menu.ID === 'portfolio-uncertainty').Parameters).toMatchObject({
+    Source: 'portfolio-source',
+    MVSType: 'MVSFromFittedPoints',
+    Representation: 'Curve',
+    PortfolioUncExplanation: 'Portfolio uncertainty guidance',
+    RollupKeys: ['Output'],
+  });
   assertNoPageErrors();
 });
 

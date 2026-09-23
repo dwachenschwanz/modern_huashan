@@ -8,6 +8,12 @@ function makeRule2Options() {
   return [{ Label: '', Value: 'NONE' }, { Label: '<', Value: 'LT' }, { Label: '<=', Value: 'LE' }];
 }
 
+const SERIES_DEFINITIONS = {
+  CFO_CHART: { x: 'AverageCost', y: 'AverageValueMinusCost', add: '#as-cfo-add', remove: '[data-cfo-delete]', removeData: 'cfoDelete' },
+  INNOVATION_SCREEN: { x: 'x', y: 'y', add: '#as-innovation-add', remove: '[data-innovation-delete]', removeData: 'innovationDelete' },
+  SCATTER_PLOT: { x: 'x', y: 'y', add: '#as-scatter-add', remove: '[data-scatter-delete]', removeData: 'scatterDelete' },
+};
+
 export class BucketManager {
   constructor(buckets) {
     this.rule1Options = makeRule1Options();
@@ -80,6 +86,28 @@ export function renderTornadoEditor({ menu, state, commandHeaderHtml, findKey, o
     ${state.tornadoTab === 'post' ? `<div class="container-fluid">${state.postProcessing.map((sendback, i) => `<div class="row table-padding"><div class="col-sm-1"><button class="btn btn-danger" data-sendback-delete="${i}"><span class="glyphicon glyphicon-trash"></span></button></div><div class="col-sm-2"><select class="form-control" data-sendback-to="${i}">${state.sendBackElements.map((item) => `<option value="${escapeHtml(item.value)}" ${sendback.Reference && sendback.Reference.slice(22) === item.value ? 'selected' : ''}>${escapeHtml(item.display)}</option>`).join('')}</select></div><div class="col-sm-3"><select class="form-control" data-sendback-tornado="${i}">${includedKeys.map((key, keyIndex) => `<option value="${keyIndex}" ${sendback.Reference && Number(sendback.Reference[19]) === keyIndex ? 'selected' : ''}>${escapeHtml((findKey(state.outputs)(key) || {}).Display || key)}</option>`).join('')}</select></div><div class="col-sm-4"><select class="form-control" data-sendback-field="${i}">${optionHtml(state.allDataStructureComponents, sendback.SendBack, (item) => item.CellLink, (item) => item.Display)}</select></div></div>`).join('')}<button class="btn btn-success" id="as-sendback-add"><span class="glyphicon glyphicon-plus"></span></button></div>` : ''}`;
 }
 
+export function renderMetalogEditor({ menu, state, commandHeaderHtml, findKey, optionHtml }) {
+  const parameters = menu.Parameters;
+  const includedKeys = parameters.MetaLogKeys || (parameters.MetaLogKeys = []);
+  const availableKeys = state.tornadoValueMetricKeys.filter((key) => !includedKeys.includes(key));
+  const failureBranch = parameters.FailureBranch;
+  return `${commandHeaderHtml(menu)}
+    <ul class="nav nav-tabs"><li class="${state.metalogTab === 'metalogKeys' ? 'active' : ''}"><a href="" data-metalog-tab="metalogKeys">MetalogKeys</a></li><li class="${state.metalogTab === 'explanation' ? 'active' : ''}"><a href="" data-metalog-tab="explanation">Explanation</a></li><li class="${state.metalogTab === 'failure' ? 'active' : ''}"><a href="" data-metalog-tab="failure">FailureBranch</a></li><li class="${state.metalogTab === 'simulation' ? 'active' : ''}"><a href="" data-metalog-tab="simulation">Simulation</a></li></ul>
+    ${state.metalogTab === 'metalogKeys' ? `<div><div class="col-sm-6"><h4>Included MetalogKeys</h4></div><div class="col-sm-6"><h4>Excluded MetalogKeys</h4></div><div class="col-sm-6" style="height:420px;overflow:auto"><ul class="list-group">${includedKeys.map((key) => `<li class="list-group-item"><a class="text-danger"><i class="fa fa-minus-square fa-lg" data-metalog-key="${escapeHtml(key)}"></i></a> ${escapeHtml((findKey(state.outputs)(key) || {}).Display || key)}</li>`).join('')}</ul></div><div class="col-sm-6" style="height:420px;overflow:auto"><ul class="list-group">${availableKeys.map((key) => `<li class="list-group-item"><a class="text-success"><i class="fa fa-plus-square fa-lg" data-metalog-key="${escapeHtml(key)}"></i></a> ${escapeHtml((findKey(state.outputs)(key) || {}).Display || key)}</li>`).join('')}</ul></div></div>` : ''}
+    ${state.metalogTab === 'explanation' ? `<div class="container-fluid"><div class="row table-padding"><div class="col-sm-8"><p>The text entered here will be used to explain the metalog in the system.</p><textarea rows="10" class="form-control" data-field="Parameters.FittedPointExplanation">${escapeHtml(parameters.FittedPointExplanation || '')}</textarea></div></div></div>` : ''}
+    ${state.metalogTab === 'failure' ? `<div class="container-fluid">${failureBranch ? failureBranch.Stages.map((stage, index) => `<div class="row table-padding"><div class="col-sm-2"><b>Probability of Failure of Stage Key</b></div><div class="col-sm-3"><select class="form-control" data-failure-field="ProbabilityFailureOfStageKey:${index}">${optionHtml(state.outputs, stage.ProbabilityFailureOfStageKey, (item) => item.Key, (item) => item.Key)}</select></div><div class="col-sm-2"><b>Cumulative Cost of Stage Key</b></div><div class="col-sm-3"><select class="form-control" data-failure-field="CumeCostOfStageKey:${index}">${optionHtml(state.outputs, stage.CumeCostOfStageKey, (item) => item.Key, (item) => item.Key)}</select></div><div class="col-sm-1"><button class="btn btn-danger" data-failure-delete="${index}"><span class="glyphicon glyphicon-trash"></span></button></div></div>`).join('') : ''}<button class="btn btn-success" id="as-failure-add"><span class="glyphicon glyphicon-plus"></span></button></div>` : ''}
+    ${state.metalogTab === 'simulation' ? `<div class="container-fluid"><div class="row table-padding"><div class="col-sm-8"><label><input type="checkbox" data-field="Parameters.CalcMVSFromFittedPoints" ${parameters.CalcMVSFromFittedPoints ? 'checked' : ''}> <b>Calculate Mean, Variance and Skewness from Fitted Points</b></label></div></div></div>` : ''}`;
+}
+
+export function renderSeriesEditor({ menu, state, commandHeaderHtml, optionHtml, getKeyFrom, getOutputDisplayFromKey }) {
+  const sets = menu.Parameters.Sets || [];
+  const definition = SERIES_DEFINITIONS[menu.Command];
+  return `${commandHeaderHtml(menu)}
+    ${menu.Command === 'SCATTER_PLOT' ? `<div class="row table-padding"><div class="col-sm-2"><b>Use Same Scale</b></div><div class="col-sm-2"><input type="checkbox" data-field="Parameters.SameScale" ${menu.Parameters.SameScale ? 'checked' : ''}></div><div class="col-sm-1"><b>Min</b></div><div class="col-sm-2"><input type="number" class="form-control" data-field="Parameters.Min" value="${menu.Parameters.Min ?? ''}"></div><div class="col-sm-1"><b>Max</b></div><div class="col-sm-2"><input type="number" class="form-control" data-field="Parameters.Max" value="${menu.Parameters.Max ?? ''}"></div></div>` : ''}
+    ${sets.map((set, index) => `<div class="well"><div class="row table-padding"><div class="col-sm-2"><b>${menu.Command === 'SCATTER_PLOT' ? `Series ${index + 1}` : 'Name'}</b></div><div class="col-sm-3"><input class="form-control" data-set-field="name:${index}" value="${escapeHtml(set.name || '')}"></div></div><div class="row table-padding"><div class="col-sm-2"><b>X Axis</b></div><div class="col-sm-3"><select class="form-control" data-set-field="${definition.x}:${index}">${optionHtml(state.allOutputs, getKeyFrom(set[definition.x]), (item) => item.Key, (item) => getOutputDisplayFromKey(item.Key))}</select></div><div class="col-sm-2"><b>X Title</b></div><div class="col-sm-3"><input class="form-control" data-set-field="xTitle:${index}" value="${escapeHtml(set.xTitle || '')}"></div></div><div class="row table-padding"><div class="col-sm-2"><b>Y Axis</b></div><div class="col-sm-3"><select class="form-control" data-set-field="${definition.y}:${index}">${optionHtml(state.allOutputs, getKeyFrom(set[definition.y]), (item) => item.Key, (item) => getOutputDisplayFromKey(item.Key))}</select></div><div class="col-sm-2"><b>Y Title</b></div><div class="col-sm-3"><input class="form-control" data-set-field="yTitle:${index}" value="${escapeHtml(set.yTitle || '')}"></div><div class="col-sm-1"><button class="btn btn-danger" ${definition.remove.slice(1, -1)}="${index}"><span class="glyphicon glyphicon-trash"></span></button></div></div>${menu.Command === 'INNOVATION_SCREEN' ? `<div class="row table-padding"><div class="col-sm-2"><b>Vertical Cut-off</b></div><div class="col-sm-3"><input type="number" class="form-control" data-set-field="VerticalCutoff:${index}" value="${set.VerticalCutoff ?? ''}"></div></div>` : ''}</div>`).join('')}
+    <button class="btn btn-success" id="${definition.add.slice(1)}"><span class="glyphicon glyphicon-plus"></span></button>`;
+}
+
 export function renderBucketChartEditor({ menu, state, commandHeaderHtml, optionHtml, getOutputDisplayFromKey }) {
   const sets = menu.Parameters.Sets || [];
   return `${commandHeaderHtml(menu)}${sets.map((set, setIndex) => {
@@ -106,6 +134,37 @@ export function bindTornadoEditor({ root, state, render, selectTornado, addSendB
   bindAll(root, '[data-sendback-to]', 'change', (event) => { const index = Number(event.currentTarget.dataset.sendbackTo); selectSendBackTo(state.postProcessing[index], event.currentTarget.value); render(); });
   bindAll(root, '[data-sendback-tornado]', 'change', (event) => { const index = Number(event.currentTarget.dataset.sendbackTornado); selectSendBackTornado(state.postProcessing[index], Number(event.currentTarget.value)); render(); });
   bindAll(root, '[data-sendback-field]', 'change', (event) => { state.postProcessing[Number(event.currentTarget.dataset.sendbackField)].SendBack = event.currentTarget.value; });
+}
+
+export function bindMetalogEditor({ root, menu, state, render, selectWithinMetalog, addFailurebranch, deleteFailurebranchStage }) {
+  bindAll(root, '[data-metalog-tab]', 'click', (event) => { event.preventDefault(); state.metalogTab = event.currentTarget.dataset.metalogTab; render(); });
+  bindAll(root, '[data-metalog-key]', 'click', (event) => { selectWithinMetalog(event.currentTarget.dataset.metalogKey); render(); });
+  root.querySelector('#as-failure-add')?.addEventListener('click', () => { addFailurebranch(); render(); });
+  bindAll(root, '[data-failure-delete]', 'click', (event) => { deleteFailurebranchStage(Number(event.currentTarget.dataset.failureDelete)); render(); });
+  bindAll(root, '[data-failure-field]', 'change', (event) => {
+    const [field, index] = event.currentTarget.dataset.failureField.split(':');
+    menu.Parameters.FailureBranch.Stages[Number(index)][field] = event.currentTarget.value;
+  });
+}
+
+export function bindSeriesEditor({ root, menu, render, inputValue, buildOutputFromKey, getOutputDisplayFromKey, addItem, deleteItem }) {
+  const definition = SERIES_DEFINITIONS[menu.Command];
+  bindAll(root, '[data-set-field]', 'change', (event) => {
+    const [field, indexText] = event.currentTarget.dataset.setField.split(':');
+    const index = Number(indexText);
+    const isAxis = ['x', 'y', 'AverageCost', 'AverageValueMinusCost'].includes(field);
+    menu.Parameters.Sets[index][field] = isAxis ? buildOutputFromKey(event.currentTarget.value) : inputValue(event.currentTarget);
+    if (isAxis) {
+      menu.Parameters.Sets[index][field === 'x' || field === 'AverageCost' ? 'xTitle' : 'yTitle'] = getOutputDisplayFromKey(event.currentTarget.value) || '';
+      render();
+    }
+  });
+  bindAll(root, 'input[data-set-field]', 'input', (event) => {
+    const [field, index] = event.currentTarget.dataset.setField.split(':');
+    menu.Parameters.Sets[Number(index)][field] = inputValue(event.currentTarget);
+  });
+  root.querySelector(definition.add)?.addEventListener('click', () => { addItem(); render(); });
+  bindAll(root, definition.remove, 'click', (event) => { deleteItem(Number(event.currentTarget.dataset[definition.removeData])); render(); });
 }
 
 export function bindBucketChartEditor({ root, menu, state, render, inputValue, generateBuckets, addBucket, deleteBucket, deleteBucketSet, addBucketChartSet, selectMenu }) {
