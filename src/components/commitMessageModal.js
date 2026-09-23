@@ -8,12 +8,12 @@ import { hideModal } from './uiInteractions.js';
 
 export function commitMessageModalHtml() {
   return `
-<div class="modal fade" id="commitMessageModal" tabindex="-1" role="dialog" aria-hidden="true">
+<div class="modal fade" id="commitMessageModal" tabindex="-1" role="dialog" aria-labelledby="commit-message-title" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
-        <h4 class="modal-title">Change Message</h4>
+        <h4 class="modal-title" id="commit-message-title">Change Message</h4>
       </div>
       <div class="modal-body">
         <h4>You will see this message in the revisions page</h4>

@@ -376,7 +376,9 @@ export function mount(container, params) {
       state.bucketLow = '';
       state.bucketHigh = '';
       state.numBuckets = '';
-      state.bucketManagers = menu.Parameters.Sets.map((s) => new BucketManager(s.xBuckets));
+      state.bucketManagers = menu.Parameters.Sets.map((set) => (
+        set.xBuckets && set.xBuckets.length > 0 ? new BucketManager(set.xBuckets) : null
+      ));
     }
   }
 
@@ -801,9 +803,9 @@ export function mount(container, params) {
 
   function openNew() {
     state.newAppStructureAlerts = [];
-    const displayInput = container.querySelector('#new-display');
-    const projectSelect = container.querySelector('#new-command-project');
-    const platformSelect = container.querySelector('#new-command-platform');
+    const displayInput = document.querySelector('#new-display');
+    const projectSelect = document.querySelector('#new-command-project');
+    const platformSelect = document.querySelector('#new-command-platform');
     if (displayInput) displayInput.value = '';
     if (projectSelect) projectSelect.value = '';
     if (platformSelect) platformSelect.value = '';
@@ -1194,11 +1196,11 @@ export function mount(container, params) {
   function modalsHtml() {
     const selectedName = state.selectedMenu ? state.selectedMenu.Display || '' : '';
     return `
-      <div class="modal fade" id="deleteAppStructureModal" tabindex="-1" role="dialog" aria-hidden="true">
+      <div class="modal fade" id="deleteAppStructureModal" tabindex="-1" role="dialog" aria-labelledby="delete-app-structure-title" aria-hidden="true">
         <div class="modal-dialog"><div class="modal-content">
           <div class="modal-header">
             <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
-            <h4 class="modal-title">Delete Menu Item</h4>
+            <h4 class="modal-title" id="delete-app-structure-title">Delete Menu Item</h4>
           </div>
           <div class="modal-body"><h4>Are you sure you want to delete <b>${escapeHtml(selectedName)}</b>?</h4></div>
           <div class="modal-footer">
@@ -1208,11 +1210,11 @@ export function mount(container, params) {
         </div></div>
       </div>
 
-      <div class="modal fade" id="editAppStructureModal" tabindex="-1" role="dialog" aria-hidden="true">
+      <div class="modal fade" id="editAppStructureModal" tabindex="-1" role="dialog" aria-labelledby="edit-app-structure-title" aria-hidden="true">
         <div class="modal-dialog"><div class="modal-content">
           <div class="modal-header">
             <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
-            <h4 class="modal-title">Rename Menu Item</h4>
+            <h4 class="modal-title" id="edit-app-structure-title">Rename Menu Item</h4>
           </div>
           <div class="modal-body">
             <label for="as-rename-input">New name</label>
@@ -1225,11 +1227,11 @@ export function mount(container, params) {
         </div></div>
       </div>
 
-      <div class="modal fade" id="newAppStructureModal" tabindex="-1" role="dialog" aria-hidden="true">
+      <div class="modal fade" id="newAppStructureModal" tabindex="-1" role="dialog" aria-labelledby="new-app-structure-title" aria-hidden="true">
         <div class="modal-dialog"><div class="modal-content">
           <div class="modal-header">
             <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
-            <h4 class="modal-title">New Menu Item</h4>
+            <h4 class="modal-title" id="new-app-structure-title">New Menu Item</h4>
           </div>
           <div class="modal-body">
             <div class="row table-padding">
@@ -1439,9 +1441,9 @@ export function mount(container, params) {
 
     container.querySelector('#as-new-btn').addEventListener('click', openNew);
     container.querySelector('#as-new-confirm').addEventListener('click', () => {
-      const display = container.querySelector('#new-display').value || undefined;
+      const display = document.querySelector('#new-display')?.value || undefined;
       const commandSelector = state.isPlatform ? '#new-command-platform' : '#new-command-project';
-      const command = container.querySelector(commandSelector).value || undefined;
+      const command = document.querySelector(commandSelector)?.value || undefined;
       addNewAppStructure(display, command);
     });
     container.querySelector('#as-delete-confirm').addEventListener('click', deleteAppStructure);

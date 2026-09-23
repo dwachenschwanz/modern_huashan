@@ -19,15 +19,62 @@ const dataStructure = {
   Description: 'Smoke data structure',
   ExcelFile: 'SmokeTemplate.xlsx',
   Inputs: [{ CellLink: "Sheet1!Input", Key: 'Input', Display: 'Input', Type: 'SCALAR', Val: 0, Units: '' }],
-  Outputs: [{ CellLink: "Sheet1!Output", Key: 'Output', Display: 'Output', Units: '' }],
+  Outputs: [
+    { CellLink: 'Sheet1!Output', Key: 'Output', Display: 'Output', Units: 'USD' },
+    { CellLink: 'Sheet1!Growth', Key: 'Growth', Display: 'Growth', Units: '%' },
+  ],
 };
 
 const appStructure = {
+  MENU: [
+    {
+      ID: 'input-screen',
+      Display: 'Inputs',
+      Command: 'INPUT_SCREEN',
+      Parameters: { InputKeys: [] },
+    },
+    {
+      ID: 'tornado',
+      Display: 'Tornado',
+      Command: 'TORNADODIST',
+      Parameters: {
+        ChartTitle: 'Risk drivers',
+        CombinedUncertaintyLabel: 'Combined uncertainty',
+        Depth: 2,
+        ValueMetricKeys: ['Output'],
+        MetaLogKeys: [],
+        Weights: { High: 0.25, Med: 0.5, Low: 0.25 },
+      },
+    },
+    {
+      ID: 'waterfall',
+      Display: 'Waterfall',
+      Command: 'WATERFALL',
+      Parameters: {
+        CellLink: 'Sheet1!Table',
+        OutputKey: 'Table',
+        Sets: [{ CellLink: 'Sheet1!Table', OutputKey: 'Table', Units: 'USD', name: 'Base', yTitle: 'Value' }],
+      },
+    },
+  ],
+  PostProcessingOutputsForPortfolio: [],
+};
+
+const platformAppStructure = {
   MENU: [{
-    ID: 'input-screen',
-    Display: 'Inputs',
-    Command: 'INPUT_SCREEN',
-    Parameters: { InputKeys: [] },
+    ID: 'bucket-chart',
+    Display: 'Bucket Chart',
+    Command: 'BUCKET_CHART',
+    Parameters: {
+      Sets: [{
+        Title: 'Distribution',
+        xTitle: 'Value',
+        yTitle: 'Percentage',
+        Key: 'Output',
+        Counts: false,
+        xBuckets: [{ GE: '0', LT: '10', Name: '0-10' }],
+      }],
+    },
   }],
   PostProcessingOutputsForPortfolio: [],
 };
@@ -46,11 +93,11 @@ const templateJson = {
   appStructure,
   portfolioStructure,
   platformDataStructure: 'Does not exist',
-  platformAppStructure: 'Does not exist',
+  platformAppStructure,
   platformPortfolioStructure: 'Does not exist',
 };
 
-function commandResult(command) {
+function commandResult(command, url) {
   const results = {
     GetAstroTemplates: [{ name: TEMPLATE, history: { guid: 'commit-1' }, groups: [] }],
     FindAssociatedPortfolios: ['Smoke Portfolio'],
@@ -63,17 +110,20 @@ function commandResult(command) {
     }),
     GetDataStructure: dataStructure,
     GetExcludedDataStructureComponents: { Excluded: { Inputs: [], Outputs: [] } },
-    GetAppStructure: appStructure,
+    GetAppStructure: url.searchParams.get('isPlatform') === 'true' ? platformAppStructure : appStructure,
     GetPortfolioStructure: portfolioStructure,
-    GetPotentialTables: { PotentialTableOutputs: [] },
+    GetPotentialTables: {
+      PotentialTableOutputs: [{ CellLink: 'Sheet1!Table', HtmlPreview: '<table><tr><td>Smoke table</td></tr></table>' }],
+    },
     GetCharts: { Charts: [] },
     GetTemplateJsonFiles: templateJson,
+    SaveAppStructure: 'Saved',
   };
   if (!(command in results)) throw new Error(`Unhandled Wizard command: ${command}`);
   return results[command];
 }
 
-async function mockBackend(page) {
+async function mockBackend(page, saveRequests) {
   await page.route('**/kirk/**', async (route) => {
     const url = new URL(route.request().url());
 
@@ -99,7 +149,10 @@ async function mockBackend(page) {
       return;
     }
     if (url.pathname === '/kirk/wizard/main') {
-      await route.fulfill({ json: commandEnvelope(commandResult(url.searchParams.get('command'))) });
+      if (url.searchParams.get('command') === 'SaveAppStructure') {
+        saveRequests.push(route.request().postDataJSON());
+      }
+      await route.fulfill({ json: commandEnvelope(commandResult(url.searchParams.get('command'), url)) });
       return;
     }
 
@@ -126,8 +179,11 @@ function failOnPageErrors(page) {
   return () => expect(errors, errors.map((error) => error.stack).join('\n\n')).toEqual([]);
 }
 
+let saveRequests;
+
 test.beforeEach(async ({ page }) => {
-  await mockBackend(page);
+  saveRequests = [];
+  await mockBackend(page, saveRequests);
   await authenticate(page);
 });
 
@@ -170,5 +226,126 @@ test('critical editor routes load after a hard refresh', async ({ page }) => {
     await expect(page.getByText(/could not be loaded/i)).toHaveCount(0);
   }
 
+  assertNoPageErrors();
+});
+
+test('App Structure edits and saves Tornado settings with a commit message', async ({ page }) => {
+  const assertNoPageErrors = failOnPageErrors(page);
+  await page.goto(`/#/appstructure/${TEMPLATE}`);
+
+  await page.getByText('Tornado', { exact: true }).click();
+  await page.locator('[data-tornado-key="Growth"]').click();
+  await page.getByText('Parameters', { exact: true }).click();
+  await page.locator('[data-field="Parameters.ChartTitle"]').fill('Updated risk drivers');
+  await page.locator('[data-field="Parameters.Depth"]').fill('4');
+
+  page.once('dialog', async (dialog) => {
+    expect(dialog.message()).toContain('unsaved changes');
+    await dialog.dismiss();
+  });
+  await page.getByRole('link', { name: /Previous: Data Structure/ }).click();
+  await expect(page).toHaveURL(new RegExp(`/appstructure/${TEMPLATE}$`));
+
+  await page.locator('#as-save-btn').click();
+  const commitDialog = page.getByRole('dialog', { name: 'Change Message' });
+  await commitDialog.locator('#commit-display').fill('Update Tornado settings');
+  await commitDialog.getByRole('button', { name: 'Ok' }).click();
+
+  await expect.poll(() => saveRequests.length).toBe(1);
+  const savedTornado = saveRequests[0].data.MENU.find((menu) => menu.ID === 'tornado');
+  expect(saveRequests[0].commitMessage).toBe('Update Tornado settings');
+  expect(savedTornado.Parameters).toMatchObject({
+    ChartTitle: 'Updated risk drivers',
+    Depth: 4,
+    ValueMetricKeys: ['Output', 'Growth'],
+  });
+  assertNoPageErrors();
+});
+
+test('App Structure adds and removes Waterfall rows', async ({ page }) => {
+  const assertNoPageErrors = failOnPageErrors(page);
+  await page.goto(`/#/appstructure/${TEMPLATE}`);
+
+  await page.getByText('Waterfall', { exact: true }).click();
+  await page.locator('#as-waterfall-add').click();
+  await expect(page.locator('[data-waterfall-field^="OutputKey:"]')).toHaveCount(2);
+
+  await page.locator('[data-waterfall-table="0"]').click();
+  await expect(page.locator('[data-waterfall-field="OutputKey:1"]')).toHaveValue('Table');
+  await page.locator('[data-waterfall-field="name:1"]').fill('Upside');
+  await expect(page.locator('[data-waterfall-field="name:1"]')).toHaveValue('Upside');
+
+  await page.locator('[data-waterfall-delete="1"]').click();
+  await expect(page.locator('[data-waterfall-field^="OutputKey:"]')).toHaveCount(1);
+  assertNoPageErrors();
+});
+
+test('Platform App Structure edits and generates Bucket Chart buckets', async ({ page }) => {
+  const assertNoPageErrors = failOnPageErrors(page);
+  await page.goto(`/#/platformAppStructure/${TEMPLATE}`);
+
+  await expect(page.getByText('Platform App Structure', { exact: true })).toBeVisible();
+  await page.locator('[data-bucket-edit="0"]').click();
+  await page.locator('[data-bucket-name="0:0"]').fill('Low');
+  await page.locator('[data-bucket-add="0"]').click();
+  await expect(page.locator('[data-bucket-name^="0:"]')).toHaveCount(2);
+  await page.locator('[data-bucket-remove="0"]').click();
+  await expect(page.locator('[data-bucket-name^="0:"]')).toHaveCount(1);
+
+  await page.locator('#as-bucket-set-add').click();
+  await page.locator('#as-bucket-count-1').fill('2');
+  await page.locator('#as-bucket-low-1').fill('0');
+  await page.locator('#as-bucket-high-1').fill('10');
+  await page.locator('[data-bucket-generate="1"]').click();
+  await expect(page.locator('[data-bucket-name^="1:"]')).toHaveCount(2);
+  await expect(page.locator('[data-bucket-name="1:0"]')).toHaveValue('0.00-5.00');
+  assertNoPageErrors();
+});
+
+test('App Structure supports adding, renaming, and deleting menu entries', async ({ page }) => {
+  const assertNoPageErrors = failOnPageErrors(page);
+  await page.goto(`/#/appstructure/${TEMPLATE}`);
+
+  await page.locator('[data-menu-edit]').click();
+  const renameDialog = page.getByRole('dialog', { name: 'Rename Menu Item' });
+  await renameDialog.locator('#as-rename-input').fill('Model Inputs');
+  await renameDialog.getByRole('button', { name: 'Rename' }).click();
+  await expect(page.getByText('Model Inputs', { exact: true }).first()).toBeVisible();
+  await expect.poll(() => saveRequests.length).toBe(1);
+
+  await page.locator('#as-new-btn').click();
+  const newDialog = page.getByRole('dialog', { name: 'New Menu Item' });
+  await newDialog.locator('#new-display').fill('Additional Table');
+  await newDialog.locator('#new-command-project').selectOption('TABLE');
+  await newDialog.getByRole('button', { name: 'Add' }).click();
+  await expect(page.getByText('Additional Table', { exact: true }).first()).toBeVisible();
+
+  await page.locator('[data-menu-delete]').click();
+  const deleteDialog = page.getByRole('dialog', { name: 'Delete Menu Item' });
+  await deleteDialog.getByRole('button', { name: 'Delete' }).click();
+  await expect(page.getByText('Additional Table', { exact: true })).toHaveCount(0);
+  assertNoPageErrors();
+});
+
+test('App Structure exposes retry after a load failure', async ({ page }) => {
+  const assertNoPageErrors = failOnPageErrors(page);
+  let failAppStructure = true;
+  await page.route('**/kirk/wizard/main**', async (route) => {
+    const url = new URL(route.request().url());
+    if (failAppStructure && url.searchParams.get('command') === 'GetAppStructure') {
+      await route.fulfill({ status: 500, json: { message: 'Temporary failure' } });
+      return;
+    }
+    await route.fallback();
+  });
+
+  await page.goto(`/#/appstructure/${TEMPLATE}`);
+  await expect(page.getByText('App structure could not be loaded.', { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Retry' })).toBeVisible();
+
+  failAppStructure = false;
+  await page.getByRole('button', { name: 'Retry' }).click();
+  await expect(page.getByText('App Structure', { exact: true })).toBeVisible();
+  await expect(page.getByText('App structure could not be loaded.', { exact: true })).toHaveCount(0);
   assertNoPageErrors();
 });
