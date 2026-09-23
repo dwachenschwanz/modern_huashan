@@ -1373,13 +1373,13 @@ export function mount(container, params) {
     const selectedName = state.selectedMenu ? state.selectedMenu.Display || '' : '';
     container.innerHTML = `
       ${appNavHtml({ active: 'appStructure', isAdmin: state.isAdmin, selectedTemplate: state.selectedTemplate })}
-      <div class="select-template fadeIn" style="height:calc(100% - 100px)">
-        <div class="choose-from" style="text-align:left; overflow:hidden; height:100%">
+      <div class="select-template fadeIn structure-editor" style="height:calc(100% - 100px)">
+        <div class="choose-from structure-sidebar" style="text-align:left">
           <div class="select-template-title"><h4>${state.isPlatform ? 'Platform App Structure' : 'App Structure'}</h4></div>
           <div class="select-template-title">
             <input type="text" class="form-control" id="as-search" placeholder="Search" value="${escapeAttr(state.searchText)}">
           </div>
-          <div class="panel panel-primary" style="height:calc(100% - 260px); margin-bottom:10px">
+          <div class="panel panel-primary structure-menu-panel">
             <div class="list-of-templates" style="height:100%">
               <div class="list-group" id="app-structure-menu">${menuListHtml()}</div>
             </div>

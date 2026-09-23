@@ -1131,22 +1131,22 @@ export function mount(container) {
     container.innerHTML = `
 <div id="st-nav">${appNavHtml({ active: 'selectTemplate', isAdmin: state.isAdmin, selectedTemplate: state.selectedTemplate, showTemplateBadge: false })}</div>
 
-<div class="select-template animated fadeIn" style="height: 100%">
+<div class="select-template animated fadeIn template-editor">
   <div class="loader-container" id="st-loading" ${state.loading ? '' : 'hidden'}>
     <div class="loader"></div>
   </div>
 
-  <div id="choose-from" style="height: 100%">
+  <div id="choose-from" class="template-sidebar">
     <div class="select-template-title"><h4>Select a Template</h4></div>
     <div class="select-template-title">
       <input type="text" id="st-search" class="form-control" placeholder="Search" value="${escapeAttr(state.searchText)}">
     </div>
-    <div class="panel panel-primary" style="height: calc(100% - 260px)">
+    <div class="panel panel-primary template-menu-panel">
       <div class="list-of-templates height-for-list" style="height: 100%">
         <div class="list-group" id="st-template-list" style="height: 100%">${templateListHtml()}</div>
       </div>
     </div>
-    <div class="">
+    <div class="template-actions">
       ${state.isAdmin ? `<button class="btn btn-primary pull-left" id="st-archive-btn" data-toggle="modal" data-target="#trashModal" title="Open Archive">Archive</button>` : ''}
       <button class="btn btn-success pull-right" id="st-upload-btn" data-toggle="modal" data-target="#uploadModal" title="Upload"><span class="glyphicon glyphicon-open"></span></button>
     </div>

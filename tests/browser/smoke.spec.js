@@ -179,6 +179,18 @@ function failOnPageErrors(page) {
   return () => expect(errors, errors.map((error) => error.stack).join('\n\n')).toEqual([]);
 }
 
+async function expectAboveFixedFooter(page, buttonSelector) {
+  const button = page.locator(buttonSelector);
+  const footer = page.locator('.align-to-bottom');
+  await expect(button).toBeVisible();
+  await expect(footer).toBeVisible();
+  const buttonBox = await button.boundingBox();
+  const footerBox = await footer.boundingBox();
+  expect(buttonBox).not.toBeNull();
+  expect(footerBox).not.toBeNull();
+  expect(buttonBox.y + buttonBox.height).toBeLessThan(footerBox.y);
+}
+
 let saveRequests;
 
 test.beforeEach(async ({ page }) => {
@@ -226,6 +238,22 @@ test('critical editor routes load after a hard refresh', async ({ page }) => {
     await expect(page.getByText(/could not be loaded/i)).toHaveCount(0);
   }
 
+  assertNoPageErrors();
+});
+
+test('left-column action buttons remain above the fixed footer', async ({ page }) => {
+  const assertNoPageErrors = failOnPageErrors(page);
+  await page.setViewportSize({ width: 1280, height: 720 });
+
+  await page.goto(`/#/appstructure/${TEMPLATE}`);
+  await expectAboveFixedFooter(page, '#as-new-btn');
+
+  await page.goto(`/#/portfoliostructure/${TEMPLATE}`);
+  await expectAboveFixedFooter(page, '#ps-new-btn');
+
+  await page.goto('/#/selectTemplate');
+  await expectAboveFixedFooter(page, '#st-archive-btn');
+  await expectAboveFixedFooter(page, '#st-upload-btn');
   assertNoPageErrors();
 });
 

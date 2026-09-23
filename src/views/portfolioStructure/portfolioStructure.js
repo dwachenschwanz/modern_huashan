@@ -1784,13 +1784,13 @@ ${loadingOverlayHtml('Loading portfolio structure')}`;
 
     container.innerHTML = `
 ${appNavHtml({ active: 'portfolioStructure', isAdmin: state.isAdmin, selectedTemplate: state.selectedTemplate })}
-<div class="select-template fadeIn" style="height: calc(100% - 100px)">
-  <div class="choose-from" style="height: calc(100% - 260px)">
+<div class="select-template fadeIn structure-editor" style="height: calc(100% - 100px)">
+  <div class="choose-from structure-sidebar">
     <div class="select-template-title"><h4>${state.isPlatform ? 'Platform Portfolio Structure' : 'Portfolio Structure'}</h4></div>
     <div class="select-template-title">
       <input type="text" class="form-control" id="ps-search" placeholder="Search" value="${escapeAttr(state.searchText)}">
     </div>
-    <div class="panel panel-primary" style="height: 100%">
+    <div class="panel panel-primary structure-menu-panel">
       <div class="list-of-templates height-for-list" style="height: 100%">
         <div id="ps-menu-list" class="list-group"></div>
       </div>
