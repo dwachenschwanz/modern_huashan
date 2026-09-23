@@ -14,6 +14,15 @@ import { makeSortable } from '../../components/sortable.js';
 import { scrollElementIntoView } from '../../components/scrollTo.js';
 import { escapeHtml, extractTablePreviewHtml } from '../../core/html.js';
 import { makeActionIDFrom, isActionIDDuplicate } from '../../core/common.js';
+import {
+  BucketManager,
+  bindBucketChartEditor,
+  bindTornadoEditor,
+  bindWaterfallEditor,
+  renderBucketChartEditor,
+  renderTornadoEditor,
+  renderWaterfallEditor,
+} from './commandEditors.js';
 
 function getIsAdmin() {
   try {
@@ -28,69 +37,6 @@ function getIsAdmin() {
 
 function escapeAttr(str) {
   return escapeHtml(str);
-}
-
-/* ---- BucketManager: ported 1:1 from the TS class at the bottom of
- * appStructureController.ts. Manages the editable "rule1/rule2" view of a
- * BUCKET_CHART set's xBuckets (each bucket is `{GE|GT, LE|LT, Name}`). ---- */
-
-function makeRule1Options() {
-  return [{ Label: '', Value: 'NONE' }, { Label: '>', Value: 'GT' }, { Label: '>=', Value: 'GE' }];
-}
-function makeRule2Options() {
-  return [{ Label: '', Value: 'NONE' }, { Label: '<', Value: 'LT' }, { Label: '<=', Value: 'LE' }];
-}
-
-class BucketManager {
-  constructor(buckets) {
-    this.rule1Options = makeRule1Options();
-    this.rule2Options = makeRule2Options();
-    this.editableBuckets = this.editableBucketsFrom(buckets);
-    this.editing = false;
-  }
-
-  editableBucketsFrom(buckets) {
-    return (buckets || []).map((bucket) => {
-      const rule1Type = this.rule1From(bucket);
-      const rule2Type = this.rule2From(bucket);
-      return {
-        Name: bucket.Name,
-        nameEditable: false,
-        rulesEditable: false,
-        rule1Type,
-        rule1Value: bucket[rule1Type.Value],
-        rule2Type,
-        rule2Value: bucket[rule2Type.Value],
-      };
-    });
-  }
-
-  rule1From(bucket) {
-    return bucket.GT ? this.rule1Options[1] : bucket.GE ? this.rule1Options[2] : this.rule1Options[0];
-  }
-
-  rule2From(bucket) {
-    return bucket.LT ? this.rule2Options[1] : bucket.LE ? this.rule2Options[2] : this.rule2Options[0];
-  }
-
-  buckets() {
-    return this.editableBuckets.map((bucket) => {
-      const packet = { Name: bucket.Name };
-      if (bucket.rule1Type.Value === 'GT') packet.GT = bucket.rule1Value;
-      else if (bucket.rule1Type.Value === 'GE') packet.GE = bucket.rule1Value;
-      if (bucket.rule2Type.Value === 'LT') packet.LT = bucket.rule2Value;
-      else if (bucket.rule2Type.Value === 'LE') packet.LE = bucket.rule2Value;
-      return packet;
-    });
-  }
-
-  makeEditable() {
-    this.editing = true;
-  }
-
-  stopEditing() {
-    this.editing = false;
-  }
 }
 
 export function mount(container, params) {
@@ -924,11 +870,12 @@ export function mount(container, params) {
   }
 
   function addBucket(setIndex) {
+    const manager = state.bucketManagers[setIndex];
     state.bucketManagers[setIndex].editableBuckets.push({
       nameEditable: false,
       rulesEditable: false,
-      rule1Type: makeRule1Options()[0],
-      rule2Type: makeRule2Options()[0],
+      rule1Type: manager.rule1Options[0],
+      rule2Type: manager.rule2Options[0],
       rule1Value: null,
       rule2Value: null,
       Name: '',
@@ -1100,34 +1047,6 @@ export function mount(container, params) {
       <button class="btn btn-success" id="as-cv-add"><span class="glyphicon glyphicon-plus"></span></button>`;
   }
 
-  function tornadoFormHtml(menu) {
-    const p = menu.Parameters;
-    const includedKeys = p.ValueMetricKeys || (p.ValueMetricKeys = []);
-    const excludedOutputs = state.outputs.filter((output) => !includedKeys.includes(output.Key));
-    const weights = p.Weights || (p.Weights = { High: 0.25, Med: 0.5, Low: 0.25 });
-    return `${commandHeaderHtml(menu)}
-      <ul class="nav nav-tabs"><li class="${state.tornadoTab === 'output' ? 'active' : ''}"><a href="" data-tornado-tab="output">Tornado Output</a></li><li class="${state.tornadoTab === 'settings' ? 'active' : ''}"><a href="" data-tornado-tab="settings">Parameters</a></li><li class="${state.tornadoTab === 'post' ? 'active' : ''}"><a href="" data-tornado-tab="post">Post Processing</a></li></ul>
-      ${state.tornadoTab === 'output' ? `<div class="tornado-output-picker">
-        <div class="col-sm-6"><h4>Included Outputs</h4></div>
-        <div class="col-sm-6"><h4>Excluded Outputs</h4></div>
-        <div class="col-sm-6" style="height:420px;overflow:auto">
-          <div class="list-of-templates"><ul class="list-group">
-            ${includedKeys.map((key) => {
-              const output = findKey(state.outputs)(key);
-              return `<li class="list-group-item"><div class="no-wrap"><a class="text-danger" href="" data-tornado-key="${escapeAttr(key)}" title="Exclude output"><i class="fa fa-minus-square fa-lg"></i></a> ${escapeHtml(output ? output.Display : key)}</div></li>`;
-            }).join('')}
-          </ul></div>
-        </div>
-        <div class="col-sm-6" style="height:420px;overflow:auto">
-          <div class="list-of-templates"><ul class="list-group">
-            ${excludedOutputs.map((output) => `<li class="list-group-item"><div class="no-wrap"><a class="text-success" href="" data-tornado-key="${escapeAttr(output.Key)}" title="Include output"><i class="fa fa-plus-square fa-lg"></i></a> ${escapeHtml(output.Display)}</div></li>`).join('')}
-          </ul></div>
-        </div>
-      </div>` : ''}
-      ${state.tornadoTab === 'settings' ? `<div class="container-fluid"><div class="row table-padding"><div class="col-sm-3 text-right"><b>Chart Title</b></div><div class="col-sm-6"><input class="form-control" data-field="Parameters.ChartTitle" value="${escapeAttr(p.ChartTitle || '')}"></div></div><div class="row table-padding"><div class="col-sm-3 text-right"><b>Combined Uncertainty Label</b></div><div class="col-sm-6"><input class="form-control" data-field="Parameters.CombinedUncertaintyLabel" value="${escapeAttr(p.CombinedUncertaintyLabel || '')}"></div></div><div class="row table-padding"><div class="col-sm-3 text-right"><b>Depth</b></div><div class="col-sm-3"><input type="number" class="form-control" data-field="Parameters.Depth" value="${p.Depth ?? 2}"></div></div>${['High','Med','Low'].map((key) => `<div class="row table-padding"><div class="col-sm-3 text-right"><b>${key === 'Med' ? 'Medium' : key}</b></div><div class="col-sm-3"><input type="number" min="0" max="1" step="0.01" class="form-control" data-field="Parameters.Weights.${key}" value="${weights[key]}"></div></div>`).join('')}</div>` : ''}
-      ${state.tornadoTab === 'post' ? `<div class="container-fluid">${state.postProcessing.map((sendback, i) => `<div class="row table-padding"><div class="col-sm-1"><button class="btn btn-danger" data-sendback-delete="${i}"><span class="glyphicon glyphicon-trash"></span></button></div><div class="col-sm-2"><select class="form-control" data-sendback-to="${i}">${state.sendBackElements.map((x) => `<option value="${escapeAttr(x.value)}" ${sendback.Reference && sendback.Reference.slice(22) === x.value ? 'selected' : ''}>${escapeHtml(x.display)}</option>`).join('')}</select></div><div class="col-sm-3"><select class="form-control" data-sendback-tornado="${i}">${(p.ValueMetricKeys || []).map((key, ki) => `<option value="${ki}" ${sendback.Reference && Number(sendback.Reference[19]) === ki ? 'selected' : ''}>${escapeHtml((findKey(state.outputs)(key) || {}).Display || key)}</option>`).join('')}</select></div><div class="col-sm-4"><select class="form-control" data-sendback-field="${i}">${optionHtml(state.allDataStructureComponents, sendback.SendBack, (x) => x.CellLink, (x) => x.Display)}</select></div></div>`).join('')}<button class="btn btn-success" id="as-sendback-add"><span class="glyphicon glyphicon-plus"></span></button></div>` : ''}`;
-  }
-
   function metalogFormHtml(menu) {
     const p = menu.Parameters;
     const included = p.MetaLogKeys || (p.MetaLogKeys = []);
@@ -1155,20 +1074,6 @@ export function mount(container, params) {
       <button class="btn btn-success" id="${def.add}"><span class="glyphicon glyphicon-plus"></span></button>`;
   }
 
-  function bucketChartFormHtml(menu) {
-    const sets = menu.Parameters.Sets || [];
-    return `${commandHeaderHtml(menu)}${sets.map((set, si) => {
-      const manager = state.bucketManagers[si];
-      return `<div class="well"><div class="row table-padding"><div class="col-sm-2"><b>Title</b></div><div class="col-sm-3"><input class="form-control" data-bucket-field="Title:${si}" value="${escapeAttr(set.Title || '')}"></div><div class="col-sm-2"><b>Counts</b></div><div class="col-sm-2"><input type="checkbox" data-bucket-field="Counts:${si}" ${set.Counts ? 'checked' : ''}></div></div><div class="row table-padding"><div class="col-sm-2"><b>X Axis</b></div><div class="col-sm-3"><select class="form-control" data-bucket-field="Key:${si}">${optionHtml(state.allOutputs, set.Key, (x) => x.Key, (x) => getOutputDisplayFromKey(x.Key))}</select></div><div class="col-sm-2"><b>X Label</b></div><div class="col-sm-3"><input class="form-control" data-bucket-field="xTitle:${si}" value="${escapeAttr(set.xTitle || '')}"></div></div><div class="row table-padding"><div class="col-sm-2"><b>Y Label</b></div><div class="col-sm-3"><input class="form-control" data-bucket-field="yTitle:${si}" value="${escapeAttr(set.yTitle || '')}"></div></div>
-      ${manager ? `<div class="row table-padding"><div class="col-sm-12"><b>Buckets:</b> ${manager.editableBuckets.map((b) => escapeHtml(b.Name)).join(', ')} <button class="btn btn-default btn-sm" data-bucket-edit="${si}">Edit</button></div></div>${manager.editing ? `<table class="table table-bordered table-striped"><thead><tr><th>Bucket Label</th><th>Lower Rule</th><th>Lower Value</th><th>Upper Rule</th><th>Upper Value</th></tr></thead><tbody>${manager.editableBuckets.map((b, bi) => `<tr><td><input class="form-control input-sm" data-bucket-name="${si}:${bi}" value="${escapeAttr(b.Name)}"></td><td><select class="form-control input-sm" data-bucket-rule1="${si}:${bi}">${makeRule1Options().map((x) => `<option value="${x.Value}" ${x.Value === b.rule1Type.Value ? 'selected' : ''}>${escapeHtml(x.Label)}</option>`).join('')}</select></td><td><input class="form-control input-sm" data-bucket-rule1-value="${si}:${bi}" value="${b.rule1Value ?? ''}"></td><td><select class="form-control input-sm" data-bucket-rule2="${si}:${bi}">${makeRule2Options().map((x) => `<option value="${x.Value}" ${x.Value === b.rule2Type.Value ? 'selected' : ''}>${escapeHtml(x.Label)}</option>`).join('')}</select></td><td><input class="form-control input-sm" data-bucket-rule2-value="${si}:${bi}" value="${b.rule2Value ?? ''}"></td></tr>`).join('')}</tbody></table><button class="btn btn-primary" data-bucket-add="${si}">Add Bucket</button> <button class="btn btn-primary" data-bucket-remove="${si}">Delete Bucket</button>` : ''}` : `<div class="row table-padding"><div class="col-sm-2">Buckets<input type="number" class="form-control" id="as-bucket-count-${si}"></div><div class="col-sm-2">Low<input class="form-control" id="as-bucket-low-${si}"></div><div class="col-sm-2">High<input class="form-control" id="as-bucket-high-${si}"></div><div class="col-sm-2"><br><button class="btn btn-primary" data-bucket-generate="${si}">Generate Buckets</button></div></div>`}<div class="row table-padding"><button class="btn btn-danger" data-bucket-set-delete="${si}"><span class="glyphicon glyphicon-trash"></span></button></div></div>`;
-    }).join('')}<button class="btn btn-success" id="as-bucket-set-add"><span class="glyphicon glyphicon-plus"></span></button>`;
-  }
-
-  function waterfallFormHtml(menu) {
-    const sets = menu.Parameters.Sets || [];
-    return `${commandHeaderHtml(menu)}<div class="col-sm-3"><div class="list-group">${state.potentialTables.map((table, i) => `<a href="" class="list-group-item ${table === state.selectedPotentialTable ? 'active' : ''}" data-waterfall-table="${i}">${escapeHtml(table.CellLink)}</a>`).join('')}</div></div><div class="col-sm-9">${previewHtml(state.selectedPotentialTable)}</div><div class="col-sm-12">${sets.map((set, i) => `<div class="well"><div class="row table-padding"><div class="col-sm-2"><b>OutputKey</b></div><div class="col-sm-3"><input class="form-control" data-waterfall-field="OutputKey:${i}" value="${escapeAttr(set.OutputKey || '')}"></div><div class="col-sm-2"><b>Units</b></div><div class="col-sm-3"><input class="form-control" data-waterfall-field="Units:${i}" value="${escapeAttr(set.Units || '')}"></div></div><div class="row table-padding"><div class="col-sm-2"><b>Name</b></div><div class="col-sm-3"><input class="form-control" data-waterfall-field="name:${i}" value="${escapeAttr(set.name || '')}"></div><div class="col-sm-2"><b>Y Title</b></div><div class="col-sm-3"><input class="form-control" data-waterfall-field="yTitle:${i}" value="${escapeAttr(set.yTitle || '')}"></div><div class="col-sm-1"><button class="btn btn-danger" data-waterfall-delete="${i}"><span class="glyphicon glyphicon-trash"></span></button></div></div></div>`).join('')}<button class="btn btn-success" id="as-waterfall-add"><span class="glyphicon glyphicon-plus"></span></button></div>`;
-  }
-
   function editorHtml() {
     if (!state.selectedMenu) {
       return '<div class="panel panel-default panel-body">No app structure items are available.</div>';
@@ -1181,14 +1086,14 @@ export function mount(container, params) {
       case 'IMAGE': return imageFormHtml(menu);
       case 'ADD_TABLES': return addTablesFormHtml(menu);
       case 'COMPARE_VALUE': return compareValueFormHtml(menu);
-      case 'TORNADODIST': return tornadoFormHtml(menu);
+      case 'TORNADODIST': return renderTornadoEditor({ menu, state, commandHeaderHtml, findKey, optionHtml });
       case 'METALOG_DISPLAY': return metalogFormHtml(menu);
       case 'COMPARE_UNCERTAINTY': return `${commandHeaderHtml(menu)}<h4>There's nothing to customize in this menu item</h4>`;
       case 'CFO_CHART': return seriesFormHtml(menu, 'CFO_CHART');
       case 'INNOVATION_SCREEN': return seriesFormHtml(menu, 'INNOVATION_SCREEN');
       case 'SCATTER_PLOT': return seriesFormHtml(menu, 'SCATTER_PLOT');
-      case 'BUCKET_CHART': return bucketChartFormHtml(menu);
-      case 'WATERFALL': return waterfallFormHtml(menu);
+      case 'BUCKET_CHART': return renderBucketChartEditor({ menu, state, commandHeaderHtml, optionHtml, getOutputDisplayFromKey });
+      case 'WATERFALL': return renderWaterfallEditor({ menu, state, commandHeaderHtml, previewHtml });
       default: return `${commandHeaderHtml(menu)}<p>This command has no configurable fields.</p>`;
     }
   }
@@ -1308,14 +1213,6 @@ export function mount(container, params) {
     const cvAdd = container.querySelector('#as-cv-add');
     if (cvAdd) cvAdd.addEventListener('click', () => { addCompareValueItem(); render(); });
     bindAll('[data-cv-delete]', 'click', (event) => { deleteCompareValueItem(Number(event.currentTarget.dataset.cvDelete)); render(); });
-    bindAll('[data-tornado-tab]', 'click', (event) => { event.preventDefault(); state.tornadoTab = event.currentTarget.dataset.tornadoTab; render(); });
-    bindAll('[data-tornado-key]', 'click', (event) => { event.preventDefault(); selectTornado(event.currentTarget.dataset.tornadoKey); render(); });
-    const sendbackAdd = container.querySelector('#as-sendback-add');
-    if (sendbackAdd) sendbackAdd.addEventListener('click', () => { addSendBack(); render(); });
-    bindAll('[data-sendback-delete]', 'click', (event) => { deleteSendBack(state.postProcessing[Number(event.currentTarget.dataset.sendbackDelete)]); render(); });
-    bindAll('[data-sendback-to]', 'change', (event) => { const i = Number(event.currentTarget.dataset.sendbackTo); selectSendBackTo(state.postProcessing[i], event.currentTarget.value); render(); });
-    bindAll('[data-sendback-tornado]', 'change', (event) => { const i = Number(event.currentTarget.dataset.sendbackTornado); selectSendBackTornado(state.postProcessing[i], Number(event.currentTarget.value)); render(); });
-    bindAll('[data-sendback-field]', 'change', (event) => { state.postProcessing[Number(event.currentTarget.dataset.sendbackField)].SendBack = event.currentTarget.value; });
 
     bindAll('[data-metalog-tab]', 'click', (event) => { event.preventDefault(); state.metalogTab = event.currentTarget.dataset.metalogTab; render(); });
     bindAll('[data-metalog-key]', 'click', (event) => { selectWithinMetalog(event.currentTarget.dataset.metalogKey); render(); });
@@ -1334,22 +1231,13 @@ export function mount(container, params) {
     bindAll('[data-innovation-delete]', 'click', (event) => { deleteInnovationScreenItem(Number(event.currentTarget.dataset.innovationDelete)); render(); });
     bindAll('[data-scatter-delete]', 'click', (event) => { deleteScatterPlotItem(Number(event.currentTarget.dataset.scatterDelete)); render(); });
 
-    bindAll('[data-bucket-field]', 'change', (event) => { const [field, index] = event.currentTarget.dataset.bucketField.split(':'); menu.Parameters.Sets[Number(index)][field] = inputValue(event.currentTarget); });
-    bindAll('[data-bucket-edit]', 'click', (event) => { const manager = state.bucketManagers[Number(event.currentTarget.dataset.bucketEdit)]; manager.editing = !manager.editing; render(); });
-    bindAll('[data-bucket-generate]', 'click', (event) => { const i = Number(event.currentTarget.dataset.bucketGenerate); state.numBuckets = Number(container.querySelector(`#as-bucket-count-${i}`).value); state.bucketLow = container.querySelector(`#as-bucket-low-${i}`).value; state.bucketHigh = container.querySelector(`#as-bucket-high-${i}`).value; generateBuckets(i); state.bucketManagers[i].editing = true; render(); });
-    bindAll('[data-bucket-add]', 'click', (event) => { addBucket(Number(event.currentTarget.dataset.bucketAdd)); render(); });
-    bindAll('[data-bucket-remove]', 'click', (event) => { deleteBucket(Number(event.currentTarget.dataset.bucketRemove)); render(); });
-    bindAll('[data-bucket-set-delete]', 'click', (event) => { deleteBucketSet(Number(event.currentTarget.dataset.bucketSetDelete)); render(); });
-    const bucketSetAdd = container.querySelector('#as-bucket-set-add');
-    if (bucketSetAdd) bucketSetAdd.addEventListener('click', () => { addBucketChartSet(); selectMenu(menu); render(); });
-    const updateBucket = (datasetName, property, options) => bindAll(`[data-${datasetName}]`, 'change', (event) => { const [si, bi] = event.currentTarget.dataset[datasetName.replace(/-([a-z])/g, (_, c) => c.toUpperCase())].split(':').map(Number); const bucket = state.bucketManagers[si].editableBuckets[bi]; bucket[property] = options ? options().find((x) => x.Value === event.currentTarget.value) : event.currentTarget.value; menu.Parameters.Sets[si].xBuckets = state.bucketManagers[si].buckets(); });
-    updateBucket('bucket-name', 'Name'); updateBucket('bucket-rule1', 'rule1Type', makeRule1Options); updateBucket('bucket-rule1-value', 'rule1Value'); updateBucket('bucket-rule2', 'rule2Type', makeRule2Options); updateBucket('bucket-rule2-value', 'rule2Value');
-
-    bindAll('[data-waterfall-table]', 'click', (event) => { event.preventDefault(); insertParamsToWaterfallTables(state.potentialTables[Number(event.currentTarget.dataset.waterfallTable)]); render(); });
-    bindAll('[data-waterfall-field]', 'input', (event) => { const [field, index] = event.currentTarget.dataset.waterfallField.split(':'); menu.Parameters.Sets[Number(index)][field] = event.currentTarget.value; });
-    bindAll('[data-waterfall-delete]', 'click', (event) => { deleteTableInWaterfall(Number(event.currentTarget.dataset.waterfallDelete)); render(); });
-    const waterfallAdd = container.querySelector('#as-waterfall-add');
-    if (waterfallAdd) waterfallAdd.addEventListener('click', () => { addNewParamsToWaterfall(); render(); });
+    if (menu.Command === 'TORNADODIST') {
+      bindTornadoEditor({ root: container, state, render, selectTornado, addSendBack, deleteSendBack, selectSendBackTo, selectSendBackTornado });
+    } else if (menu.Command === 'BUCKET_CHART') {
+      bindBucketChartEditor({ root: container, menu, state, render, inputValue, generateBuckets, addBucket, deleteBucket, deleteBucketSet, addBucketChartSet, selectMenu });
+    } else if (menu.Command === 'WATERFALL') {
+      bindWaterfallEditor({ root: container, menu, state, render, insertParamsToWaterfallTables, deleteTableInWaterfall, addNewParamsToWaterfall });
+    }
 
     if (menu.Command === 'IMAGE' && menu.Parameters.Type === 'CHART') renderSelectedImageChart();
   }
