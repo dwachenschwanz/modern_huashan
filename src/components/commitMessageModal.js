@@ -4,7 +4,7 @@
  * markup (call `commitMessageModalHtml()` once into the view template) and
  * wires the "Ok" button to `onSave(commitMessage)`.
  */
-import { hideModal } from './bootstrapUI.js';
+import { hideModal } from './uiInteractions.js';
 
 export function commitMessageModalHtml() {
   return `

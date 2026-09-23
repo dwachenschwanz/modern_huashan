@@ -24,3 +24,66 @@
     overflow:auto;
     padding-top: 2px;
 }
+
+.json-editor-host {
+    min-width: 0;
+}
+
+.json-editor-host .cm-editor {
+    height: 350px;
+    border: 1px solid #b9c1c9;
+    border-radius: 4px 4px 0 0;
+    background: #fff;
+    color: #20252b;
+    font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
+    font-size: 13px;
+}
+
+.json-editor-host .cm-editor.cm-focused {
+    border-color: #2b6cb0;
+    box-shadow: 0 0 0 2px rgba(43, 108, 176, 0.2);
+    outline: none;
+}
+
+.json-editor-host .cm-scroller {
+    overflow: auto;
+}
+
+.json-editor-host .cm-content {
+    min-height: 100%;
+}
+
+.json-editor-host .cm-gutters {
+    border-right: 1px solid #d8dde3;
+    background: #f4f6f8;
+    color: #68717c;
+}
+
+.json-editor-host .cm-matchingBracket {
+    background: #d9edf7;
+    color: #18212b;
+    outline: 1px solid #31708f;
+}
+
+.json-editor-status {
+    min-height: 28px;
+    padding: 5px 8px;
+    overflow: hidden;
+    border: 1px solid #b9c1c9;
+    border-top: 0;
+    border-radius: 0 0 4px 4px;
+    background: #f4f6f8;
+    font-size: 12px;
+    line-height: 18px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.json-editor-status.is-valid {
+    color: #23653a;
+}
+
+.json-editor-status.is-invalid {
+    background: #fff1f0;
+    color: #a12622;
+}

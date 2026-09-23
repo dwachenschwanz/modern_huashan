@@ -1,7 +1,6 @@
 /*
- * Minimal vanilla-JS replacements for the Bootstrap 3 jQuery plugins the
- * legacy app relied on ($(...).modal(), dropdown toggle, tooltip/popover,
- * and the fadeIn().delay().fadeOut() alert flash pattern). No jQuery.
+ * Framework-free interactions for modals, dropdowns, tooltips, popovers,
+ * and transient alerts.
  */
 
 // ---- Modal ---------------------------------------------------------------
@@ -111,12 +110,18 @@ function positionFloating(trigger, el) {
   el.style.left = `${window.scrollX + rect.left + rect.width / 2 - el.offsetWidth / 2}px`;
 }
 
+export function dismissFloatingUi() {
+  document.querySelectorAll('.tooltip.in, .popover.in').forEach((element) => element.remove());
+}
+
 export function initTooltips(root = document) {
+  dismissFloatingUi();
   root.querySelectorAll('[data-toggle="tooltip"]').forEach((trigger) => {
     if (trigger.dataset.tooltipBound) return;
     trigger.dataset.tooltipBound = '1';
     let tipEl = null;
     trigger.addEventListener('mouseenter', () => {
+      dismissFloatingUi();
       const text = trigger.getAttribute('title') || trigger.getAttribute('data-original-title');
       if (!text) return;
       trigger.setAttribute('data-original-title', text);
@@ -139,6 +144,7 @@ export function initTooltips(root = document) {
 }
 
 export function initPopovers(root = document) {
+  dismissFloatingUi();
   root.querySelectorAll('[data-toggle="popover"]').forEach((trigger) => {
     if (trigger.dataset.popoverBound) return;
     trigger.dataset.popoverBound = '1';
@@ -151,10 +157,12 @@ export function initPopovers(root = document) {
     };
     trigger.addEventListener('click', (evt) => {
       evt.stopPropagation();
+      if (popEl && !popEl.isConnected) popEl = null;
       if (popEl) {
         close();
         return;
       }
+      dismissFloatingUi();
       const title = trigger.getAttribute('title') || trigger.getAttribute('data-original-title');
       const content = trigger.getAttribute('data-content') || '';
       popEl = document.createElement('div');

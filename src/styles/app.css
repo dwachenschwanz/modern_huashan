@@ -1,9 +1,9 @@
-@import 'bootstrap/dist/css/bootstrap.min.css';
+@import './base.css';
 @import 'font-awesome/css/font-awesome.min.css';
 
 @import './animate.css';
 @import './main.css';
-@import './iosOverlay.css';
+@import './loading-overlay.css';
 @import './admin.css';
 @import './app-structure.css';
 @import './data-structure.css';

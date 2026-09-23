@@ -10,7 +10,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "bootstrap": "^3.4.1",
+    "@codemirror/commands": "^6.11.1",
+    "@codemirror/lang-json": "^6.0.2",
+    "@codemirror/language": "^6.12.4",
+    "@codemirror/lint": "^6.9.7",
+    "codemirror": "^6.0.2",
     "font-awesome": "^4.7.0",
     "highcharts": "^12.5.0"
   },

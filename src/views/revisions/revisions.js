@@ -4,7 +4,7 @@ import { session, restoreSession } from '../../core/session.js';
 import { SERVER_URL, TOKEN_KEY } from '../../core/config.js';
 import { appNavHtml } from '../../components/appNav.js';
 import { accordionGroupHtml, initAccordions } from '../../components/accordion.js';
-import { initTooltips } from '../../components/bootstrapUI.js';
+import { initTooltips } from '../../components/uiInteractions.js';
 import { escapeHtml } from '../../core/html.js';
 
 function stringify(jsonObject) {

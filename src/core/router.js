@@ -8,6 +8,8 @@
  * function that's called before the next route mounts.
  */
 
+import { dismissFloatingUi } from '../components/uiInteractions.js';
+
 const routes = [];
 let notFoundRoute = null;
 let currentCleanup = null;
@@ -45,6 +47,8 @@ function currentHashPath() {
 
 async function handleRouteChange() {
   const path = currentHashPath();
+
+  dismissFloatingUi();
 
   if (typeof currentCleanup === 'function') {
     try {

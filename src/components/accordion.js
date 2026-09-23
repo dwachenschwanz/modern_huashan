@@ -1,6 +1,6 @@
 /*
- * Minimal replacement for angular-ui-bootstrap's <accordion>/<accordion-group>,
- * used by the JSON and Revisions views. Panels toggle independently
+ * Framework-free accordion used by the JSON and Revisions views.
+ * Panels toggle independently
  * (close-others="false" in every usage), each starting open.
  */
 export function accordionGroupHtml({ id, heading, bodyHtml, open = true }) {

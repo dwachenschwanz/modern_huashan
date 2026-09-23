@@ -6,10 +6,11 @@ import { appNavHtml } from '../../components/appNav.js';
 import { accordionGroupHtml, initAccordions } from '../../components/accordion.js';
 import { renderAlerts, wireAlertClose } from '../../components/alerts.js';
 import { commitMessageModalHtml, initCommitMessageModal, closeCommitMessageModal } from '../../components/commitMessageModal.js';
+import { createJsonEditor } from '../../components/jsonEditor.js';
 import { escapeHtml } from '../../core/html.js';
 
 function stringify(jsonObject) {
-  return JSON.stringify(jsonObject, undefined, 4);
+  return JSON.stringify(jsonObject, undefined, 2);
 }
 
 function getIsAdmin() {
@@ -25,6 +26,8 @@ function getIsAdmin() {
 
 export function mount(container, params) {
   if (!restoreSession()) return () => {};
+
+  let editors = [];
 
   const state = {
     selectedTemplate: params.templateID,
@@ -49,6 +52,8 @@ export function mount(container, params) {
   }
 
   function render() {
+    editors.forEach((editor) => editor.destroy());
+    editors = [];
     container.innerHTML = `
 ${appNavHtml({ active: 'json', isAdmin: state.isAdmin, selectedTemplate: state.selectedTemplate })}
 <div class="select-template fadeIn" style="height:650px;background-color: #eee;margin-bottom: 60px;">
@@ -75,24 +80,26 @@ ${commitMessageModalHtml()}`;
 
     if (state.data) {
       initAccordions(container);
-      container.querySelector('#ds-textarea').addEventListener('input', (e) => {
-        state.data.dataStructure = e.target.value;
-        refreshSaveButton();
+      const editorConfigs = [
+        ['ds-editor', 'dataStructure', 'Data Structure JSON'],
+        ['as-editor', 'appStructure', 'App Structure JSON'],
+        ['ps-editor', 'portfolioStructure', 'Portfolio Structure JSON'],
+        ['pds-editor', 'platformDataStructure', 'Platform Data Structure JSON'],
+        ['pas-editor', 'platformAppStructure', 'Platform App Structure JSON'],
+        ['pps-editor', 'platformPortfolioStructure', 'Platform Portfolio Structure JSON'],
+      ];
+      editorConfigs.forEach(([id, field, label]) => {
+        const host = container.querySelector(`#${id}`);
+        if (!host) return;
+        editors.push(createJsonEditor(host, {
+          value: state.data[field],
+          label,
+          onChange(value) {
+            state.data[field] = value;
+            refreshSaveButton();
+          },
+        }));
       });
-      container.querySelector('#as-textarea').addEventListener('input', (e) => {
-        state.data.appStructure = e.target.value;
-        refreshSaveButton();
-      });
-      container.querySelector('#ps-textarea').addEventListener('input', (e) => {
-        state.data.portfolioStructure = e.target.value;
-        refreshSaveButton();
-      });
-      const pds = container.querySelector('#pds-textarea');
-      if (pds) pds.addEventListener('input', (e) => { state.data.platformDataStructure = e.target.value; refreshSaveButton(); });
-      const pas = container.querySelector('#pas-textarea');
-      if (pas) pas.addEventListener('input', (e) => { state.data.platformAppStructure = e.target.value; refreshSaveButton(); });
-      const pps = container.querySelector('#pps-textarea');
-      if (pps) pps.addEventListener('input', (e) => { state.data.platformPortfolioStructure = e.target.value; refreshSaveButton(); });
     }
 
     container.querySelector('#json-close-btn').addEventListener('click', () => navigate('/selectTemplate'));
@@ -109,16 +116,16 @@ ${commitMessageModalHtml()}`;
     return `
     <div id="json">
       <div class="col-sm-4">
-        ${accordionGroupHtml({ id: 'ds', heading: 'Data Structure', bodyHtml: `<textarea id="ds-textarea" class="json-container">${escapeHtml(state.data.dataStructure)}</textarea>` })}
-        ${platformExists() ? accordionGroupHtml({ id: 'pds', heading: 'Platform Data Structure', bodyHtml: `<textarea id="pds-textarea" class="json-container">${escapeHtml(state.data.platformDataStructure)}</textarea>` }) : ''}
+        ${accordionGroupHtml({ id: 'ds', heading: 'Data Structure', bodyHtml: '<div id="ds-editor" class="json-editor-host"></div>' })}
+        ${platformExists() ? accordionGroupHtml({ id: 'pds', heading: 'Platform Data Structure', bodyHtml: '<div id="pds-editor" class="json-editor-host"></div>' }) : ''}
       </div>
       <div class="col-sm-4">
-        ${accordionGroupHtml({ id: 'as', heading: 'App Structure', bodyHtml: `<textarea id="as-textarea" class="json-container">${escapeHtml(state.data.appStructure)}</textarea>` })}
-        ${platformExists() ? accordionGroupHtml({ id: 'pas', heading: 'Platform App Structure', bodyHtml: `<textarea id="pas-textarea" class="json-container">${escapeHtml(state.data.platformAppStructure)}</textarea>` }) : ''}
+        ${accordionGroupHtml({ id: 'as', heading: 'App Structure', bodyHtml: '<div id="as-editor" class="json-editor-host"></div>' })}
+        ${platformExists() ? accordionGroupHtml({ id: 'pas', heading: 'Platform App Structure', bodyHtml: '<div id="pas-editor" class="json-editor-host"></div>' }) : ''}
       </div>
       <div class="col-sm-4">
-        ${accordionGroupHtml({ id: 'ps', heading: 'Portfolio Structure', bodyHtml: `<textarea id="ps-textarea" class="json-container">${escapeHtml(state.data.portfolioStructure)}</textarea>` })}
-        ${platformExists() ? accordionGroupHtml({ id: 'pps', heading: 'Platform Portfolio Structure', bodyHtml: `<textarea id="pps-textarea" class="json-container">${escapeHtml(state.data.platformPortfolioStructure)}</textarea>` }) : ''}
+        ${accordionGroupHtml({ id: 'ps', heading: 'Portfolio Structure', bodyHtml: '<div id="ps-editor" class="json-editor-host"></div>' })}
+        ${platformExists() ? accordionGroupHtml({ id: 'pps', heading: 'Platform Portfolio Structure', bodyHtml: '<div id="pps-editor" class="json-editor-host"></div>' }) : ''}
       </div>
     </div>`;
   }
@@ -226,6 +233,7 @@ ${commitMessageModalHtml()}`;
   render();
 
   return () => {
+    editors.forEach((editor) => editor.destroy());
     clearNavigationGuard();
   };
 }

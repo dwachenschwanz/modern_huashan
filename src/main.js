@@ -1,9 +1,8 @@
 import './styles/app.css';
 import { addRoute, otherwise, startRouter, navigate } from './core/router.js';
-import { initModals, initDropdowns } from './components/bootstrapUI.js';
+import { initModals, initDropdowns } from './components/uiInteractions.js';
 
-// Global delegated handling for Bootstrap-style modal/dropdown triggers, so
-// individual views don't each need to wire this up.
+// Global delegated handling keeps individual views from duplicating listeners.
 initModals(document);
 initDropdowns(document);
 

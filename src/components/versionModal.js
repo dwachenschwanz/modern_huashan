@@ -3,7 +3,7 @@
  * an "About" link in the nav bar that opens a modal listing the changelog.
  */
 import { getVersions } from '../core/versions.js';
-import { showModal, hideModal } from './bootstrapUI.js';
+import { showModal, hideModal } from './uiInteractions.js';
 import { escapeHtml } from '../core/html.js';
 
 export function versionNavItemHtml() {

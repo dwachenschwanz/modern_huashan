@@ -3,7 +3,7 @@ import { huashan } from '../../api/huashanClient.js';
 import { session, restoreSession } from '../../core/session.js';
 import { SERVER_URL, TOKEN_KEY } from '../../core/config.js';
 import { navigate } from '../../core/router.js';
-import { flashAlert, initDropdowns } from '../../components/bootstrapUI.js';
+import { flashAlert, initDropdowns } from '../../components/uiInteractions.js';
 import { escapeHtml } from '../../core/html.js';
 
 const ALL_GROUP = 'ALL';

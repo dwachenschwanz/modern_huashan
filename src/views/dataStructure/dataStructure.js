@@ -15,7 +15,8 @@ import { appNavHtml } from '../../components/appNav.js';
 import { renderAlerts, wireAlertClose } from '../../components/alerts.js';
 import { commitMessageModalHtml, initCommitMessageModal, closeCommitMessageModal } from '../../components/commitMessageModal.js';
 import { applyFixedHeader } from '../../components/fixedHeader.js';
-import { initTooltips } from '../../components/bootstrapUI.js';
+import { initTooltips } from '../../components/uiInteractions.js';
+import { loadingOverlayHtml } from '../../components/loadingOverlay.js';
 import { escapeHtml, extractTablePreviewHtml } from '../../core/html.js';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -672,8 +673,7 @@ export function mount(container, params) {
     if (state.showLoading || !state.includedComponents || !state.excludedComponents) {
       container.innerHTML = `
 ${appNavHtml({ active: 'dataStructure', isAdmin: state.isAdmin, selectedTemplate: state.selectedTemplate })}
-<div id="loadingSpinner"></div>`;
-      if (state.showLoading) startSpinner(container.querySelector('#loadingSpinner'));
+${loadingOverlayHtml()}`;
       return;
     }
 
@@ -720,29 +720,6 @@ ${commitMessageModalHtml()}`;
     if (outputTable) applyFixedHeader(outputTable);
     initCommitMessageModal(container, saveWithCommit);
     wireAlertClose(container.querySelector('#ds-alerts'), state.alerts, render);
-  }
-
-  function startSpinner(target) {
-    if (!target || typeof window.Spinner === 'undefined' || typeof window.iosOverlay === 'undefined') return;
-    const opts = {
-      lines: 13,
-      length: 11,
-      width: 5,
-      radius: 17,
-      corners: 1,
-      rotate: 0,
-      color: '#FFF',
-      speed: 1,
-      trail: 60,
-      shadow: false,
-      hwaccel: false,
-      className: 'spinner',
-      zIndex: 2e9,
-      top: 'auto',
-      left: 'auto',
-    };
-    const spinner = new window.Spinner(opts).spin(target);
-    window.iosOverlay({ text: 'Loading', spinner, parentEl: 'loadingSpinner' });
   }
 
   function wireEvents() {

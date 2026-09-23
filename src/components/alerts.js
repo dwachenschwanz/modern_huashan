@@ -1,6 +1,6 @@
 /*
- * Replaces angular-ui-bootstrap's <alert> directive: a dismissible Bootstrap
- * alert. `alerts` is an array of `{ type, msg }`; `renderAlerts` produces the
+ * Renders dismissible alerts. `alerts` is an array of `{ type, msg }`;
+ * `renderAlerts` produces the
  * markup and `wireAlertClose` wires each alert's close (×) button to splice
  * it out of the backing array and re-render via `rerender`.
  */

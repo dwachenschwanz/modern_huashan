@@ -6,7 +6,8 @@ import { setNavigationGuard, clearNavigationGuard } from '../../core/router.js';
 import { appNavHtml } from '../../components/appNav.js';
 import { renderAlerts, wireAlertClose } from '../../components/alerts.js';
 import { commitMessageModalHtml, initCommitMessageModal, closeCommitMessageModal } from '../../components/commitMessageModal.js';
-import { onModalShown, hideModal } from '../../components/bootstrapUI.js';
+import { loadingOverlayHtml } from '../../components/loadingOverlay.js';
+import { onModalShown, hideModal } from '../../components/uiInteractions.js';
 import { makeSortable } from '../../components/sortable.js';
 import { scrollElementIntoView } from '../../components/scrollTo.js';
 import { escapeHtml, extractTablePreviewHtml } from '../../core/html.js';
@@ -135,6 +136,7 @@ export function mount(container, params) {
     bucketHigh: '',
     numBucketsClone: 0,
     searchText: '',
+    loadError: '',
   };
 
   let sortableHandle = null;
@@ -142,14 +144,28 @@ export function mount(container, params) {
   // ---- data loading (constructor + getX methods) ----
 
   function getPortfolioStructure() {
-    huashan.getPortfolioStructure(session.getCredentials(), params.templateID, state.isPlatform).then((response) => {
-      state.portfolioStructure = response.result;
-      state.portfolioStructureCopy = structuredClone(state.portfolioStructure);
-      state.selectedMenu = state.portfolioStructure.MENU[0];
-      selectMenu(state.selectedMenu);
-      state.numBucketsClone = 0;
-      onDataChanged();
-    });
+    state.loadError = '';
+    state.portfolioStructure = null;
+    render();
+    huashan
+      .getPortfolioStructure(session.getCredentials(), params.templateID, state.isPlatform)
+      .then((response) => {
+        if (!response || !response.status || !response.result || !Array.isArray(response.result.MENU)) {
+          throw new Error((response && response.msg) || 'The server returned an invalid portfolio structure.');
+        }
+        state.portfolioStructure = response.result;
+        state.portfolioStructureCopy = structuredClone(state.portfolioStructure);
+        state.selectedMenu = state.portfolioStructure.MENU[0] || null;
+        selectMenu(state.selectedMenu);
+        state.numBucketsClone = 0;
+        // This is the first full render; incremental refreshes are safe after it.
+        render();
+      })
+      .catch((error) => {
+        console.error('Portfolio structure loading failed:', error);
+        state.loadError = error instanceof Error ? error.message : 'Portfolio structure loading failed.';
+        render();
+      });
   }
 
   function getAppStructure() {
@@ -1720,6 +1736,26 @@ export function mount(container, params) {
   }
 
   function render() {
+    if (!state.portfolioStructure) {
+      if (state.loadError) {
+        container.innerHTML = `
+${appNavHtml({ active: 'portfolioStructure', isAdmin: state.isAdmin, selectedTemplate: state.selectedTemplate })}
+<div class="container-fluid">
+  <div class="alert alert-danger" role="alert">
+    <b>Portfolio structure could not be loaded.</b>
+    <div>${escapeHtml(state.loadError)}</div>
+  </div>
+  <button type="button" class="btn btn-primary" id="ps-load-retry">Retry</button>
+</div>`;
+        container.querySelector('#ps-load-retry').addEventListener('click', getPortfolioStructure);
+        return;
+      }
+      container.innerHTML = `
+${appNavHtml({ active: 'portfolioStructure', isAdmin: state.isAdmin, selectedTemplate: state.selectedTemplate })}
+${loadingOverlayHtml('Loading portfolio structure')}`;
+      return;
+    }
+
     container.innerHTML = `
 ${appNavHtml({ active: 'portfolioStructure', isAdmin: state.isAdmin, selectedTemplate: state.selectedTemplate })}
 <div class="select-template fadeIn" style="height: calc(100% - 100px)">

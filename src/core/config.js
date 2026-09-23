@@ -2,7 +2,7 @@
  * The legacy app kept two copies of this (one per file) that had to be kept
  * in sync by hand; this is now the single source of truth. */
 
-export const DOMAIN = 'https://qa.smartorg.com';
+export const DOMAIN = window.location.origin;
 export const ENDPOINT = 'kirk';
 export const SERVER_URL = `${DOMAIN}/${ENDPOINT}`;
 export const WIZARD_URL = `${SERVER_URL}/wizard/main?`;

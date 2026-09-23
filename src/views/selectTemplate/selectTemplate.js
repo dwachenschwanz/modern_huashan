@@ -31,7 +31,7 @@ import { SERVER_URL, TOKEN_KEY } from '../../core/config.js';
 import { navigate } from '../../core/router.js';
 import { TheUte } from '../../core/textUtils.js';
 import { appNavHtml } from '../../components/appNav.js';
-import { showModal, hideModal, flashAlert, initTooltips } from '../../components/bootstrapUI.js';
+import { showModal, hideModal, flashAlert, initTooltips } from '../../components/uiInteractions.js';
 import { renderAlerts, wireAlertClose } from '../../components/alerts.js';
 import { escapeHtml } from '../../core/html.js';
 
@@ -59,7 +59,8 @@ const saveBlob = (() => {
     a.href = url;
     a.download = fileName;
     a.click();
-    window.URL.revokeObjectURL(url);
+    // Some browsers do not begin reading the object URL until after click returns.
+    window.setTimeout(() => window.URL.revokeObjectURL(url), 1000);
   };
 })();
 
@@ -146,7 +147,7 @@ export function mount(container) {
   // ---------------------------------------------------------------------
 
   function getGroups() {
-    // Mirrors the legacy bootstrap chain (getGroups -> getGroupsForUser ->
+    // Mirrors the legacy startup chain (getGroups -> getGroupsForUser ->
     // getTemplates). The group list itself isn't used anywhere in this view
     // (see file header), but this request's error handling - redirect to
     // /login on failure ("session expired") - is real, load-bearing
@@ -318,22 +319,48 @@ export function mount(container) {
     });
   }
 
-  function downloadTemplate() {
+  function downloadFileName(response) {
+    const disposition = response.headers.get('content-disposition') || '';
+    const encodedMatch = disposition.match(/filename\*=UTF-8''([^;]+)/i);
+    const plainMatch = disposition.match(/filename="?([^";]+)"?/i);
+    let fileName = encodedMatch ? decodeURIComponent(encodedMatch[1]) : plainMatch ? plainMatch[1] : '';
+    fileName = fileName.split(/[\\/]/).pop().trim();
+    if (!fileName) fileName = replaceSpace(state.selectedTemplate);
+    return /\.xls[xm]$/i.test(fileName) ? fileName : `${fileName}.xlsx`;
+  }
+
+  async function downloadTemplate() {
     state.loading = true;
     renderLoading();
-    const url = `${SERVER_URL}/wizard/download/excel/${state.selectedTemplate}`;
-    fetch(url, { headers: authHeaders({ 'Content-Type': 'application/json', Accept: 'application/vnd.ms-excel' }) })
-      .then((res) => res.blob())
-      .then((blob) => {
-        state.loading = false;
-        renderLoading();
-        saveBlob(blob, state.selectedTemplate);
-      })
-      .catch((err) => {
-        state.loading = false;
-        renderLoading();
-        console.error(err);
+    const templateName = encodeURIComponent(state.selectedTemplate);
+    const url = `${SERVER_URL}/wizard/download/excel/${templateName}`;
+
+    try {
+      const response = await fetch(url, {
+        headers: authHeaders({
+          Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel',
+        }),
       });
+      const contentType = (response.headers.get('content-type') || '').toLowerCase();
+
+      if (!response.ok || contentType.includes('application/json') || contentType.includes('text/html')) {
+        const responseText = (await response.text()).trim();
+        const detail = responseText.length > 300 ? `${responseText.slice(0, 300)}...` : responseText;
+        throw new Error(`Download failed (${response.status})${detail ? `: ${detail}` : ''}`);
+      }
+
+      const blob = await response.blob();
+      if (blob.size === 0) throw new Error('Download failed: the server returned an empty file.');
+      saveBlob(blob, downloadFileName(response));
+    } catch (err) {
+      console.error('Excel download failed:', err);
+      state.alertMsg.type = 'danger';
+      state.alertMsg.msg = err instanceof Error ? err.message : 'Excel download failed.';
+      showFlashAlert('errorMsgAlert', 5000);
+    } finally {
+      state.loading = false;
+      renderLoading();
+    }
   }
 
   function replaceSpace(fileName) {
@@ -709,7 +736,7 @@ export function mount(container) {
     if (udsTrigger) {
       udsTrigger.addEventListener('click', () => {
         // No preventDefault: this anchor also carries data-toggle="modal",
-        // handled by the app-wide delegated listener from bootstrapUI.js.
+        // handled by the app-wide delegated listener from uiInteractions.js.
         initializeUpdateDataStructure();
         renderRight();
       });
