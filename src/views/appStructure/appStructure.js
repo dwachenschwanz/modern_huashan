@@ -96,7 +96,6 @@ class BucketManager {
 export function mount(container, params) {
   if (!restoreSession()) return () => {};
 
-  let render = () => {};
   let disposed = false;
 
   const state = {
@@ -982,136 +981,6 @@ export function mount(container, params) {
     }
   }
 
-  return mountPart2({
-    container,
-    params,
-    state,
-    findKey,
-    findCellLink,
-    addAlert,
-    isUnchanged,
-    getKeyFrom,
-    buildOutputFromKey,
-    getOutputDisplayFromKey,
-    getAppStructure,
-    getPotentialTables,
-    getCharts,
-    loadAppStructure,
-    isDisposed() {
-      return disposed;
-    },
-    dispose() {
-      disposed = true;
-    },
-    selectMenu,
-    selectTable,
-    selectPotentialTable,
-    selectImageTable,
-    selectImageChart,
-    renderSelectedImageChart,
-    save,
-    saveWithCommit,
-    rename,
-    selectSendBackTornado,
-    selectSendBackTo,
-    addSendBack,
-    deleteSendBack,
-    selectTornado,
-    selectWithinMetalog,
-    excludeInput,
-    includeInput,
-    selectTableInput,
-    deleteAppStructure,
-    addNewAppStructure,
-    openNew,
-    addCompareValueItem,
-    deleteCompareValueItem,
-    addFailurebranch,
-    deleteFailurebranchStage,
-    addCFOChartItem,
-    deleteCFOChartItem,
-    addInnovationScreenItem,
-    deleteInnovationScreenItem,
-    addScatterPlotItem,
-    deleteScatterPlotItem,
-    addBucketChartSet,
-    generateBuckets,
-    toggleNameEdit,
-    toggleRuleEdit,
-    addBucket,
-    deleteBucket,
-    deleteBucketSet,
-    insertParamsToWaterfallTables,
-    addNewParamsToWaterfall,
-    deleteTableInWaterfall,
-    changePrecisionOptions,
-    destroyImageChart,
-    setRender(nextRender) {
-      render = nextRender;
-    },
-  });
-}
-
-function mountPart2({
-  container,
-  params,
-  state,
-  isUnchanged,
-  getAppStructure,
-  getPotentialTables,
-  getCharts,
-  loadAppStructure,
-  isDisposed,
-  dispose,
-  selectMenu,
-  findKey,
-  findCellLink,
-  getKeyFrom,
-  buildOutputFromKey,
-  getOutputDisplayFromKey,
-  selectTable,
-  selectPotentialTable,
-  selectImageTable,
-  selectImageChart,
-  renderSelectedImageChart,
-  saveWithCommit,
-  rename,
-  deleteAppStructure,
-  addNewAppStructure,
-  openNew,
-  selectSendBackTornado,
-  selectSendBackTo,
-  addSendBack,
-  deleteSendBack,
-  selectTornado,
-  selectWithinMetalog,
-  excludeInput,
-  includeInput,
-  selectTableInput,
-  addCompareValueItem,
-  deleteCompareValueItem,
-  addFailurebranch,
-  deleteFailurebranchStage,
-  addCFOChartItem,
-  deleteCFOChartItem,
-  addInnovationScreenItem,
-  deleteInnovationScreenItem,
-  addScatterPlotItem,
-  deleteScatterPlotItem,
-  addBucketChartSet,
-  generateBuckets,
-  toggleNameEdit,
-  toggleRuleEdit,
-  addBucket,
-  deleteBucket,
-  deleteBucketSet,
-  insertParamsToWaterfallTables,
-  addNewParamsToWaterfall,
-  deleteTableInWaterfall,
-  changePrecisionOptions,
-  destroyImageChart,
-  setRender,
-}) {
   const projectCommands = ['INPUT_SCREEN', 'TABLE', 'TABLE_INPUT', 'IMAGE', 'TORNADODIST', 'METALOG_DISPLAY', 'WATERFALL'];
   const platformCommands = [
     'INPUT_SCREEN', 'TABLE', 'TABLE_INPUT', 'IMAGE', 'TORNADODIST', 'METALOG_DISPLAY',
@@ -1484,7 +1353,7 @@ function mountPart2({
   }
 
   function render() {
-    if (isDisposed()) return;
+    if (disposed) return;
     if (state.loadError) {
       container.innerHTML = `
         ${appNavHtml({ active: 'appStructure', isAdmin: state.isAdmin, selectedTemplate: state.selectedTemplate })}
@@ -1588,7 +1457,6 @@ function mountPart2({
     initTooltips(container);
   }
 
-  setRender(render);
   loadAppStructure();
 
   setNavigationGuard((nextPath) => {
@@ -1600,7 +1468,7 @@ function mountPart2({
   });
 
   return () => {
-    dispose();
+    disposed = true;
     destroyImageChart();
     clearNavigationGuard();
   };
