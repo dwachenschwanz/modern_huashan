@@ -5,6 +5,9 @@
 
 // ---- Modal ---------------------------------------------------------------
 
+const modalPlaceholders = new WeakMap();
+const modalReturnFocus = new WeakMap();
+
 function getBackdrop() {
   let backdrop = document.querySelector('.modal-backdrop');
   if (!backdrop) {
@@ -17,11 +20,24 @@ function getBackdrop() {
   return backdrop;
 }
 
-export function showModal(idOrEl) {
+export function showModal(idOrEl, triggerEl) {
   const el = typeof idOrEl === 'string' ? document.getElementById(idOrEl) : idOrEl;
   if (!el) return;
+  const activeElement = triggerEl || document.activeElement;
+  const returnFocus = activeElement && activeElement.id
+    ? document.getElementById(activeElement.id) || activeElement
+    : activeElement;
+  if (returnFocus) modalReturnFocus.set(el, returnFocus);
+  if (el.parentNode !== document.body) {
+    const placeholder = document.createComment(`modal:${el.id || 'anonymous'}`);
+    el.parentNode.insertBefore(placeholder, el);
+    modalPlaceholders.set(el, placeholder);
+    document.body.appendChild(el);
+  }
+  el.inert = false;
   el.style.display = 'block';
   el.removeAttribute('aria-hidden');
+  el.setAttribute('aria-modal', 'true');
   document.body.classList.add('modal-open');
   const backdrop = getBackdrop();
   requestAnimationFrame(() => {
@@ -32,16 +48,33 @@ export function showModal(idOrEl) {
 }
 
 export function hideModal(idOrEl) {
-  const el = typeof idOrEl === 'string' ? document.getElementById(idOrEl) : idOrEl;
+  const el = typeof idOrEl === 'string'
+    ? [...document.querySelectorAll('.modal.in')].find((modal) => modal.id === idOrEl) || document.getElementById(idOrEl)
+    : idOrEl;
   if (!el) return;
   el.classList.remove('in');
+  const focusedElement = document.activeElement;
+  if (focusedElement && el.contains(focusedElement)) focusedElement.blur();
+  const returnFocus = modalReturnFocus.get(el);
+  if (returnFocus && returnFocus.isConnected && typeof returnFocus.focus === 'function') {
+    returnFocus.focus({ preventScroll: true });
+  }
+  modalReturnFocus.delete(el);
+  el.inert = true;
   el.setAttribute('aria-hidden', 'true');
+  el.removeAttribute('aria-modal');
   document.body.classList.remove('modal-open');
   const backdrop = document.querySelector('.modal-backdrop');
   if (backdrop) backdrop.remove();
   window.setTimeout(() => {
     el.style.display = 'none';
     el.dispatchEvent(new CustomEvent('hidden.bs.modal', { bubbles: true }));
+    const placeholder = modalPlaceholders.get(el);
+    if (placeholder) {
+      if (placeholder.isConnected) placeholder.replaceWith(el);
+      else el.remove();
+      modalPlaceholders.delete(el);
+    }
   }, 150);
 }
 
@@ -61,7 +94,7 @@ export function initModals(root = document) {
       const targetSel = trigger.getAttribute('data-target') || trigger.getAttribute('href');
       if (targetSel) {
         evt.preventDefault();
-        showModal(targetSel.replace('#', ''));
+        showModal(targetSel.replace('#', ''), trigger);
       }
       return;
     }

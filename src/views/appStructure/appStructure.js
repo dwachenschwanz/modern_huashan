@@ -1,6 +1,6 @@
 /* Ported from appStructureController.ts + views/appstructure.html. */
 import Highcharts from 'highcharts';
-import { huashan } from '../../api/huashanClient.js';
+import { huashan, isRequestAborted } from '../../api/huashanClient.js';
 import { session, restoreSession } from '../../core/session.js';
 import { SERVER_URL } from '../../core/config.js';
 import { navigate, setNavigationGuard, clearNavigationGuard } from '../../core/router.js';
@@ -8,6 +8,7 @@ import { appNavHtml } from '../../components/appNav.js';
 import { renderAlerts, wireAlertClose } from '../../components/alerts.js';
 import { commitMessageModalHtml, initCommitMessageModal, closeCommitMessageModal } from '../../components/commitMessageModal.js';
 import { loadingOverlayHtml } from '../../components/loadingOverlay.js';
+import { handleLoadError, loadErrorHtml, loadErrorMessage, requireResponseResult } from '../../components/loadError.js';
 import { showModal, hideModal, onModalShown, initTooltips } from '../../components/uiInteractions.js';
 import { makeSortable } from '../../components/sortable.js';
 import { scrollElementIntoView } from '../../components/scrollTo.js';
@@ -96,12 +97,14 @@ export function mount(container, params) {
   if (!restoreSession()) return () => {};
 
   let render = () => {};
+  let disposed = false;
 
   const state = {
     selectedTemplate: params.templateID,
     isPlatform: !!params.isPlatform,
     isAdmin: getIsAdmin(),
     appStructure: null,
+    loadError: '',
     appStructureCopy: null,
     selectedMenu: null,
     potentialTables: [],
@@ -199,7 +202,9 @@ export function mount(container, params) {
 
   function getAppStructure() {
     huashan.getAppStructure(session.getCredentials(), params.templateID, state.isPlatform).then((response) => {
-      state.appStructure = response.result;
+      const result = requireResponseResult(response, 'Loading the app structure');
+      if (!Array.isArray(result.MENU)) throw new Error('The app structure response did not contain a MENU array.');
+      state.appStructure = result;
       state.tornadoValueMetricKeys = gettornadoValueMetricKeys();
       state.tornadoMetaLogKeys = gettornadoMetaLogKeys();
       if (state.appStructure.PostProcessingOutputsForPortfolio === undefined) {
@@ -212,49 +217,80 @@ export function mount(container, params) {
       state.appStructureCopy = structuredClone(state.appStructure);
       getDataStructure();
       render();
-    });
+    }).catch(handleInitialLoadError);
     // platform app structure needs information in product app structure
     huashan.getAppStructure(session.getCredentials(), params.templateID, false).then((response) => {
-      const regularAppStructure = response.result;
+      const regularAppStructure = requireResponseResult(response, 'Loading the project app structure');
+      if (!Array.isArray(regularAppStructure.MENU)) throw new Error('The project app structure response did not contain a MENU array.');
       state.tables = regularAppStructure.MENU.filter((menu) => menu.Command === 'TABLE');
       if (state.selectedMenu && state.selectedMenu.Command === 'ADD_TABLES') selectMenu(state.selectedMenu);
       render();
-    });
+    }).catch(handleInitialLoadError);
   }
 
   function getPotentialTables() {
     huashan.getPotentialTables(session.getCredentials(), params.templateID).then((response) => {
-      state.potentialTables = response.result.PotentialTableOutputs;
+      const result = requireResponseResult(response, 'Loading potential tables');
+      if (!Array.isArray(result.PotentialTableOutputs)) throw new Error('Potential tables were missing from the response.');
+      state.potentialTables = result.PotentialTableOutputs;
       if (state.selectedMenu && ['TABLE', 'ADD_TABLES', 'WATERFALL'].includes(state.selectedMenu.Command)) {
         selectMenu(state.selectedMenu);
       } else if (state.selectedMenu && state.selectedMenu.Command === 'IMAGE' && state.selectedMenu.Parameters.Type === 'RANGE') {
         selectMenu(state.selectedMenu);
       }
       render();
-    });
+    }).catch(handleInitialLoadError);
   }
 
   function getCharts() {
     huashan.getCharts(session.getCredentials(), params.templateID).then((response) => {
-      state.charts = response.result.Charts;
+      const result = requireResponseResult(response, 'Loading charts');
+      if (!Array.isArray(result.Charts)) throw new Error('Charts were missing from the response.');
+      state.charts = result.Charts;
       if (state.selectedMenu && state.selectedMenu.Command === 'IMAGE' && state.selectedMenu.Parameters.Type === 'CHART') {
         selectMenu(state.selectedMenu);
       }
       render();
-    });
+    }).catch(handleInitialLoadError);
   }
 
   function getDataStructure() {
     huashan.getIncludedDataStructureComponents(session.getCredentials(), params.templateID, state.isPlatform).then((data) => {
-      state.inputs = data.result.Inputs;
+      const result = requireResponseResult(data, 'Loading app structure inputs and outputs');
+      if (!Array.isArray(result.Inputs) || !Array.isArray(result.Outputs)) {
+        throw new Error('Inputs or outputs were missing from the data structure response.');
+      }
+      state.inputs = result.Inputs;
       getExcludedInputs();
-      state.outputs = data.result.Outputs;
+      state.outputs = result.Outputs;
       state.allDataStructureComponents = state.inputs.concat(state.outputs);
       state.tableInputs = state.inputs.filter((input) => input.Type === 'TABLE');
       state.tornadoOutputs = state.outputs.filter((output) => output.UsePostProcessingOutputs === true);
       state.allOutputs = state.outputs.concat(state.tornadoOutputs);
       render();
-    });
+    }).catch(handleInitialLoadError);
+  }
+
+  function handleInitialLoadError(error) {
+    if (disposed) return;
+    handleLoadError(error, state, render);
+  }
+
+  function loadAppStructure() {
+    state.loadError = '';
+    state.appStructure = null;
+    state.appStructureCopy = null;
+    state.selectedMenu = null;
+    state.potentialTables = [];
+    state.tables = [];
+    state.charts = [];
+    state.inputs = [];
+    state.outputs = [];
+    state.excludedInputs = [];
+    render();
+    getAppStructure();
+    getPotentialTables();
+    getCharts();
   }
 
   function getExcludedInputs() {
@@ -487,6 +523,12 @@ export function mount(container, params) {
         } else {
           addAlert(state.saveAlerts, 'danger', response.msg);
         }
+        render();
+      })
+      .catch((error) => {
+        if (disposed || isRequestAborted(error)) return;
+        state.saveComplete = true;
+        addAlert(state.saveAlerts, 'danger', loadErrorMessage(error, 'The app structure could not be saved.'));
         render();
       });
   }
@@ -954,6 +996,13 @@ export function mount(container, params) {
     getAppStructure,
     getPotentialTables,
     getCharts,
+    loadAppStructure,
+    isDisposed() {
+      return disposed;
+    },
+    dispose() {
+      disposed = true;
+    },
     selectMenu,
     selectTable,
     selectPotentialTable,
@@ -1011,6 +1060,9 @@ function mountPart2({
   getAppStructure,
   getPotentialTables,
   getCharts,
+  loadAppStructure,
+  isDisposed,
+  dispose,
   selectMenu,
   findKey,
   findCellLink,
@@ -1432,6 +1484,14 @@ function mountPart2({
   }
 
   function render() {
+    if (isDisposed()) return;
+    if (state.loadError) {
+      container.innerHTML = `
+        ${appNavHtml({ active: 'appStructure', isAdmin: state.isAdmin, selectedTemplate: state.selectedTemplate })}
+        ${loadErrorHtml({ title: 'App structure could not be loaded.', message: state.loadError, retryId: 'as-load-retry' })}`;
+      container.querySelector('#as-load-retry').addEventListener('click', loadAppStructure);
+      return;
+    }
     if (!state.appStructure) {
       container.innerHTML = `
         ${appNavHtml({ active: 'appStructure', isAdmin: state.isAdmin, selectedTemplate: state.selectedTemplate })}
@@ -1529,10 +1589,7 @@ function mountPart2({
   }
 
   setRender(render);
-  render();
-  getAppStructure();
-  getPotentialTables();
-  getCharts();
+  loadAppStructure();
 
   setNavigationGuard((nextPath) => {
     if (isUnchanged()) return true;
@@ -1543,6 +1600,7 @@ function mountPart2({
   });
 
   return () => {
+    dispose();
     destroyImageChart();
     clearNavigationGuard();
   };

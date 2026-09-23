@@ -1,5 +1,5 @@
 /* Ported from jsonController.ts + views/json.html. */
-import { huashan } from '../../api/huashanClient.js';
+import { huashan, isRequestAborted } from '../../api/huashanClient.js';
 import { session, restoreSession } from '../../core/session.js';
 import { navigate, setNavigationGuard, clearNavigationGuard } from '../../core/router.js';
 import { appNavHtml } from '../../components/appNav.js';
@@ -7,6 +7,8 @@ import { accordionGroupHtml, initAccordions } from '../../components/accordion.j
 import { renderAlerts, wireAlertClose } from '../../components/alerts.js';
 import { commitMessageModalHtml, initCommitMessageModal, closeCommitMessageModal } from '../../components/commitMessageModal.js';
 import { createJsonEditor } from '../../components/jsonEditor.js';
+import { loadingOverlayHtml } from '../../components/loadingOverlay.js';
+import { handleLoadError, loadErrorHtml, loadErrorMessage, requireResponseResult } from '../../components/loadError.js';
 import { escapeHtml } from '../../core/html.js';
 
 function stringify(jsonObject) {
@@ -28,6 +30,7 @@ export function mount(container, params) {
   if (!restoreSession()) return () => {};
 
   let editors = [];
+  let disposed = false;
 
   const state = {
     selectedTemplate: params.templateID,
@@ -37,6 +40,7 @@ export function mount(container, params) {
     alerts: [],
     data: null,
     dataCopy: null,
+    loadError: '',
   };
 
   function isUnchanged() {
@@ -52,8 +56,22 @@ export function mount(container, params) {
   }
 
   function render() {
+    if (disposed) return;
     editors.forEach((editor) => editor.destroy());
     editors = [];
+    if (state.loadError) {
+      container.innerHTML = `
+${appNavHtml({ active: 'json', isAdmin: state.isAdmin, selectedTemplate: state.selectedTemplate })}
+${loadErrorHtml({ title: 'Template JSON could not be loaded.', message: state.loadError, retryId: 'json-load-retry' })}`;
+      container.querySelector('#json-load-retry').addEventListener('click', loadTemplateJsonFiles);
+      return;
+    }
+    if (!state.data) {
+      container.innerHTML = `
+${appNavHtml({ active: 'json', isAdmin: state.isAdmin, selectedTemplate: state.selectedTemplate })}
+${loadingOverlayHtml('Loading template JSON')}`;
+      return;
+    }
     container.innerHTML = `
 ${appNavHtml({ active: 'json', isAdmin: state.isAdmin, selectedTemplate: state.selectedTemplate })}
 <div class="select-template fadeIn" style="height:650px;background-color: #eee;margin-bottom: 60px;">
@@ -64,7 +82,7 @@ ${appNavHtml({ active: 'json', isAdmin: state.isAdmin, selectedTemplate: state.s
         <small><a target="_blank" class="pull-right" href="http://jsoneditoronline.org/">Open JSON Editor</a></small>
       </h3>
     </div>
-    ${state.data ? renderColumns() : '<div class="col-sm-12">Loading&hellip;</div>'}
+    ${renderColumns()}
   </div>
 </div>
 
@@ -78,29 +96,27 @@ ${appNavHtml({ active: 'json', isAdmin: state.isAdmin, selectedTemplate: state.s
 
 ${commitMessageModalHtml()}`;
 
-    if (state.data) {
-      initAccordions(container);
-      const editorConfigs = [
-        ['ds-editor', 'dataStructure', 'Data Structure JSON'],
-        ['as-editor', 'appStructure', 'App Structure JSON'],
-        ['ps-editor', 'portfolioStructure', 'Portfolio Structure JSON'],
-        ['pds-editor', 'platformDataStructure', 'Platform Data Structure JSON'],
-        ['pas-editor', 'platformAppStructure', 'Platform App Structure JSON'],
-        ['pps-editor', 'platformPortfolioStructure', 'Platform Portfolio Structure JSON'],
-      ];
-      editorConfigs.forEach(([id, field, label]) => {
-        const host = container.querySelector(`#${id}`);
-        if (!host) return;
-        editors.push(createJsonEditor(host, {
-          value: state.data[field],
-          label,
-          onChange(value) {
-            state.data[field] = value;
-            refreshSaveButton();
-          },
-        }));
-      });
-    }
+    initAccordions(container);
+    const editorConfigs = [
+      ['ds-editor', 'dataStructure', 'Data Structure JSON'],
+      ['as-editor', 'appStructure', 'App Structure JSON'],
+      ['ps-editor', 'portfolioStructure', 'Portfolio Structure JSON'],
+      ['pds-editor', 'platformDataStructure', 'Platform Data Structure JSON'],
+      ['pas-editor', 'platformAppStructure', 'Platform App Structure JSON'],
+      ['pps-editor', 'platformPortfolioStructure', 'Platform Portfolio Structure JSON'],
+    ];
+    editorConfigs.forEach(([id, field, label]) => {
+      const host = container.querySelector(`#${id}`);
+      if (!host) return;
+      editors.push(createJsonEditor(host, {
+        value: state.data[field],
+        label,
+        onChange(value) {
+          state.data[field] = value;
+          refreshSaveButton();
+        },
+      }));
+    });
 
     container.querySelector('#json-close-btn').addEventListener('click', () => navigate('/selectTemplate'));
     wireAlertClose(container.querySelector('#json-alerts'), state.alerts, render);
@@ -147,10 +163,21 @@ ${commitMessageModalHtml()}`;
   }
 
   function getTemplateJsonFiles() {
-    huashan.getTemplateJsonFiles(session.getCredentials(), params.templateID).then((response) => {
+    return huashan.getTemplateJsonFiles(session.getCredentials(), params.templateID).then((response) => {
       state.selectedTemplate = params.templateID;
-      setData(response.result);
+      setData(requireResponseResult(response, 'Loading template JSON'));
+    }).catch((error) => {
+      if (disposed) return;
+      handleLoadError(error, state, render);
     });
+  }
+
+  function loadTemplateJsonFiles() {
+    state.loadError = '';
+    state.data = null;
+    state.dataCopy = null;
+    render();
+    getTemplateJsonFiles();
   }
 
   function addAlert(msg) {
@@ -212,6 +239,12 @@ ${commitMessageModalHtml()}`;
           state.dataCopy = structuredClone(state.data);
         }
         render();
+      })
+      .catch((error) => {
+        if (disposed || isRequestAborted(error)) return;
+        state.saveComplete = true;
+        addAlert(loadErrorMessage(error, 'Template JSON could not be saved.'));
+        render();
       });
   }
 
@@ -229,10 +262,10 @@ ${commitMessageModalHtml()}`;
     return true;
   });
 
-  getTemplateJsonFiles();
-  render();
+  loadTemplateJsonFiles();
 
   return () => {
+    disposed = true;
     editors.forEach((editor) => editor.destroy());
     clearNavigationGuard();
   };

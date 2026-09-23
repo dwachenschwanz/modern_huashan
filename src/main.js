@@ -1,10 +1,12 @@
 import './styles/app.css';
 import { addRoute, otherwise, startRouter, navigate } from './core/router.js';
 import { initModals, initDropdowns } from './components/uiInteractions.js';
+import { initApiErrorBoundary } from './components/apiErrorBoundary.js';
 
 // Global delegated handling keeps individual views from duplicating listeners.
 initModals(document);
 initDropdowns(document);
+initApiErrorBoundary();
 
 const appEl = document.getElementById('app');
 

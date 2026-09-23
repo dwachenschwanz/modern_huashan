@@ -81,3 +81,17 @@ body {
 .centerText {
     text-align: center
 }
+.api-error-banner {
+  position: fixed;
+  z-index: 11000;
+  top: 12px;
+  left: 50%;
+  width: min(680px, calc(100% - 24px));
+  margin: 0;
+  transform: translateX(-50%);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.24);
+}
+
+.api-error-banner .close {
+  margin-left: 16px;
+}

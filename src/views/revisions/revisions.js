@@ -1,9 +1,13 @@
 /* Ported from revisionsController.ts + views/revisions.html. */
-import { huashan } from '../../api/huashanClient.js';
+import { huashan, isRequestAborted } from '../../api/huashanClient.js';
 import { session, restoreSession } from '../../core/session.js';
 import { SERVER_URL, TOKEN_KEY } from '../../core/config.js';
+import { getRouteSignal } from '../../core/router.js';
 import { appNavHtml } from '../../components/appNav.js';
 import { accordionGroupHtml, initAccordions } from '../../components/accordion.js';
+import { renderAlerts, wireAlertClose } from '../../components/alerts.js';
+import { loadingOverlayHtml } from '../../components/loadingOverlay.js';
+import { handleLoadError, loadErrorHtml, loadErrorMessage, requireResponseResult } from '../../components/loadError.js';
 import { initTooltips } from '../../components/uiInteractions.js';
 import { escapeHtml } from '../../core/html.js';
 
@@ -47,6 +51,7 @@ function getDisplayNameBy(fileName) {
 
 export function mount(container, params) {
   if (!restoreSession()) return () => {};
+  let disposed = false;
 
   const state = {
     selectedTemplate: params.templateID,
@@ -58,6 +63,8 @@ export function mount(container, params) {
     jsonCompareResult: null,
     templateGot: {},
     alerts: [],
+    loading: true,
+    loadError: '',
   };
 
   function addAlert(msg) {
@@ -74,6 +81,20 @@ export function mount(container, params) {
   }
 
   function render() {
+    if (disposed) return;
+    if (state.loadError) {
+      container.innerHTML = `
+${appNavHtml({ active: 'revisions', isAdmin: state.isAdmin, selectedTemplate: state.selectedTemplate })}
+${loadErrorHtml({ title: 'Revision history could not be loaded.', message: state.loadError, retryId: 'revisions-load-retry' })}`;
+      container.querySelector('#revisions-load-retry').addEventListener('click', loadRevisionHistory);
+      return;
+    }
+    if (state.loading) {
+      container.innerHTML = `
+${appNavHtml({ active: 'revisions', isAdmin: state.isAdmin, selectedTemplate: state.selectedTemplate })}
+${loadingOverlayHtml('Loading revision history')}`;
+      return;
+    }
     const revisions = (state.re && state.re.revisionLogs) || [];
     const selectedRevision = state.selectedRevisionIndex != null ? revisions[state.selectedRevisionIndex] : null;
     const selectedRevisionCompare =
@@ -81,6 +102,7 @@ export function mount(container, params) {
 
     container.innerHTML = `
 ${appNavHtml({ active: 'revisions', isAdmin: state.isAdmin, selectedTemplate: state.selectedTemplate })}
+<div id="revision-alerts">${renderAlerts(state.alerts)}</div>
 <div class="select-template animated fadeIn" style="height: 100%">
   <div id="choose-from" style="height: 100%">
     <div class="select-template-title"><h4><b>Revision History</b></h4></div>
@@ -154,6 +176,7 @@ ${appNavHtml({ active: 'revisions', isAdmin: state.isAdmin, selectedTemplate: st
 
     initAccordions(container);
     initTooltips(container);
+    wireAlertClose(container.querySelector('#revision-alerts'), state.alerts, render);
 
     container.querySelectorAll('[data-revision-index]').forEach((el) => {
       el.addEventListener('click', (evt) => {
@@ -204,42 +227,33 @@ ${appNavHtml({ active: 'revisions', isAdmin: state.isAdmin, selectedTemplate: st
   }
 
   async function getTemplateData() {
-    try {
-      const res = await fetch(`${SERVER_URL}/domain/astro-templates/${params.templateID}`, {
-        headers: { Authorization: 'jwttoken ' + (localStorage.getItem(TOKEN_KEY) || '') },
-      });
-      const body = await res.json();
-      if (body.token) localStorage.setItem(TOKEN_KEY, body.token);
-      if (body.data.status === 1) {
-        state.templateGot = body.data.template;
-        await getRevisions();
-      } else {
-        addAlert(body.data.message);
-      }
-    } catch (err) {
-      addAlert(err);
+    const res = await fetch(`${SERVER_URL}/domain/astro-templates/${encodeURIComponent(params.templateID)}`, {
+      headers: { Authorization: 'jwttoken ' + (localStorage.getItem(TOKEN_KEY) || '') },
+      signal: getRouteSignal(),
+    });
+    if (!res.ok) throw new Error(`Loading template details failed with HTTP ${res.status}.`);
+    const body = await res.json();
+    if (body.token) localStorage.setItem(TOKEN_KEY, body.token);
+    if (!body.data || body.data.status !== 1 || !body.data.template) {
+      throw new Error((body.data && body.data.message) || 'Template details were missing from the response.');
     }
+    if (disposed) return;
+    state.templateGot = body.data.template;
+    await getRevisions();
   }
 
   async function getRevisions() {
-    try {
-      const response = await huashan.getRevisions(session.getCredentials(), params.templateID);
-      if (response.status) {
-        const temLog = response.result.split('\n').map((item) => JSON.parse(item));
-        state.re = { revisionLogs: temLog };
-        let revisionIndex = state.re.revisionLogs.findIndex(
-          (t) => t.commitNum === (state.templateGot.history && state.templateGot.history.guid)
-        );
-        if (revisionIndex === -1 && state.re.revisionLogs.length > 0) revisionIndex = 0;
-        state.selectedRevisionIndex = revisionIndex === -1 ? null : revisionIndex;
-        await getTemplateJsonFiles();
-      } else {
-        addAlert(response.msg);
-      }
-      render();
-    } catch (err) {
-      console.error(err);
-    }
+    const response = await huashan.getRevisions(session.getCredentials(), params.templateID);
+    const result = requireResponseResult(response, 'Loading revision history');
+    if (typeof result !== 'string') throw new Error('Revision history returned an invalid result.');
+    const temLog = result.split('\n').filter((item) => item.trim()).map((item) => JSON.parse(item));
+    state.re = { revisionLogs: temLog };
+    let revisionIndex = state.re.revisionLogs.findIndex(
+      (t) => t.commitNum === (state.templateGot.history && state.templateGot.history.guid)
+    );
+    if (revisionIndex === -1 && state.re.revisionLogs.length > 0) revisionIndex = 0;
+    state.selectedRevisionIndex = revisionIndex === -1 ? null : revisionIndex;
+    await getTemplateJsonFiles();
   }
 
   function selectRevision(commitNumber, index) {
@@ -249,18 +263,22 @@ ${appNavHtml({ active: 'revisions', isAdmin: state.isAdmin, selectedTemplate: st
 
   async function switchRevisionByCommitHash(commitHash) {
     try {
-      await huashan.switchRevisionByCommitHash(session.getCredentials(), params.templateID, { commitHash });
+      const response = await huashan.switchRevisionByCommitHash(session.getCredentials(), params.templateID, { commitHash });
+      if (!response || response.status !== true) throw new Error((response && response.msg) || 'The revision could not be selected.');
+      if (disposed) return;
       state.selectedTemplate = params.templateID;
       await getTemplateJsonFiles();
       render();
     } catch (err) {
-      console.error(err);
+      if (disposed || isRequestAborted(err)) return;
+      addAlert(loadErrorMessage(err, 'The revision could not be selected.'));
+      render();
     }
   }
 
   async function getTemplateJsonFiles() {
     const response = await huashan.getTemplateJsonFiles(session.getCredentials(), params.templateID);
-    setData(response.result);
+    setData(requireResponseResult(response, 'Loading revision JSON'));
   }
 
   function setData(jsonFiles) {
@@ -297,16 +315,43 @@ ${appNavHtml({ active: 'revisions', isAdmin: state.isAdmin, selectedTemplate: st
         selectedRevision,
         selectedRevisionCompare,
       });
-      const temp = response.result.split('\n').map((item) => JSON.parse(item));
+      const result = requireResponseResult(response, 'Comparing revisions');
+      if (typeof result !== 'string') throw new Error('The comparison returned an invalid result.');
+      const temp = result.split('\n').filter((item) => item.trim()).map((item) => JSON.parse(item));
       state.jsonCompareResult = temp[0];
       render();
     } catch (err) {
-      console.error(err);
+      if (disposed || isRequestAborted(err)) return;
+      addAlert(loadErrorMessage(err, 'The revisions could not be compared.'));
+      render();
     }
   }
 
-  getTemplateData();
-  render();
+  function handleInitialLoadError(error) {
+    if (disposed || error.name === 'AbortError') return;
+    state.loading = false;
+    handleLoadError(error, state, render);
+  }
 
-  return () => {};
+  function loadRevisionHistory() {
+    state.loading = true;
+    state.loadError = '';
+    state.re = null;
+    state.jsonData = null;
+    state.jsonCompareResult = null;
+    render();
+    getTemplateData()
+      .then(() => {
+        if (disposed) return;
+        state.loading = false;
+        render();
+      })
+      .catch(handleInitialLoadError);
+  }
+
+  loadRevisionHistory();
+
+  return () => {
+    disposed = true;
+  };
 }

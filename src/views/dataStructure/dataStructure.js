@@ -7,7 +7,7 @@
  * save flow is the bottom "save" button -> commitMessageModal, same as the
  * other structure views.
  */
-import { huashan } from '../../api/huashanClient.js';
+import { huashan, isRequestAborted } from '../../api/huashanClient.js';
 import { session, restoreSession } from '../../core/session.js';
 import { smartorg, SERVER_URL } from '../../core/config.js';
 import { setNavigationGuard, clearNavigationGuard } from '../../core/router.js';
@@ -17,6 +17,7 @@ import { commitMessageModalHtml, initCommitMessageModal, closeCommitMessageModal
 import { applyFixedHeader } from '../../components/fixedHeader.js';
 import { initTooltips } from '../../components/uiInteractions.js';
 import { loadingOverlayHtml } from '../../components/loadingOverlay.js';
+import { handleLoadError, loadErrorHtml, loadErrorMessage, requireResponseResult } from '../../components/loadError.js';
 import { escapeHtml, extractTablePreviewHtml } from '../../core/html.js';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -47,12 +48,14 @@ function updateFormat(val, month, year) {
 
 export function mount(container, params) {
   if (!restoreSession()) return () => {};
+  let disposed = false;
 
   const state = {
     selectedTemplate: params.templateID,
     isPlatform: !!params.isPlatform,
     isAdmin: getIsAdmin(),
     showLoading: true,
+    loadError: '',
     activeTab: 'input',
     data: null,
     includedComponents: null,
@@ -137,32 +140,57 @@ export function mount(container, params) {
   }
 
   function getPotentialTableInputs() {
-    smartorg.wizard
+    return smartorg.wizard
       .fetchPotentialTableInputs(params.templateID)
       .then((ptInputs) => {
         state.potentialTableInputs = (ptInputs.data && ptInputs.data.PotentialTableInputs) || [];
         buildPotentialTableLists();
       })
-      .catch(() => {});
+      .catch(handleInitialLoadError);
   }
 
   function getIncludedDataStructureComponents() {
-    huashan.getIncludedDataStructureComponents(session.getCredentials(), params.templateID, state.isPlatform).then((data) => {
+    return huashan.getIncludedDataStructureComponents(session.getCredentials(), params.templateID, state.isPlatform).then((data) => {
+      requireResponseResult(data, 'Loading the data structure');
       state.data = data;
       state.includedComponents = data.result;
       state.includedComponentsCopy = structuredClone(state.includedComponents);
       getPotentialTableInputs();
       render();
-    });
+    }).catch(handleInitialLoadError);
   }
 
   function getExcludedDataStructureComponents() {
-    huashan.getExcludedDataStructureComponents(session.getCredentials(), params.templateID, state.isPlatform).then((data) => {
+    return huashan.getExcludedDataStructureComponents(session.getCredentials(), params.templateID, state.isPlatform).then((data) => {
+      requireResponseResult(data, 'Loading excluded data structure components');
+      if (!data.result.Excluded) throw new Error('Excluded data structure components were missing from the response.');
       state.showLoading = false;
       state.excludedComponents = data.result.Excluded;
       buildPotentialTableLists();
       render();
-    });
+    }).catch(handleInitialLoadError);
+  }
+
+  function handleInitialLoadError(error) {
+    if (disposed) return;
+    state.showLoading = false;
+    handleLoadError(error, state, render);
+  }
+
+  function loadDataStructure() {
+    state.loadError = '';
+    state.showLoading = true;
+    state.data = null;
+    state.includedComponents = null;
+    state.includedComponentsCopy = null;
+    state.excludedComponents = null;
+    state.potentialTableInputs = [];
+    state.includedPotentialTableInputs = [];
+    state.excludedPotentialTableInputs = [];
+    state.potentialTableListsBuilt = false;
+    render();
+    getIncludedDataStructureComponents();
+    getExcludedDataStructureComponents();
   }
 
   // ---- actions ----
@@ -330,6 +358,12 @@ export function mount(container, params) {
         } else {
           state.includedComponentsCopy = structuredClone(state.includedComponents);
         }
+        render();
+      })
+      .catch((error) => {
+        if (disposed || isRequestAborted(error)) return;
+        state.saveComplete = true;
+        addAlert(loadErrorMessage(error, 'The data structure could not be saved.'));
         render();
       });
   }
@@ -670,6 +704,14 @@ export function mount(container, params) {
   }
 
   function render() {
+    if (disposed) return;
+    if (state.loadError) {
+      container.innerHTML = `
+${appNavHtml({ active: 'dataStructure', isAdmin: state.isAdmin, selectedTemplate: state.selectedTemplate })}
+${loadErrorHtml({ title: 'Data structure could not be loaded.', message: state.loadError, retryId: 'ds-load-retry' })}`;
+      container.querySelector('#ds-load-retry').addEventListener('click', loadDataStructure);
+      return;
+    }
     if (state.showLoading || !state.includedComponents || !state.excludedComponents) {
       container.innerHTML = `
 ${appNavHtml({ active: 'dataStructure', isAdmin: state.isAdmin, selectedTemplate: state.selectedTemplate })}
@@ -905,11 +947,10 @@ ${commitMessageModalHtml()}`;
     return true;
   });
 
-  getIncludedDataStructureComponents();
-  getExcludedDataStructureComponents();
-  render();
+  loadDataStructure();
 
   return () => {
+    disposed = true;
     clearNavigationGuard();
   };
 }

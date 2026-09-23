@@ -25,14 +25,15 @@
  * the whole controller, so the ogre===true modal branches could never render
  * and those click handlers could never fire even in the original app.
  */
-import { huashan } from '../../api/huashanClient.js';
+import { huashan, isRequestAborted } from '../../api/huashanClient.js';
 import { session, restoreSession } from '../../core/session.js';
 import { SERVER_URL, TOKEN_KEY } from '../../core/config.js';
-import { navigate } from '../../core/router.js';
+import { getRouteSignal, navigate } from '../../core/router.js';
 import { TheUte } from '../../core/textUtils.js';
 import { appNavHtml } from '../../components/appNav.js';
 import { showModal, hideModal, flashAlert, initTooltips } from '../../components/uiInteractions.js';
 import { renderAlerts, wireAlertClose } from '../../components/alerts.js';
+import { loadErrorMessage } from '../../components/loadError.js';
 import { escapeHtml } from '../../core/html.js';
 
 function escapeAttr(str) {
@@ -66,6 +67,7 @@ const saveBlob = (() => {
 
 export function mount(container) {
   if (!restoreSession()) return () => {};
+  let disposed = false;
 
   const userInfo = getUserInfo();
 
@@ -79,6 +81,7 @@ export function mount(container) {
     isAdmin: !!(userInfo && userInfo.is_admin),
     loading: false,
     loadingTable: false,
+    tableLoadError: '',
     loadingDeleteList: false,
     deletedTemplates: [],
     selectedDeletedTemplate: 'Not Selected',
@@ -142,6 +145,11 @@ export function mount(container) {
     flashAlert(id, delayMs);
   }
 
+  function renderLoading() {
+    const loadingEl = container.querySelector('#st-loading');
+    if (loadingEl) loadingEl.hidden = !state.loading;
+  }
+
   // ---------------------------------------------------------------------
   // data loading
   // ---------------------------------------------------------------------
@@ -152,13 +160,14 @@ export function mount(container) {
     // (see file header), but this request's error handling - redirect to
     // /login on failure ("session expired") - is real, load-bearing
     // behavior, so it's preserved as the gate before loading templates.
-    fetch(`${SERVER_URL}/framework/admin/group/list`, { headers: authHeaders() })
+    fetch(`${SERVER_URL}/framework/admin/group/list`, { headers: authHeaders(), signal: getRouteSignal() })
       .then((res) => res.json())
       .then((body) => {
         if (body.token) localStorage.setItem(TOKEN_KEY, body.token);
         getTemplates();
       })
       .catch((err) => {
+        if (disposed || err.name === 'AbortError') return;
         console.error(err);
         state.alertMsg.type = 'danger';
         state.alertMsg.msg = '(SESSION EXPIRED) Data retrieval failed due to: ' + (err.data ? err.data.message : err);
@@ -170,6 +179,7 @@ export function mount(container) {
   function getTemplates() {
     state.templates = [];
     state.loadingTable = true;
+    state.tableLoadError = '';
     renderList();
     huashan.getAstroTemplates(session.getCredentials()).then((response) => {
       if (response.status) {
@@ -193,10 +203,19 @@ export function mount(container) {
         onTemplateChanged();
       } else {
         state.loadingTable = false;
+        state.tableLoadError = response.msg || 'Templates could not be loaded.';
         renderList();
         state.alertMsg.msg = 'Templates not found! ' + response.msg;
         showFlashAlert('infoMsgAlert', 3000);
       }
+    }).catch((error) => {
+      if (disposed || isRequestAborted(error)) return;
+      state.loadingTable = false;
+      state.tableLoadError = loadErrorMessage(error, 'Templates could not be loaded.');
+      renderList();
+      state.alertMsg.type = 'danger';
+      state.alertMsg.msg = loadErrorMessage(error, 'Templates could not be loaded.');
+      showFlashAlert('errorMsgAlert', 5000);
     });
   }
 
@@ -230,6 +249,11 @@ export function mount(container) {
         alert('Some error happened: ' + response.msg);
       }
       renderRight();
+    }).catch((error) => {
+      if (disposed || isRequestAborted(error)) return;
+      state.alertMsg.type = 'danger';
+      state.alertMsg.msg = loadErrorMessage(error, 'Associated portfolios could not be loaded.');
+      showFlashAlert('errorMsgAlert', 5000);
     });
   }
 
@@ -267,6 +291,13 @@ export function mount(container) {
         return;
       }
       renderTrashModal();
+    }).catch((error) => {
+      if (disposed || isRequestAborted(error)) return;
+      state.loadingDeleteList = false;
+      renderTrashModal();
+      state.alertMsg.type = 'danger';
+      state.alertMsg.msg = loadErrorMessage(error, 'Archived templates could not be loaded.');
+      showFlashAlert('errorMsgAlert', 5000);
     });
   }
 
@@ -294,6 +325,12 @@ export function mount(container) {
         renderLoading();
         renderDeleteModal();
       }
+    }).catch((error) => {
+      if (disposed || isRequestAborted(error)) return;
+      state.loading = false;
+      addAlert(state.deleteAlerts, 'danger', loadErrorMessage(error, 'The template could not be archived.'));
+      renderLoading();
+      renderDeleteModal();
     });
   }
 
@@ -316,6 +353,12 @@ export function mount(container) {
         renderLoading();
         renderTrashModal();
       }
+    }).catch((error) => {
+      if (disposed || isRequestAborted(error)) return;
+      state.loading = false;
+      addAlert(state.undeleteAlerts, 'danger', loadErrorMessage(error, 'The template could not be restored.'));
+      renderLoading();
+      renderTrashModal();
     });
   }
 
@@ -340,6 +383,7 @@ export function mount(container) {
         headers: authHeaders({
           Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel',
         }),
+        signal: getRouteSignal(),
       });
       const contentType = (response.headers.get('content-type') || '').toLowerCase();
 
@@ -353,13 +397,16 @@ export function mount(container) {
       if (blob.size === 0) throw new Error('Download failed: the server returned an empty file.');
       saveBlob(blob, downloadFileName(response));
     } catch (err) {
+      if (disposed || err.name === 'AbortError') return;
       console.error('Excel download failed:', err);
       state.alertMsg.type = 'danger';
       state.alertMsg.msg = err instanceof Error ? err.message : 'Excel download failed.';
       showFlashAlert('errorMsgAlert', 5000);
     } finally {
-      state.loading = false;
-      renderLoading();
+      if (!disposed) {
+        state.loading = false;
+        renderLoading();
+      }
     }
   }
 
@@ -372,9 +419,7 @@ export function mount(container) {
     state.renameAlerts = [];
     if (state.newTemplateName === '') {
       addAlert(state.renameAlerts, 'danger', 'Template name cannot be blank.');
-      // Legacy bug, preserved: `loading` is never reset on this early-return
-      // path, so the page-wide spinner overlay stays up until some other
-      // action resets it.
+      state.loading = false;
       renderLoading();
       renderRenameModal();
       return;
@@ -394,6 +439,12 @@ export function mount(container) {
         renderLoading();
         renderRenameModal();
       }
+    }).catch((error) => {
+      if (disposed || isRequestAborted(error)) return;
+      state.loading = false;
+      addAlert(state.renameAlerts, 'danger', loadErrorMessage(error, 'The template could not be renamed.'));
+      renderLoading();
+      renderRenameModal();
     });
   }
 
@@ -448,7 +499,7 @@ export function mount(container) {
     // `huashan.uploadFile()` (which posts multipart to /fileD) - that helper
     // isn't used by this flow, matching the legacy controller.
     const url = `${SERVER_URL}/wizard/upload/${fileName}`;
-    fetch(url, { method: 'POST', headers: authHeaders(), body: state.fileToUpload })
+    fetch(url, { method: 'POST', headers: authHeaders(), body: state.fileToUpload, signal: getRouteSignal() })
       .then(async (res) => {
         let body = null;
         try {
@@ -472,6 +523,7 @@ export function mount(container) {
         }
       })
       .catch((err) => {
+        if (disposed || err.name === 'AbortError') return;
         state.loading = false;
         addAlert(state.submitAlerts, 'danger', 'Upload failed due to: ' + (err.data ? err.data.message : err));
         renderLoading();
@@ -517,6 +569,12 @@ export function mount(container) {
             state.responseMsg = response.msg;
           }
           renderRight();
+        })
+        .catch((error) => {
+          if (disposed || isRequestAborted(error)) return;
+          state.runningUpdateDataStructure = 'Failure';
+          state.responseMsg = loadErrorMessage(error, 'The data structure could not be updated.');
+          renderRight();
         });
     }
   }
@@ -559,6 +617,10 @@ export function mount(container) {
 
   function templateListHtml() {
     if (state.loadingTable) return `<div class="loader-small"></div>`;
+    if (state.tableLoadError) {
+      return `<div class="alert alert-danger" role="alert">${escapeHtml(state.tableLoadError)}</div>
+        <button type="button" class="btn btn-primary" id="st-template-retry">Retry</button>`;
+    }
     return filteredSortedTemplates()
       .map(
         (t, i) => `
@@ -585,6 +647,8 @@ export function mount(container) {
     const listEl = container.querySelector('#st-template-list');
     if (!listEl) return;
     listEl.innerHTML = templateListHtml();
+    const retry = listEl.querySelector('#st-template-retry');
+    if (retry) retry.addEventListener('click', getTemplates);
     const rows = filteredSortedTemplates();
     listEl.querySelectorAll('[data-template-index]').forEach((el) => {
       el.addEventListener('click', (evt) => {
@@ -757,8 +821,8 @@ export function mount(container) {
 
   function udsFooterHtml() {
     return `
-    ${state.selectedPortfolioName !== '' ? `<button class="btn btn-primary" data-dismiss="modal" id="st-uds-run">Run</button>` : ''}
-    <button class="btn btn-default" data-dismiss="modal" id="st-uds-close">Close</button>`;
+    ${state.selectedPortfolioName !== '' ? `<button class="btn btn-primary" id="st-uds-run">Run</button>` : ''}
+    <button class="btn btn-default" id="st-uds-close">Close</button>`;
   }
 
   function udsModalHtml() {
@@ -785,13 +849,14 @@ export function mount(container) {
   }
 
   function refreshUdsInner() {
-    const listEl = container.querySelector('#st-uds-list');
+    const modal = document.getElementById('updateDataStructureModal');
+    const listEl = modal && modal.querySelector('#st-uds-list');
     if (listEl) {
       listEl.innerHTML = udsListHtml();
       wireUdsList(listEl);
       initTooltips(listEl);
     }
-    const footerEl = container.querySelector('#st-uds-footer');
+    const footerEl = modal && modal.querySelector('#st-uds-footer');
     if (footerEl) {
       footerEl.innerHTML = udsFooterHtml();
       wireUdsFooter(footerEl);
@@ -810,19 +875,27 @@ export function mount(container) {
 
   function wireUdsFooter(scope) {
     const runBtn = (scope || container).querySelector('#st-uds-run');
-    if (runBtn) runBtn.addEventListener('click', () => runUpdateDataStructure());
+    if (runBtn) runBtn.addEventListener('click', () => {
+      hideModal('updateDataStructureModal');
+      runUpdateDataStructure();
+    });
     const closeBtn = (scope || container).querySelector('#st-uds-close');
-    if (closeBtn) closeBtn.addEventListener('click', () => resetPortfolioName());
+    if (closeBtn) closeBtn.addEventListener('click', () => {
+      hideModal('updateDataStructureModal');
+      resetPortfolioName();
+    });
   }
 
   function wireUdsInner() {
-    const leafCb = container.querySelector('#st-uds-leaf');
+    const modal = document.getElementById('updateDataStructureModal');
+    if (!modal) return;
+    const leafCb = modal.querySelector('#st-uds-leaf');
     if (leafCb) leafCb.addEventListener('change', (e) => { state.updateDataStructure.Leaf = e.target.checked; });
-    const platformCb = container.querySelector('#st-uds-platform');
+    const platformCb = modal.querySelector('#st-uds-platform');
     if (platformCb) platformCb.addEventListener('change', (e) => { state.updateDataStructure.Platform = e.target.checked; });
-    wireUdsList(container.querySelector('#st-uds-list'));
-    wireUdsFooter(container.querySelector('#st-uds-footer'));
-    const listEl = container.querySelector('#st-uds-list');
+    wireUdsList(modal.querySelector('#st-uds-list'));
+    wireUdsFooter(modal.querySelector('#st-uds-footer'));
+    const listEl = modal.querySelector('#st-uds-list');
     if (listEl) initTooltips(listEl);
   }
 
@@ -1134,5 +1207,7 @@ ${uploadModalHtml()}
   render();
   getGroups();
 
-  return () => {};
+  return () => {
+    disposed = true;
+  };
 }

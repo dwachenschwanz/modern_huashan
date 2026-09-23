@@ -7,3 +7,5 @@ bower_components
 .gitattributes
 .vscode
 /dist
+/test-results
+/playwright-report

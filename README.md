@@ -62,9 +62,19 @@ backend configured in `vite.config.js`.
 | `npm run dev` | Start the Vite development server on port 5173. |
 | `npm run build` | Create a production build in `dist/`. |
 | `npm run preview` | Serve the production build locally on port 4173. |
+| `npm run lint` | Run ESLint, including undefined-variable checks. |
+| `npm test` | Run the API client tests with Node's built-in test runner. |
+| `npm run test:browser` | Run mocked-backend browser smoke tests in Chromium. |
+| `npm run check` | Run lint, unit tests, build, and browser tests. |
 
-There is currently no automated test suite. Run `npm run build` after making
-changes to catch module resolution and compilation errors.
+The automated tests cover API transport, command-response parsing, session
+restoration, navigation cancellation, hard-refresh route loading, modal
+interaction, and Excel downloads. Install the Playwright browser once after
+installing dependencies:
+
+```bash
+npx playwright install chromium
+```
 
 ## Backend Configuration
 
@@ -250,11 +260,11 @@ editor includes Tornado Output, Parameters, and Post Processing tabs.
 
 ### Portfolio Structure
 
-The Portfolio Structure screen configures portfolio menu commands and reports
-API load failures with a retry action instead of leaving the loading indicator
-active indefinitely.
+The Portfolio Structure screen configures portfolio menu commands.
 
 All three structure views warn before navigation when unsaved changes exist.
+They replace a failed initial load with an actionable error and Retry button,
+and failed saves restore the controls instead of leaving a spinner active.
 
 ## Full JSON Editors
 
@@ -299,6 +309,11 @@ File upload uses `/kirk/fileD`. Excel download uses
 `/kirk/wizard/download/excel/:templateName` and validates the HTTP status,
 content type, and response size before creating the browser download.
 
+Wizard requests time out after 30 seconds (uploads after 120 seconds). Changing
+routes aborts requests owned by the previous view, and cancelled requests do
+not display an error. Transport, timeout, malformed-response, and HTTP errors
+use consistent user-facing messages.
+
 ## Development Guidelines
 
 - Keep endpoint configuration centralized in `src/core/config.js`.
@@ -328,8 +343,8 @@ that POST requests are reaching the same endpoint path expected by Kirk.
 
 Inspect the failed `/kirk/wizard/main` request in browser developer tools. A
 successful response must contain the expected structure and a `MENU` array.
-The Portfolio Structure screen displays a retryable error for invalid or failed
-responses.
+Data Structure, App Structure, and Portfolio Structure display a retryable
+error for invalid or failed responses.
 
 ### Login Works Until the Page Is Refreshed
 
@@ -352,7 +367,7 @@ save operation validates all project and platform documents together.
 Before committing changes, run:
 
 ```bash
-npm run build
+npm run check
 git diff --check
 ```
 

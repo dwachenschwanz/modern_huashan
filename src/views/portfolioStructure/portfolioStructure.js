@@ -1,5 +1,5 @@
 /* Ported from portfolioStructureController.ts + views/portfolioStructure.html. */
-import { huashan } from '../../api/huashanClient.js';
+import { huashan, isRequestAborted } from '../../api/huashanClient.js';
 import { session, restoreSession } from '../../core/session.js';
 import { SERVER_URL } from '../../core/config.js';
 import { setNavigationGuard, clearNavigationGuard } from '../../core/router.js';
@@ -7,6 +7,7 @@ import { appNavHtml } from '../../components/appNav.js';
 import { renderAlerts, wireAlertClose } from '../../components/alerts.js';
 import { commitMessageModalHtml, initCommitMessageModal, closeCommitMessageModal } from '../../components/commitMessageModal.js';
 import { loadingOverlayHtml } from '../../components/loadingOverlay.js';
+import { handleLoadError, loadErrorHtml, loadErrorMessage, requireResponseResult } from '../../components/loadError.js';
 import { onModalShown, hideModal } from '../../components/uiInteractions.js';
 import { makeSortable } from '../../components/sortable.js';
 import { scrollElementIntoView } from '../../components/scrollTo.js';
@@ -107,6 +108,7 @@ function bucketsFromManager(manager) {
 
 export function mount(container, params) {
   if (!restoreSession()) return () => {};
+  let disposed = false;
 
   const state = {
     selectedTemplate: params.templateID,
@@ -144,16 +146,12 @@ export function mount(container, params) {
   // ---- data loading (constructor + getX methods) ----
 
   function getPortfolioStructure() {
-    state.loadError = '';
-    state.portfolioStructure = null;
-    render();
     huashan
       .getPortfolioStructure(session.getCredentials(), params.templateID, state.isPlatform)
       .then((response) => {
-        if (!response || !response.status || !response.result || !Array.isArray(response.result.MENU)) {
-          throw new Error((response && response.msg) || 'The server returned an invalid portfolio structure.');
-        }
-        state.portfolioStructure = response.result;
+        const result = requireResponseResult(response, 'Loading the portfolio structure');
+        if (!Array.isArray(result.MENU)) throw new Error('The portfolio structure response did not contain a MENU array.');
+        state.portfolioStructure = result;
         state.portfolioStructureCopy = structuredClone(state.portfolioStructure);
         state.selectedMenu = state.portfolioStructure.MENU[0] || null;
         selectMenu(state.selectedMenu);
@@ -161,47 +159,73 @@ export function mount(container, params) {
         // This is the first full render; incremental refreshes are safe after it.
         render();
       })
-      .catch((error) => {
-        console.error('Portfolio structure loading failed:', error);
-        state.loadError = error instanceof Error ? error.message : 'Portfolio structure loading failed.';
-        render();
-      });
+      .catch(handleInitialLoadError);
   }
 
   function getAppStructure() {
     huashan.getAppStructure(session.getCredentials(), params.templateID, state.isPlatform).then((response) => {
-      state.appStructure = response.result;
+      state.appStructure = requireResponseResult(response, 'Loading the app structure for portfolio configuration');
+      if (!Array.isArray(state.appStructure.MENU)) throw new Error('The app structure response did not contain a MENU array.');
       state.tornadoOutputs = state.appStructure.PostProcessingOutputsForPortfolio || [];
       getDataStructure(); // Ensure GetAppStructure already returned before getting data structure
       const tables = (state.appStructure.MENU || []).filter((menu) => menu.Command === 'TABLE');
       state.tables = state.tables.concat(tables);
       onDataChanged();
-    });
+    }).catch(handleInitialLoadError);
     // when isPlatform, still need data from the regular (non-platform) app structure
     if (state.isPlatform === true) {
       huashan.getAppStructure(session.getCredentials(), params.templateID, false).then((response) => {
-        const regularAppStructure = response.result;
+        const regularAppStructure = requireResponseResult(response, 'Loading the project app structure');
+        if (!Array.isArray(regularAppStructure.MENU)) throw new Error('The project app structure response did not contain a MENU array.');
         const tables = (regularAppStructure.MENU || []).filter((menu) => menu.Command === 'TABLE');
         state.tables = state.tables.concat(tables);
         onDataChanged();
-      });
+      }).catch(handleInitialLoadError);
     }
   }
 
   function getPotentialTables() {
     huashan.getPotentialTables(session.getCredentials(), params.templateID).then((response) => {
-      state.potentialTables = response.result.PotentialTableOutputs;
+      const result = requireResponseResult(response, 'Loading potential tables');
+      if (!Array.isArray(result.PotentialTableOutputs)) throw new Error('Potential tables were missing from the response.');
+      state.potentialTables = result.PotentialTableOutputs;
       onDataChanged();
-    });
+    }).catch(handleInitialLoadError);
   }
 
   function getDataStructure() {
     huashan.getIncludedDataStructureComponents(session.getCredentials(), params.templateID, state.isPlatform).then((data) => {
-      state.inputs = data.result.Inputs;
-      state.outputs = data.result.Outputs;
+      const result = requireResponseResult(data, 'Loading portfolio inputs and outputs');
+      if (!Array.isArray(result.Inputs) || !Array.isArray(result.Outputs)) {
+        throw new Error('Inputs or outputs were missing from the data structure response.');
+      }
+      state.inputs = result.Inputs;
+      state.outputs = result.Outputs;
       state.allOutputs = state.outputs.concat(state.tornadoOutputs);
       onDataChanged();
-    });
+    }).catch(handleInitialLoadError);
+  }
+
+  function handleInitialLoadError(error) {
+    if (disposed) return;
+    handleLoadError(error, state, render);
+  }
+
+  function loadPortfolioStructure() {
+    state.loadError = '';
+    state.portfolioStructure = null;
+    state.portfolioStructureCopy = null;
+    state.selectedMenu = null;
+    state.appStructure = null;
+    state.tables = [];
+    state.potentialTables = [];
+    state.inputs = [];
+    state.outputs = [];
+    state.allOutputs = [];
+    render();
+    getPortfolioStructure();
+    getPotentialTables();
+    getAppStructure();
   }
 
   /** Called after each async load resolves: refreshes just the bits of the
@@ -308,6 +332,13 @@ export function mount(container, params) {
         } else {
           addAlert(state.saveAlerts, 'danger', response.msg);
         }
+        renderSaveAlerts();
+        refreshSaveButton();
+      })
+      .catch((error) => {
+        if (disposed || isRequestAborted(error)) return;
+        state.saveComplete = true;
+        addAlert(state.saveAlerts, 'danger', loadErrorMessage(error, 'The portfolio structure could not be saved.'));
         renderSaveAlerts();
         refreshSaveButton();
       });
@@ -1736,18 +1767,13 @@ export function mount(container, params) {
   }
 
   function render() {
+    if (disposed) return;
     if (!state.portfolioStructure) {
       if (state.loadError) {
         container.innerHTML = `
 ${appNavHtml({ active: 'portfolioStructure', isAdmin: state.isAdmin, selectedTemplate: state.selectedTemplate })}
-<div class="container-fluid">
-  <div class="alert alert-danger" role="alert">
-    <b>Portfolio structure could not be loaded.</b>
-    <div>${escapeHtml(state.loadError)}</div>
-  </div>
-  <button type="button" class="btn btn-primary" id="ps-load-retry">Retry</button>
-</div>`;
-        container.querySelector('#ps-load-retry').addEventListener('click', getPortfolioStructure);
+${loadErrorHtml({ title: 'Portfolio structure could not be loaded.', message: state.loadError, retryId: 'ps-load-retry' })}`;
+        container.querySelector('#ps-load-retry').addEventListener('click', loadPortfolioStructure);
         return;
       }
       container.innerHTML = `
@@ -1899,10 +1925,7 @@ ${commitMessageModalHtml()}`;
     renderEditModalValue();
   }
 
-  render();
-  getPortfolioStructure();
-  getPotentialTables();
-  getAppStructure();
+  loadPortfolioStructure();
 
   setNavigationGuard((nextPath) => {
     // Legacy bug ported as-is: the original `$locationChangeStart` guard tested
@@ -1918,6 +1941,7 @@ ${commitMessageModalHtml()}`;
   });
 
   return () => {
+    disposed = true;
     clearNavigationGuard();
   };
 }

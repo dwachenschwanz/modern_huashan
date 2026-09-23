@@ -3,7 +3,7 @@ import { smartorg, SERVER_URL, TOKEN_KEY, INFO_KEY } from '../../core/config.js'
 import { huashan } from '../../api/huashanClient.js';
 import { session } from '../../core/session.js';
 import { autoAuthService } from '../../core/auth.js';
-import { navigate } from '../../core/router.js';
+import { getRouteSignal, navigate } from '../../core/router.js';
 import { versionNavItemHtml, initVersionModal } from '../../components/versionModal.js';
 
 function template() {
@@ -97,7 +97,7 @@ export function mount(container) {
     }
 
     try {
-      const res = await fetch(`${SERVER_URL}/framework/config`);
+      const res = await fetch(`${SERVER_URL}/framework/config`, { signal: getRouteSignal() });
       const data = await res.json();
       if (data.wizardUserAccess) {
         const response = await huashan.auth(userName, password);
@@ -107,6 +107,7 @@ export function mount(container) {
         console.warn('Please login with admin username');
       }
     } catch (err) {
+      if (err.name === 'AbortError') return;
       showError('Please Use Admin Username To Login');
       console.warn('Please login with admin username');
     }

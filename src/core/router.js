@@ -13,6 +13,7 @@ import { dismissFloatingUi } from '../components/uiInteractions.js';
 const routes = [];
 let notFoundRoute = null;
 let currentCleanup = null;
+let currentRouteController = null;
 let rootEl = null;
 let navigationGuard = null;
 
@@ -49,6 +50,9 @@ async function handleRouteChange() {
   const path = currentHashPath();
 
   dismissFloatingUi();
+  if (currentRouteController) currentRouteController.abort();
+  const routeController = new AbortController();
+  currentRouteController = routeController;
 
   if (typeof currentCleanup === 'function') {
     try {
@@ -66,14 +70,28 @@ async function handleRouteChange() {
       route.paramNames.forEach((name, i) => {
         params[name] = decodeURIComponent(match[i + 1]);
       });
-      currentCleanup = await route.mount(rootEl, params);
+      const cleanup = await route.mount(rootEl, params);
+      if (routeController.signal.aborted) {
+        if (typeof cleanup === 'function') cleanup();
+      } else {
+        currentCleanup = cleanup;
+      }
       return;
     }
   }
 
   if (notFoundRoute) {
-    currentCleanup = await notFoundRoute.mount(rootEl, {});
+    const cleanup = await notFoundRoute.mount(rootEl, {});
+    if (routeController.signal.aborted) {
+      if (typeof cleanup === 'function') cleanup();
+    } else {
+      currentCleanup = cleanup;
+    }
   }
+}
+
+export function getRouteSignal() {
+  return currentRouteController ? currentRouteController.signal : undefined;
 }
 
 export function navigate(path) {

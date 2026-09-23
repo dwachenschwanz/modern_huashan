@@ -1,9 +1,10 @@
 /* Ported from adminController.ts + views/admin.html. */
-import { huashan } from '../../api/huashanClient.js';
+import { huashan, isRequestAborted } from '../../api/huashanClient.js';
 import { session, restoreSession } from '../../core/session.js';
 import { SERVER_URL, TOKEN_KEY } from '../../core/config.js';
-import { navigate } from '../../core/router.js';
+import { getRouteSignal, navigate } from '../../core/router.js';
 import { flashAlert, initDropdowns } from '../../components/uiInteractions.js';
+import { loadErrorMessage } from '../../components/loadError.js';
 import { escapeHtml } from '../../core/html.js';
 
 const ALL_GROUP = 'ALL';
@@ -34,6 +35,7 @@ function matchesSearch(item, text) {
 
 export function mount(container) {
   if (!restoreSession()) return () => {};
+  let disposed = false;
 
   const userInfo = getUserInfo();
   if (!userInfo || !userInfo.is_admin) {
@@ -51,6 +53,7 @@ export function mount(container) {
     archivedAstroTemplates: [],
     loading: false,
     loadingTable: true,
+    tableLoadError: '',
     searchText: '',
     selectedTemplate: null,
     showEditModal: false,
@@ -99,6 +102,7 @@ export function mount(container) {
   function getGroups() {
     fetch(`${SERVER_URL}/framework/admin/group/list`, {
       headers: { Authorization: 'jwttoken ' + (localStorage.getItem(TOKEN_KEY) || '') },
+      signal: getRouteSignal(),
     })
       .then((res) => res.json())
       .then((body) => {
@@ -110,6 +114,7 @@ export function mount(container) {
         getAstroTemplates();
       })
       .catch((err) => {
+        if (disposed || err.name === 'AbortError') return;
         console.error(err);
         state.alertMsg.type = 'danger';
         state.alertMsg.msg = '(SESSION EXPIRED) Data retrieval failed due to: ' + (err.data ? err.data.message : err);
@@ -120,15 +125,24 @@ export function mount(container) {
 
   function getAstroTemplates() {
     state.loadingTable = true;
+    state.tableLoadError = '';
     renderRows();
     huashan.getAstroTemplates(session.getCredentials()).then((response) => {
       if (response.status) {
         state.astroTemplates = response.result;
       } else {
+        state.tableLoadError = response.msg || 'Templates could not be loaded.';
         state.alertMsg.msg = 'Templates not found';
         showAlert('infoMsgAlert');
       }
       state.loadingTable = false;
+      renderRows();
+    }).catch((error) => {
+      if (disposed || isRequestAborted(error)) return;
+      state.loadingTable = false;
+      state.tableLoadError = loadErrorMessage(error, 'Templates could not be loaded.');
+      state.alertMsg.msg = loadErrorMessage(error, 'Templates could not be loaded.');
+      showAlert('errorMsgAlert');
       renderRows();
     });
   }
@@ -136,15 +150,24 @@ export function mount(container) {
   function getArchivedAstroTemplates() {
     state.archivedAstroTemplates = [];
     state.loadingTable = true;
+    state.tableLoadError = '';
     renderRows();
     huashan.getArchivedAstroTemplates(session.getCredentials()).then((response) => {
       if (response.status) {
         state.archivedAstroTemplates = response.result;
       } else {
+        state.tableLoadError = response.msg || 'Archived templates could not be loaded.';
         state.alertMsg.msg = 'Archived templates not found';
         showAlert('infoMsgAlert');
       }
       state.loadingTable = false;
+      renderRows();
+    }).catch((error) => {
+      if (disposed || isRequestAborted(error)) return;
+      state.loadingTable = false;
+      state.tableLoadError = loadErrorMessage(error, 'Archived templates could not be loaded.');
+      state.alertMsg.msg = loadErrorMessage(error, 'Archived templates could not be loaded.');
+      showAlert('errorMsgAlert');
       renderRows();
     });
   }
@@ -159,6 +182,7 @@ export function mount(container) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(state.selectedTemplate),
+      signal: getRouteSignal(),
     })
       .then((res) => res.json())
       .then((body) => {
@@ -172,6 +196,7 @@ export function mount(container) {
         renderToolbar();
       })
       .catch((err) => {
+        if (disposed || err.name === 'AbortError') return;
         console.error(err);
         state.alertMsg.msg = 'Template Update failed due to: ' + (err.data ? err.data.message : err);
         showAlert('errorMsgAlert');
@@ -196,6 +221,12 @@ export function mount(container) {
       }
       state.loading = false;
       renderToolbar();
+    }).catch((error) => {
+      if (disposed || isRequestAborted(error)) return;
+      state.loading = false;
+      state.alertMsg.msg = loadErrorMessage(error, 'The template could not be archived.');
+      showAlert('errorMsgAlert');
+      renderToolbar();
     });
   }
 
@@ -216,6 +247,12 @@ export function mount(container) {
         showAlert('errorMsgAlert');
       }
       state.loading = false;
+      renderToolbar();
+    }).catch((error) => {
+      if (disposed || isRequestAborted(error)) return;
+      state.loading = false;
+      state.alertMsg.msg = loadErrorMessage(error, 'The template could not be restored.');
+      showAlert('errorMsgAlert');
       renderToolbar();
     });
   }
@@ -339,6 +376,7 @@ export function mount(container) {
 
   function allTemplatesRowsHtml() {
     if (state.loadingTable) return `<tr><td colspan="6"><div class="loader"></div></td></tr>`;
+    if (state.tableLoadError) return tableLoadErrorRowHtml();
     return filteredSortedRows(state.astroTemplates)
       .map(
         (template, i) => `
@@ -359,6 +397,7 @@ export function mount(container) {
 
   function archiveRowsHtml() {
     if (state.loadingTable) return `<tr><td colspan="6"><div class="loader"></div></td></tr>`;
+    if (state.tableLoadError) return tableLoadErrorRowHtml();
     return filteredSortedRows(state.archivedAstroTemplates)
       .map(
         (template, i) => `
@@ -381,7 +420,20 @@ export function mount(container) {
     const archiveBody = container.querySelector('#archive-tbody');
     if (allBody) allBody.innerHTML = allTemplatesRowsHtml();
     if (archiveBody) archiveBody.innerHTML = archiveRowsHtml();
+    container.querySelectorAll('[data-admin-load-retry]').forEach((button) => {
+      button.addEventListener('click', () => {
+        if (state.activeTab === 'archive') getArchivedAstroTemplates();
+        else getAstroTemplates();
+      });
+    });
     wireRowActions();
+  }
+
+  function tableLoadErrorRowHtml() {
+    return `<tr><td colspan="6">
+      <div class="alert alert-danger" role="alert">${escapeHtml(state.tableLoadError)}</div>
+      <button type="button" class="btn btn-primary" data-admin-load-retry>Retry</button>
+    </td></tr>`;
   }
 
   function wireRowActions() {
@@ -644,7 +696,9 @@ export function mount(container) {
   render();
   getGroups();
 
-  return () => {};
+  return () => {
+    disposed = true;
+  };
 }
 
 function escapeAttr(str) {
