@@ -338,6 +338,63 @@ async function expectAboveFixedFooter(page, buttonSelector) {
   expect(buttonBox.y + buttonBox.height).toBeLessThan(footerBox.y);
 }
 
+/* Read every panel's geometry in one tick, and keep reading until it stops
+ * changing: these views re-render on each API response, so measurements
+ * taken across separate calls can land on an element that has since been
+ * detached. Returns the last reading either way so the assertions below
+ * still fail with real numbers rather than a timeout. */
+async function readSettledLayout(page, selectors) {
+  let previous = null;
+  for (let attempt = 0; attempt < 25; attempt += 1) {
+    const current = await page.evaluate(([sidebar, content, list]) => {
+      const box = (selector) => {
+        const element = document.querySelector(selector);
+        if (!element) return null;
+        const rect = element.getBoundingClientRect();
+        return {
+          x: rect.x, y: rect.y, width: rect.width, height: rect.height,
+          overflows: element.scrollHeight > element.clientHeight,
+          overflowY: getComputedStyle(element).overflowY,
+        };
+      };
+      return { sidebar: box(sidebar), content: box(content), list: box(list) };
+    }, [selectors.sidebar, selectors.content, selectors.list]);
+    if (previous && JSON.stringify(current) === JSON.stringify(previous)) return current;
+    previous = current;
+    await page.waitForTimeout(100);
+  }
+  return previous;
+}
+
+/* These views share generic layout class names across separate stylesheets,
+ * and have twice regressed to a state where the content panel was still in
+ * the DOM (so text and role assertions kept passing) but was painted
+ * off-screen or collapsed to zero width. Assert the geometry, not just the
+ * markup: that the panels sit side by side, both have real size, and the
+ * menu list scrolls inside the fold rather than running off it. */
+async function expectPanelLayout(page, selectors) {
+  const { sidebar, content, list } = await readSettledLayout(page, selectors);
+  const viewport = page.viewportSize();
+  expect(sidebar, `${selectors.sidebar} is missing`).not.toBeNull();
+  expect(content, `${selectors.content} is missing`).not.toBeNull();
+  expect(list, `${selectors.list} is missing`).not.toBeNull();
+
+  expect(sidebar.width).toBeGreaterThan(100);
+  expect(content.width).toBeGreaterThan(300);
+  expect(content.height).toBeGreaterThan(50);
+
+  expect(content.x + 1).toBeGreaterThanOrEqual(sidebar.x + sidebar.width);
+  expect(Math.abs(content.y - sidebar.y)).toBeLessThan(80);
+  expect(content.x + content.width).toBeLessThanOrEqual(viewport.width + 1);
+  expect(content.y).toBeLessThan(viewport.height);
+
+  /* Unconditional: the fixtures are too small to overflow these panels, but
+   * a list that can't scroll spills its rows off the bottom of the page the
+   * moment a real template has enough of them. */
+  expect(list.y + list.height).toBeLessThanOrEqual(viewport.height + 1);
+  expect(['auto', 'scroll']).toContain(list.overflowY);
+}
+
 let saveRequests;
 let actionRequests;
 let uploadRequests;
@@ -702,6 +759,27 @@ test('left-column action buttons remain above the fixed footer', async ({ page }
   await page.goto('/#/selectTemplate');
   await expectAboveFixedFooter(page, '#st-archive-btn');
   await expectAboveFixedFooter(page, '#st-upload-btn');
+  assertNoPageErrors();
+});
+
+test('sidebar and content panels stay side by side and on screen', async ({ page }) => {
+  const assertNoPageErrors = failOnPageErrors(page);
+  // Short viewport so the menu lists actually overflow their panels.
+  await page.setViewportSize({ width: 1280, height: 640 });
+
+  const views = [
+    { route: `/datastructure/${TEMPLATE}`, sidebar: '.select-input > .choose-from', content: '.select-input > .selected', list: '.select-input .list-of-templates' },
+    { route: `/appstructure/${TEMPLATE}`, sidebar: '.structure-sidebar', content: '.structure-content', list: '.structure-menu-panel .list-of-templates' },
+    { route: `/portfoliostructure/${TEMPLATE}`, sidebar: '.structure-sidebar', content: '.structure-content', list: '.structure-menu-panel .list-of-templates' },
+    { route: `/revisions/${TEMPLATE}`, sidebar: '.revisions-sidebar', content: '.revisions-content', list: '.revisions-sidebar .list-of-templates' },
+    { route: '/selectTemplate', sidebar: '#choose-from', content: '#selected-template', list: '.template-menu-panel .list-of-templates' },
+  ];
+
+  for (const view of views) {
+    await page.goto(`/#${view.route}`);
+    await expectPanelLayout(page, view);
+  }
+
   assertNoPageErrors();
 });
 
@@ -1194,3 +1272,4 @@ test('App Structure exposes retry after a load failure', async ({ page }) => {
   await expect(page.getByText('App structure could not be loaded.', { exact: true })).toHaveCount(0);
   assertNoPageErrors();
 });
+

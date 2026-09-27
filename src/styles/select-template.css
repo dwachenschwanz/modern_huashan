@@ -1,3 +1,6 @@
+/* Select Template's own two-column layout. App/Portfolio Structure and
+ * Revisions used to borrow these two ids for their own panels; they now
+ * carry their own named classes, so these belong to this view alone. */
 #choose-from{
     width:20%;
     position: absolute;

@@ -1227,7 +1227,7 @@ export function mount(container, params) {
     container.innerHTML = `
       ${appNavHtml({ active: 'appStructure', isAdmin: state.isAdmin, selectedTemplate: state.selectedTemplate })}
       <div class="select-template fadeIn structure-editor" style="height:calc(100% - 100px)">
-        <div class="choose-from structure-sidebar" style="text-align:left">
+        <div class="structure-sidebar" style="text-align:left">
           <div class="select-template-title"><h4>${state.isPlatform ? 'Platform App Structure' : 'App Structure'}</h4></div>
           <div class="select-template-title">
             <input type="text" class="form-control" id="as-search" placeholder="Search" value="${escapeAttr(state.searchText)}">
@@ -1242,7 +1242,7 @@ export function mount(container, params) {
           </button>
         </div>
 
-        <div id="selected-template" style="height:100%">
+        <div class="structure-content" style="height:100%">
           <div class="select-template-title">
             <div class="col-sm-12"><h4 id="as-selected-title">${escapeHtml(selectedName)}</h4></div>
           </div>

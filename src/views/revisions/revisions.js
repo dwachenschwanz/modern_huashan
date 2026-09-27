@@ -104,7 +104,7 @@ ${loadingOverlayHtml('Loading revision history')}`;
 ${appNavHtml({ active: 'revisions', isAdmin: state.isAdmin, selectedTemplate: state.selectedTemplate })}
 <div id="revision-alerts">${renderAlerts(state.alerts)}</div>
 <div class="select-template animated fadeIn" style="height: 100%">
-  <div id="choose-from" style="height: 100%">
+  <div class="revisions-sidebar" style="height: 100%">
     <div class="select-template-title"><h4><b>Revision History</b></h4></div>
     <div class="panel panel-primary" style="height: calc(100% - 260px)">
       <div class="list-of-templates height-for-list" style="height: 100%">
@@ -133,7 +133,7 @@ ${appNavHtml({ active: 'revisions', isAdmin: state.isAdmin, selectedTemplate: st
     </div>
   </div>
 
-  <div id="selected-template">
+  <div class="revisions-content">
     <div class="select-template-title" style="padding-left: 15px"><h4><b>Revision Details</b></h4></div>
     <div class="panel panel-default panel-body" style="padding-left: 15px; margin-left: 13px; margin-right: 13px">
       ${

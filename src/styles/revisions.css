@@ -1,0 +1,22 @@
+/* Revisions lays out as two absolutely positioned columns. These rules used
+ * to come from select-template.css's `#choose-from` / `#selected-template`,
+ * which this view happened to reuse by id; they live here now so the two
+ * views can move independently. */
+.revisions-sidebar {
+    position: absolute;
+    width: 20%;
+}
+
+.revisions-content {
+    position: absolute;
+    left: 22%;
+    width: 77%;
+}
+
+/* The revision list never had an overflow of its own - with enough revisions
+ * to fill the panel its rows painted straight past the bottom of the page,
+ * unreachable because nothing scrolled. */
+.revisions-sidebar .list-of-templates {
+    min-height: 0;
+    overflow-y: auto;
+}

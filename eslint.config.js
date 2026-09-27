@@ -34,4 +34,13 @@ export default [
       'no-unused-vars': 'off',
     },
   },
+  {
+    // Playwright specs pass callbacks that run inside the page
+    // (page.evaluate, addInitScript), so they touch both global scopes.
+    // Scoped to tests/ so the pure-Node unit tests in test/ stay strict.
+    files: ['tests/**/*.js'],
+    languageOptions: {
+      globals: { ...globals.node, ...globals.browser },
+    },
+  },
 ];
