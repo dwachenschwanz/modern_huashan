@@ -953,7 +953,7 @@ export function mount(container, params) {
           <a href="" class="list-group-item cursor-move${active}" data-menu-index="${index}">
             <table><tr>
               <td class="appStructList no-wrap">${escapeHtml(menu.Display || menu.ID || 'Untitled')}</td>
-              <td class="appStructList" style="width:60px">
+              <td class="appStructList" style="width:76px">
                 ${active ? `<span data-toggle="modal" data-target="#deleteAppStructureModal" data-menu-delete class="inline-icon pull-right glyphicon glyphicon-trash" title="Delete"></span>
                 <span data-toggle="modal" data-target="#editAppStructureModal" data-menu-edit class="inline-icon pull-right glyphicon glyphicon-pencil" title="Rename"></span>` : ''}
               </td>

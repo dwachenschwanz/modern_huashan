@@ -6,6 +6,19 @@
     padding-left: 5px;
 }
 
+/* The menu-row table (Excel Range Name-style label + trailing icon cell)
+ * is auto-width by default, so its icon cell sits flush against the label
+ * instead of the row's right edge - stretch it to fill the row so the
+ * pull-right icons land at the true right edge. */
+.structure-sidebar table {
+    width: 100%;
+}
+
+.structure-sidebar .inline-icon {
+    font-size: 18px;
+    padding-left: 10px;
+}
+
 .no-padding{
     padding:0px !important;
 }

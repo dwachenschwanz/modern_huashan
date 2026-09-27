@@ -812,7 +812,7 @@ export function mount(container, params) {
         <table>
           <tr>
             <td class="appStructList no-wrap">${escapeHtml(menu.Display)}</td>
-            <td class="appStructList" style="width:60px">
+            <td class="appStructList" style="width:76px">
               ${active ? `<span data-toggle="modal" data-target="#deletePortfolioStructureModal" class="inline-icon pull-right glyphicon glyphicon-trash" title="Delete"></span>` : ''}
               ${active ? `<span data-toggle="modal" data-target="#editPortfolioStructureModal" class="inline-icon pull-right glyphicon glyphicon-pencil" title="Rename"></span>` : ''}
             </td>
