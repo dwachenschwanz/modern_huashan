@@ -1,8 +1,43 @@
 .astro-table {
     min-width: 900px;
     width: 100%;
+    table-layout: fixed;
     border-collapse: collapse;
     font-family: 'Arial', sans-serif;
+  }
+
+  .astro-table th:nth-child(1),
+  .astro-table td:nth-child(1) {
+    width: 22%;
+  }
+
+  .astro-table th:nth-child(2),
+  .astro-table td:nth-child(2) {
+    width: 12%;
+  }
+
+  .astro-table th:nth-child(3),
+  .astro-table td:nth-child(3) {
+    width: 9%;
+  }
+
+  .astro-table th:nth-child(4),
+  .astro-table td:nth-child(4) {
+    width: 11%;
+  }
+
+  .astro-table th:nth-child(5),
+  .astro-table td:nth-child(5) {
+    width: 36%;
+  }
+
+  .astro-table th:nth-child(6),
+  .astro-table td:nth-child(6) {
+    width: 10%;
+  }
+
+  .astro-table th.sortable .admin-sort-button span {
+    white-space: nowrap;
   }
 
   .astro-table th {
@@ -211,6 +246,7 @@
 .group-cloud {
     display: flex;
     flex-wrap: wrap;
+    justify-content: center;
   }
   
   .group-cloud-item {
@@ -431,6 +467,10 @@
   th.sortable.is-sorted .admin-sort-button {
     color: #337ab7;
     font-weight: 700;
+  }
+
+  .group-icon {
+    margin-right: 8px;
   }
   
   .owner-details-div{
