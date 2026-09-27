@@ -33,7 +33,7 @@ import { TheUte } from '../../core/textUtils.js';
 import { appNavHtml } from '../../components/appNav.js';
 import { hideModal, flashAlert } from '../../components/uiInteractions.js';
 import { loadErrorMessage } from '../../components/loadError.js';
-import { escapeHtml } from '../../core/html.js';
+import { escapeHtml, escapeAttr } from '../../core/html.js';
 import { renderTemplateList, templateListHtml } from './templateList.js';
 import {
   deleteDialogHtml,
@@ -49,10 +49,6 @@ import {
   wireUpdateDataStructureDialog,
   wireUploadDialog,
 } from './dialogs.js';
-
-function escapeAttr(str) {
-  return escapeHtml(str);
-}
 
 function getUserInfo() {
   try {
@@ -579,7 +575,6 @@ export function mount(container) {
           if (response.status) {
             state.runningUpdateDataStructure = 'Success';
           } else {
-            alert('Some error happened: ' + response.msg);
             state.runningUpdateDataStructure = 'Failure';
             state.responseMsg = response.msg;
           }

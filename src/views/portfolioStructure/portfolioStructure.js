@@ -10,7 +10,7 @@ import { loadingOverlayHtml } from '../../components/loadingOverlay.js';
 import { handleLoadError, loadErrorHtml, loadErrorMessage, requireResponseResult } from '../../components/loadError.js';
 import { onModalShown, hideModal } from '../../components/uiInteractions.js';
 import { makeSortable } from '../../components/sortable.js';
-import { escapeHtml } from '../../core/html.js';
+import { escapeHtml, escapeAttr } from '../../core/html.js';
 import { makeActionIDFrom } from '../../core/common.js';
 import {
   bindCfoChartEditor,
@@ -29,10 +29,6 @@ import {
   renderPortfolioUncertaintyEditor,
   renderScatterPlotEditor,
 } from './commandEditors.js';
-
-function escapeAttr(str) {
-  return escapeHtml(str);
-}
 
 function numOrEmpty(v) {
   return v === null || v === undefined ? '' : v;

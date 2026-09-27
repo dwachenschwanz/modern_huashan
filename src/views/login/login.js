@@ -68,7 +68,6 @@ export function mount(container) {
     } else {
       navigate('/login');
       showError('Login Failed. You cannot proceed.');
-      console.log('Login failed. You cannot proceed.');
     }
   }
 

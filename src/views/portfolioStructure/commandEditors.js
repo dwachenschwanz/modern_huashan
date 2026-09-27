@@ -1,9 +1,5 @@
-import { escapeHtml, extractTablePreviewHtml } from '../../core/html.js';
+import { escapeHtml, escapeAttr, extractTablePreviewHtml } from '../../core/html.js';
 import { scrollElementIntoView } from '../../components/scrollTo.js';
-
-function escapeAttr(value) {
-  return escapeHtml(value);
-}
 
 function numOrEmpty(value) {
   return value === null || value === undefined ? '' : value;

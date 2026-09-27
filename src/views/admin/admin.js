@@ -5,7 +5,7 @@ import { SERVER_URL, TOKEN_KEY } from '../../core/config.js';
 import { getRouteSignal, navigate } from '../../core/router.js';
 import { flashAlert, initDropdowns } from '../../components/uiInteractions.js';
 import { loadErrorMessage } from '../../components/loadError.js';
-import { escapeHtml } from '../../core/html.js';
+import { escapeHtml, escapeAttr } from '../../core/html.js';
 
 const ALL_GROUP = 'ALL';
 const ADMINISTRATORS = 'administrators';
@@ -856,8 +856,4 @@ export function mount(container) {
     disposed = true;
     document.body.classList.remove('modal-open');
   };
-}
-
-function escapeAttr(str) {
-  return escapeHtml(str);
 }

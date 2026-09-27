@@ -4,7 +4,7 @@
  * markup and `wireAlertClose` wires each alert's close (×) button to splice
  * it out of the backing array and re-render via `rerender`.
  */
-import { escapeHtml } from '../core/html.js';
+import { escapeHtml, escapeAttr } from '../core/html.js';
 
 export function renderAlerts(alerts, { icon = 'fa fa-exclamation-triangle fa-lg', prefix = '' } = {}) {
   return alerts
@@ -26,8 +26,4 @@ export function wireAlertClose(container, alerts, rerender) {
       rerender();
     });
   });
-}
-
-function escapeAttr(str) {
-  return escapeHtml(str);
 }

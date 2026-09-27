@@ -12,7 +12,7 @@ import { handleLoadError, loadErrorHtml, loadErrorMessage, requireResponseResult
 import { showModal, hideModal, onModalShown, initTooltips } from '../../components/uiInteractions.js';
 import { makeSortable } from '../../components/sortable.js';
 import { scrollElementIntoView } from '../../components/scrollTo.js';
-import { escapeHtml, extractTablePreviewHtml } from '../../core/html.js';
+import { escapeHtml, escapeAttr, extractTablePreviewHtml } from '../../core/html.js';
 import { makeActionIDFrom, isActionIDDuplicate } from '../../core/common.js';
 import {
   BucketManager,
@@ -37,10 +37,6 @@ function getIsAdmin() {
   } catch (e) {
     return false;
   }
-}
-
-function escapeAttr(str) {
-  return escapeHtml(str);
 }
 
 export function mount(container, params) {

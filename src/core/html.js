@@ -5,6 +5,11 @@ export function escapeHtml(str) {
   return div.innerHTML;
 }
 
+/* Alias for escapeHtml() used at attribute-value interpolation sites. */
+export function escapeAttr(str) {
+  return escapeHtml(str);
+}
+
 /*
  * Ported from the `tablePreviewHtml` Angular filter (app.ts): the REST
  * CalcEngine returns table/range previews as a full HTML document string
