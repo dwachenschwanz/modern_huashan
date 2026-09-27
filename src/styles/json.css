@@ -2,6 +2,10 @@
     position:absolute;
     bottom:25px;
     right:0px;
+    /* Absolutely positioned, so it shrink-wraps without a width - it used to
+     * get one from .col-sm-12's width:100%, which the grid columns no longer
+     * carry. */
+    width:100%;
 }
 
 .shake {

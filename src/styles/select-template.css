@@ -62,6 +62,10 @@
 .align-to-bottom{
     position:fixed;
     bottom:0px;
+    /* Fixed elements shrink-wrap, and this bar used to get its width from
+     * .col-sm-12's width:100%. The grid columns carry no width, so it has
+     * to state its own. */
+    width:100%;
     background-color: white;
     padding-bottom:10px;
     padding-top: 10px;

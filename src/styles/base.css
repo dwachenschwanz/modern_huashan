@@ -133,8 +133,10 @@ ol {
   margin-left: -15px;
 }
 
-.row::before,
-.row::after,
+/* .row is a grid now and needs no clearfix - and must not have one, since a
+ * ::before/::after would become a grid item and occupy a real cell. The
+ * remaining containers still hold floats (.pull-left/.pull-right), so they
+ * keep theirs. */
 .container::before,
 .container::after,
 .container-fluid::before,
@@ -149,7 +151,6 @@ ol {
   content: " ";
 }
 
-.row::after,
 .container::after,
 .container-fluid::after,
 .panel-body::after,
@@ -168,35 +169,53 @@ ol {
   padding-left: 15px;
 }
 
+/* A real 12-column grid rather than floats with widths.
+ *
+ * Floats were never a layout system - a column that did not fit dropped to
+ * the next line, overlapped a sibling, or collapsed to zero width, silently
+ * and based on its neighbours' dimensions. Several bugs came from exactly
+ * that. Grid places columns in tracks, so a column cannot land on top of
+ * another one, and a row cannot repack because something above it grew.
+ *
+ * Columns keep their 15px side padding and rows their -15px margin, so the
+ * gutters and the box model are unchanged; only the placement mechanism is
+ * different. `grid-column-end: span N` (rather than the `grid-column`
+ * shorthand) leaves the start auto, so columns still flow into the next
+ * free slot - and so .col-sm-offset-1 can set a start without fighting it. */
 @media (min-width: 768px) {
   .container { width: 750px; }
-  /* All twelve, not just the ones that happened to be needed first: col-sm-9
-   * and col-sm-10 were in use in the views while missing here, so they laid
-   * out as full-width unfloated blocks sitting on top of their floated
-   * siblings and swallowing their clicks. */
-  .col-sm-1, .col-sm-2, .col-sm-3, .col-sm-4, .col-sm-5, .col-sm-6,
-  .col-sm-7, .col-sm-8, .col-sm-9, .col-sm-10, .col-sm-11, .col-sm-12 { float: left; }
-  .col-sm-1 { width: 8.3333%; }
-  .col-sm-2 { width: 16.6667%; }
-  .col-sm-3 { width: 25%; }
-  .col-sm-4 { width: 33.3333%; }
-  .col-sm-5 { width: 41.6667%; }
-  .col-sm-6 { width: 50%; }
-  .col-sm-7 { width: 58.3333%; }
-  .col-sm-8 { width: 66.6667%; }
-  .col-sm-9 { width: 75%; }
-  .col-sm-10 { width: 83.3333%; }
-  .col-sm-11 { width: 91.6667%; }
-  .col-sm-12 { width: 100%; }
-  .col-sm-offset-1 { margin-left: 8.3333%; }
+
+  .row {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    align-items: start;
+  }
+
+  /* Anything put straight into a row that is not a column spans the whole
+   * width, which is how it rendered as a block beside floats. */
+  .row > *:not([class*="col-"]) { grid-column: 1 / -1; }
+
+  .col-sm-1  { grid-column-end: span 1; }
+  .col-sm-2  { grid-column-end: span 2; }
+  .col-sm-3  { grid-column-end: span 3; }
+  .col-sm-4  { grid-column-end: span 4; }
+  .col-sm-5  { grid-column-end: span 5; }
+  .col-sm-6  { grid-column-end: span 6; }
+  .col-sm-7  { grid-column-end: span 7; }
+  .col-sm-8  { grid-column-end: span 8; }
+  .col-sm-9  { grid-column-end: span 9; }
+  .col-sm-10 { grid-column-end: span 10; }
+  .col-sm-11 { grid-column-end: span 11; }
+  .col-sm-12 { grid-column-end: span 12; }
+
+  .col-sm-offset-1 { grid-column-start: 2; }
 }
 
 @media (min-width: 992px) {
   .container { width: 970px; }
-  .col-md-3, .col-md-6, .col-md-9 { float: left; }
-  .col-md-3 { width: 25%; }
-  .col-md-6 { width: 50%; }
-  .col-md-9 { width: 75%; }
+  .col-md-3 { grid-column-end: span 3; }
+  .col-md-6 { grid-column-end: span 6; }
+  .col-md-9 { grid-column-end: span 9; }
 }
 
 @media (min-width: 1200px) {

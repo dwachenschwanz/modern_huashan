@@ -130,7 +130,7 @@ ${commitMessageModalHtml()}`;
 
   function renderColumns() {
     return `
-    <div id="json">
+    <div id="json" class="row">
       <div class="col-sm-4">
         ${accordionGroupHtml({ id: 'ds', heading: 'Data Structure', bodyHtml: '<div id="ds-editor" class="json-editor-host"></div>' })}
         ${platformExists() ? accordionGroupHtml({ id: 'pds', heading: 'Platform Data Structure', bodyHtml: '<div id="pds-editor" class="json-editor-host"></div>' }) : ''}

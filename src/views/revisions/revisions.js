@@ -152,7 +152,7 @@ ${appNavHtml({ active: 'revisions', isAdmin: state.isAdmin, selectedTemplate: st
         : ''
     }
 
-    <div id="revision-json">
+    <div id="revision-json" class="row">
       ${
         state.jsonData
           ? `

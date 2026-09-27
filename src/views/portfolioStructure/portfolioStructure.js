@@ -898,7 +898,7 @@ export function mount(container, params) {
       default:
         html = '';
     }
-    formEl.innerHTML = `<div class="col-sm-12">${html}</div>`;
+    formEl.innerHTML = `<div class="col-sm-12 row">${html}</div>`;
     wireActionForm(formEl, menu);
     refreshSaveButton();
   }
