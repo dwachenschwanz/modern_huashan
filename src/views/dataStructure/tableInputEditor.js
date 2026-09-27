@@ -17,7 +17,7 @@ function tableRowHtml(table, state, isRowShown) {
     <td><div class="no-wrap" title="${escapeHtml(cellLink)}" data-toggle="tooltip">${escapeHtml(cellLink)}</div>${editing ? `<label class="ds-key-label" for="ds-pti-key-${escapeHtml(cellLink)}">Key</label><input id="ds-pti-key-${escapeHtml(cellLink)}" type="text" style="width:100%;" class="form form-control" data-pti-key="${escapeHtml(cellLink)}" value="${escapeHtml(table.Key)}">` : ''}</td>
     <td>${readOnly ? `<p>${escapeHtml(table.Display)}</p>` : `<input type="text" style="width:100%;" class="form form-control" data-pti-display="${escapeHtml(cellLink)}" value="${escapeHtml(table.Display)}">`}</td>
     <td><input type="checkbox" data-pti-inherited="${escapeHtml(cellLink)}" ${table.Inherited ? 'checked' : ''} ${readOnly ? 'disabled' : ''}></td>
-    <td>${readOnly ? `<button type="button" class="btn btn-default btn-sm" data-row-edit="${escapeHtml(cellLink)}"><i class="fa fa-pencil" aria-hidden="true"></i></button>` : `<button type="button" class="btn btn-primary btn-sm" data-row-done="${escapeHtml(cellLink)}"><i class="fa fa-check" aria-hidden="true"></i></button>`}</td>
+    <td>${readOnly ? `<button type="button" class="btn btn-edit btn-sm" data-row-edit="${escapeHtml(cellLink)}"><i class="fa fa-pencil" aria-hidden="true"></i></button>` : `<button type="button" class="btn btn-primary btn-sm" data-row-done="${escapeHtml(cellLink)}"><i class="fa fa-check" aria-hidden="true"></i></button>`}</td>
   </tr>`;
 }
 

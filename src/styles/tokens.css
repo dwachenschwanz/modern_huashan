@@ -40,6 +40,15 @@
   --action:      var(--brand);
   --action-deep: var(--brand-deep);
 
+  /* --- primitives: edit ---
+   * Edit affordances get their own hue so they read as neither an action
+   * (maroon), an addition (green) nor a removal (red). Teal-blue rather
+   * than a teal-green, to stay clearly apart from --ok. */
+  --edit-tint: #e3eff3;
+  --edit-edge: #6499ab;   /* 3.14:1 on white - clears the boundary minimum */
+  --edit:      #14657c;
+  --edit-deep: #0f4d5f;
+
   /* --- primitives: semantic status ---
    * --danger sits deliberately brighter and more orange than the maroon it
    * now has to be told apart from; destructive buttons are also outlined

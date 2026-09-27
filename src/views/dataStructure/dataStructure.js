@@ -417,7 +417,7 @@ ${appNavHtml({ active: 'dataStructure', isAdmin: state.isAdmin, selectedTemplate
   <a href="#/appstructure/${encodeURIComponent(state.selectedTemplate)}" class="btn btn-default pull-right" role="button">Next: App Structure <i class="fa fa-chevron-right" aria-hidden="true"></i></a>
 
   ${state.show2
-    ? `<button type="button" class="btn btn-tonal" id="ds-edit-toggle">Edit</button>`
+    ? `<button type="button" class="btn btn-edit" id="ds-edit-toggle">Edit All</button>`
     : `<button type="button" class="btn btn-primary" id="ds-edit-toggle"><i class="fa fa-check" aria-hidden="true"></i></button>`}
 
   <button class="btn btn-primary" id="ds-save-open-btn" data-toggle="modal" data-target="#commitMessageModal" ${isUnchanged() ? 'disabled' : ''}>

@@ -457,6 +457,11 @@ a.btn[disabled] {
 .btn-tonal { color: var(--brand-deep); background: var(--brand-tint); border-color: var(--brand-edge); }
 .btn-tonal:hover, .btn-tonal:focus { color: var(--brand-deep); background: #eed4d9; border-color: var(--brand); }
 
+/* Edit affordances - the "Edit All" toggle and the per-row pencils - share
+ * one look, since they are the same action at different scope. */
+.btn-edit { color: var(--edit-deep); background: var(--edit-tint); border-color: var(--edit-edge); }
+.btn-edit:hover, .btn-edit:focus { color: var(--edit-deep); background: #d2e4ea; border-color: var(--edit); }
+
 .btn-default { color: var(--ink); background: var(--n-100); border-color: var(--n-500); }
 .btn-default:hover, .btn-default:focus { color: var(--ink); background: var(--n-200); border-color: var(--n-700); }
 
