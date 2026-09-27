@@ -1,0 +1,83 @@
+# AGENTS.md
+
+Huashan Wizard: Vite + vanilla JavaScript (ES modules) frontend for managing
+SmartOrg templates. See `README.md` for full product/architecture docs.
+
+## Never search or read
+
+- `node_modules/` — dependencies.
+- `dist/` — generated build output (gitignored).
+- `legacy/` — previous AngularJS app, kept as inactive reference only.
+- `test-results/` — Playwright run output (`.last-run.json` etc.), not test
+  source.
+- `public/vendor/` — third-party vendored code (e.g. `smartorg.js`, loaded
+  as a browser global), not app code.
+
+README states Node.js 20.19+ (20.x line) or 22.12+, but there's no `engines`
+field in `package.json` and no npm engine warnings — in practice newer Node
+(tested with v24) installs and lints cleanly. Don't treat Node version as a
+suspect for unrelated failures; it isn't enforced.
+
+## Commands
+
+| Command | Purpose | Cost |
+| --- | --- | --- |
+| `npm run lint` | ESLint (`--max-warnings=0`) | fast |
+| `npm test` | Node test runner, `test/*.test.js` | fast |
+| `npm run dev` | Vite dev server, port 5173, proxies `/kirk` | long-running, foreground |
+| `npm run build` | Production build into `dist/` | slow |
+| `npm run test:browser` | Playwright smoke tests (mocked backend) | slow |
+| `npm run check` | lint + test + build + test:browser | slow |
+
+Use `lint`/`test` for fast iteration while editing. Reserve `npm run check`
+for final verification before calling a change done — don't rerun it after
+every small edit. If it can't be run, say so rather than claiming verified.
+
+Setup (only if not already done): `npm install`, then
+`npx playwright install chromium` once for browser tests.
+
+## Where to look for a task
+
+- Editing a structure screen (Data/App/Portfolio) → its coordinator in
+  `src/views/<name>/<name>.js` plus editor submodules in the same folder
+  (e.g. `dataStructure/inputEditor.js`, `tableInputEditor.js`,
+  `outputEditor.js`).
+- Backend/API request behavior → `src/api/huashanClient.js` (all Kirk/
+  CalcEngine calls go through here) and `src/core/config.js` (endpoint
+  config, same-origin `/kirk/...` paths, Vite proxy in `vite.config.js`).
+- Auth/session bugs → `src/core/auth.js`, `session.js`, `cookies.js`.
+  Session state: `JWT-TOKEN`/`INFO` in `localStorage`, `huashansession`
+  cookie for restore; authenticated views call `restoreSession()`.
+- Routing/navigation guards → `src/core/router.js`; route registration and
+  app startup → `src/main.js` (routes are imported lazily there — keep new
+  route registrations there rather than scattering imports elsewhere).
+- Shared UI (modals, overlays, JSON editor, nav) → `src/components/`.
+- Unit tests → `test/`; Playwright workflow tests → `tests/browser/`.
+
+## Code conventions (deviations worth knowing)
+
+- No framework — vanilla ES modules only. Don't reintroduce Bootstrap,
+  AngularJS, or jQuery.
+- `no-unused-vars` and `no-useless-assignment` are disabled in
+  `eslint.config.js` — don't flag or "fix" these as if they were errors.
+- Route modules export `mount(container, params)` and return a cleanup
+  function when they register guards, listeners, timers, or chart
+  instances — destroy CodeMirror/Highcharts instances and listeners there.
+- Use `escapeHtml()` (`src/core/html.js`) for server-provided text in HTML.
+
+## CSS
+
+- Plain CSS, no preprocessor, no custom-property/token system, no
+  Bootstrap/Tailwind.
+- `src/styles/app.css` is the single entry point; it only `@import`s the
+  other files in the folder. Add a new view's stylesheet there.
+- One stylesheet per view (`data-structure.css`, `app-structure.css`,
+  `select-template.css`, etc.); `base.css`/`main.css` hold shared/global
+  rules, `admin.css`/`json.css`/`loading-overlay.css` are component/route
+  specific. Put view-specific rules in that view's file, not `base.css`.
+- `animate.css` is a vendored third-party library — never hand-edit it.
+
+## Git / PR hygiene
+
+- Don't touch `legacy/` or `dist/`.
+- Keep commits scoped to the requested change.
