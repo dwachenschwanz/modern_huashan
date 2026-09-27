@@ -1026,14 +1026,16 @@ export function mount(container, params) {
 
   function imageFormHtml(menu) {
     const isChart = menu.Parameters.Type === 'CHART';
-    return `${commandHeaderHtml(menu)}
+    return `<div class="as-image-editor">
+      ${commandHeaderHtml(menu)}
       <div class="row table-padding"><div class="col-sm-3"><label><input type="radio" name="image-type" data-image-type="RANGE" ${!isChart ? 'checked' : ''}> RANGE</label> &nbsp; <label><input type="radio" name="image-type" data-image-type="CHART" ${isChart ? 'checked' : ''}> CHART</label></div><div class="col-sm-3"><label><input type="checkbox" data-field="Parameters.FitToScreen" ${menu.Parameters.FitToScreen ? 'checked' : ''}> Fit To Screen</label></div></div>
-      <div class="row">
-      <div class="col-sm-3"><div class="list-of-templates"><div class="list-group">
+      <div class="row as-image-body">
+      <div class="col-sm-3 as-image-list"><div class="list-of-templates"><div class="list-group">
         ${isChart ? state.charts.map((chart, i) => `<a href="" class="list-group-item ${chart === state.selectedImageChart ? 'active' : ''}" data-image-chart="${i}">${escapeHtml(chart.ChartName)}</a>`).join('') : state.potentialTables.map((table, i) => `<a href="" class="list-group-item ${table === state.selectedImageTable ? 'active' : ''}" data-image-table="${i}">${escapeHtml(table.CellLink)}</a>`).join('')}
       </div></div></div>
-      <div class="col-sm-9" style="height:500px;overflow:auto">${isChart ? '<div id="appstructure-image-chart" style="width:100%;height:480px"></div>' : previewHtml(state.selectedImageTable)}</div>
-      </div>`;
+      <div class="col-sm-9 as-image-preview">${isChart ? '<div id="appstructure-image-chart"></div>' : previewHtml(state.selectedImageTable)}</div>
+      </div>
+    </div>`;
   }
 
   function addTablesFormHtml(menu) {
@@ -1253,7 +1255,7 @@ export function mount(container, params) {
           <div class="select-template-title">
             <div class="col-sm-12"><h4 id="as-selected-title">${escapeHtml(selectedName)}</h4></div>
           </div>
-          <div class="selected-inputs editor-canvas">${editorHtml()}</div>
+          <div class="selected-inputs editor-canvas${state.selectedMenu && state.selectedMenu.Command === 'IMAGE' ? ' editor-canvas-fill' : ''}">${editorHtml()}</div>
         </div>
 
         <div class="col-sm-12 text-center align-to-bottom">

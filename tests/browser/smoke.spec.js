@@ -77,6 +77,12 @@ const appStructure = {
       },
     },
     {
+      ID: 'image',
+      Display: 'Image',
+      Command: 'IMAGE',
+      Parameters: { Type: 'RANGE', CellLink: 'Sheet1!Preview', FitToScreen: false },
+    },
+    {
       ID: 'metalog',
       Display: 'Metalog',
       Command: 'METALOG_DISPLAY',
@@ -239,7 +245,10 @@ function commandResult(command, url) {
     GetAppStructure: url.searchParams.get('isPlatform') === 'true' ? platformAppStructure : appStructure,
     GetPortfolioStructure: portfolioStructure,
     GetPotentialTables: {
-      PotentialTableOutputs: [{ CellLink: 'Sheet1!Table', HtmlPreview: '<table><tr><td>Smoke table</td></tr></table>' }],
+      PotentialTableOutputs: [
+        { CellLink: 'Sheet1!Table', HtmlPreview: '<table><tr><td>Smoke table</td></tr></table>' },
+        { CellLink: 'Sheet1!Preview', PreviewURL: '/preview.svg' },
+      ],
     },
     GetCharts: { Charts: [] },
     GetTemplateJsonFiles: templateJson,
@@ -270,6 +279,20 @@ async function mockBackend(page, saveRequests, actionRequests, uploadRequests) {
     }
     if (url.pathname === `/kirk/domain/astro-templates/${TEMPLATE}`) {
       await route.fulfill({ json: { data: { status: 1, template: { name: TEMPLATE, history: { guid: 'commit-1' } } } } });
+      return;
+    }
+    /* The IMAGE editor builds its preview src as SERVER_URL + PreviewURL, so
+     * a range preview lands under /kirk. Serve a real image rather than
+     * letting it 404: a broken image still takes its CSS box, so the layout
+     * assertions would pass without anything having been decoded. It is
+     * deliberately tall and narrow (1:10, like a screenshot of a long Excel
+     * range) so it overflows the pane and exercises the scrolling. */
+    if (url.pathname === '/kirk/preview.svg') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'image/svg+xml',
+        body: '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="400"><rect width="40" height="400" fill="#14657c"/></svg>',
+      });
       return;
     }
     if (url.pathname === `/kirk/wizard/potential-table-inputs/${TEMPLATE}`) {
@@ -1218,6 +1241,71 @@ test('Portfolio Structure edits command forms and saves their settings', async (
     Max: 100,
     Sets: [{ x: "Outputs['Output']", y: "Outputs['Growth']", name: 'Series 1' }],
   });
+  assertNoPageErrors();
+});
+
+test('App Structure image preview grows to the available height', async ({ page }) => {
+  const assertNoPageErrors = failOnPageErrors(page);
+
+  /* The preview used to sit in a hard 500px box, so a tall window wasted the
+   * space below it and a short one clipped. The pane should now be whatever
+   * height is left in the column: taller window, more preview visible before
+   * the pane has to scroll, and the page itself never scrolls. */
+  const measure = async (height) => {
+    await page.setViewportSize({ width: 1280, height });
+    await expect(page.locator('.as-image-preview img')).toBeVisible();
+    return page.evaluate(() => {
+      const pane = document.querySelector('.as-image-preview');
+      const rect = pane.getBoundingClientRect();
+      const image = pane.querySelector('img').getBoundingClientRect();
+      return {
+        pane: rect.height,
+        paneBottom: rect.bottom,
+        paneScrolls: pane.scrollHeight > pane.clientHeight + 1,
+        imageHeight: image.height,
+        imageWidth: image.width,
+        paneContentWidth: pane.clientWidth
+          - parseFloat(getComputedStyle(pane).paddingLeft)
+          - parseFloat(getComputedStyle(pane).paddingRight),
+        documentScrolls: document.documentElement.scrollHeight > document.documentElement.clientHeight,
+      };
+    });
+  };
+
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto(`/#/appstructure/${TEMPLATE}`);
+  await page.getByText('Image', { exact: true }).first().click();
+
+  const short = await measure(900);
+  const tall = await measure(1300);
+
+  // 400px more window becomes roughly 400px more preview, not a fixed box.
+  expect(tall.pane - short.pane).toBeGreaterThan(350);
+  expect(short.pane, 'preview is no larger than the 500px box it replaced').toBeGreaterThan(500);
+
+  // Whatever the window height, the pane ends on screen and the page does not
+  // scroll - overflow belongs to the pane.
+  expect(short.documentScrolls, 'preview pushed the page into scroll').toBe(false);
+  expect(tall.documentScrolls, 'preview pushed the page into scroll').toBe(false);
+  expect(tall.paneBottom).toBeLessThanOrEqual(1300);
+  expect(short.paneScrolls, 'the tall preview should scroll inside its pane').toBe(true);
+
+  /* The image keeps its own proportions and fills the column width, so
+   * growing the pane reveals more of it rather than rescaling it. */
+  expect(Math.abs(tall.imageWidth - tall.paneContentWidth)).toBeLessThan(2);
+  expect(tall.imageHeight).toBeCloseTo(short.imageHeight, 0);
+
+  /* The CHART variant swaps the image for a Highcharts container, which used
+   * to carry its own hard-coded 480px. A chart has no intrinsic size, so it
+   * does fill the pane. */
+  await page.locator('[data-image-type="CHART"]').check();
+  const chart = await page.evaluate(() => ({
+    container: document.querySelector('#appstructure-image-chart').getBoundingClientRect().height,
+    pane: document.querySelector('.as-image-preview').getBoundingClientRect().height,
+  }));
+  expect(chart.container).toBeGreaterThan(500);
+  expect(chart.container).toBeGreaterThan(chart.pane - 2);
+
   assertNoPageErrors();
 });
 
