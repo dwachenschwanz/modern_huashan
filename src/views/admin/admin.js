@@ -5,6 +5,7 @@ import { SERVER_URL, TOKEN_KEY } from '../../core/config.js';
 import { getRouteSignal, navigate } from '../../core/router.js';
 import { flashAlert, initDropdowns } from '../../components/uiInteractions.js';
 import { loadErrorMessage } from '../../components/loadError.js';
+import { appNavHtml } from '../../components/appNav.js';
 import { escapeHtml, escapeAttr } from '../../core/html.js';
 
 const ALL_GROUP = 'ALL';
@@ -782,19 +783,7 @@ export function mount(container) {
 
   function render() {
     container.innerHTML = `
-<nav class="navbar navbar-inverse navbar-static-top" role="navigation" style="margin-bottom: 10px;">
-  <div class="container-fluid">
-    <div class="navbar-header"><a class="navbar-brand">Huashan</a></div>
-    <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
-      <ul class="nav navbar-nav">
-        <li><a href="#">Home</a></li>
-        <li class="active"><a href="#/admin">Admin</a></li>
-        <li><a href="#/selectTemplate">Select Template</a></li>
-      </ul>
-      <ul class="nav navbar-nav navbar-right"></ul>
-    </div>
-  </div>
-</nav>
+${appNavHtml({ active: 'admin', isAdmin: true })}
 
 <div class="admin-templates animated fadeIn">
   <h3>Admin</h3>

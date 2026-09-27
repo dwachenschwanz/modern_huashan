@@ -19,14 +19,16 @@ export function appNavHtml({ active = null, isAdmin = false, selectedTemplate = 
   const encodedTemplate = encodeURIComponent(selectedTemplate || '');
 
   return `
-<nav class="navbar navbar-inverse navbar-static-top" role="navigation" style="margin-bottom: 10px;">
+<nav class="app-nav navbar navbar-inverse navbar-static-top" role="navigation" style="margin-bottom: 10px;">
   <div class="container-fluid">
     <div class="navbar-header">
-      <a class="navbar-brand">Huashan</a>
+      <a class="app-nav-brand navbar-brand" href="#/selectTemplate">
+        <img src="/images/smartorg-icon.png" alt="" class="app-nav-brand-icon">
+        <span class="app-nav-brand-text">Huashan Wizard</span>
+      </a>
     </div>
     <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
       <ul class="nav navbar-nav">
-        <li><a href="#">Home</a></li>
         ${isAdmin ? `<li${active === 'admin' ? ' class="active"' : ''}><a href="#/admin">Admin</a></li>` : ''}
         <li${active === 'selectTemplate' ? ' class="active"' : ''}><a href="#/selectTemplate">Select Template</a></li>
         ${
@@ -57,7 +59,7 @@ export function appNavHtml({ active = null, isAdmin = false, selectedTemplate = 
       <ul class="nav navbar-nav navbar-right">
         ${
           hasTemplate && showTemplateBadge
-            ? `<li class="active"><a class="navbar-brand" href=""><b>${escapeHtml(selectedTemplate)}</b></a></li>`
+            ? `<li class="app-nav-template"><span class="app-nav-template-chip"><i class="fa fa-file-text-o" aria-hidden="true"></i>${escapeHtml(selectedTemplate)}</span></li>`
             : ''
         }
       </ul>
