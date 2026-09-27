@@ -1,4 +1,5 @@
 import { escapeHtml } from '../../core/html.js';
+import { searchFieldHtml } from '../../components/searchField.js';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const INPUT_TYPES = ['DISTRIBUTION', 'SCALAR', 'TABLE', 'DATE'];
@@ -98,7 +99,7 @@ export function inputEditorHtml(state, isRowShown) {
   return `<div class="select-input">
     <div class="choose-from">
       <div class="select-template-title"><h4>${state.isPlatform ? 'Platform Data Structure' : 'Data Structure'}</h4></div>
-      <div class="select-template-title"><input type="text" class="form-control" placeholder="Search" id="ds-search-input" value="${escapeHtml(state.searchInput)}"></div>
+      ${searchFieldHtml({ id: 'ds-search-input', value: state.searchInput })}
       <div class="panel panel-primary"><div class="list-of-templates" id="input-list"><ul class="list-group">
         ${excluded.map((input) => `<li class="list-group-item" title="${escapeHtml(input.CellLink)}" data-toggle="tooltip"><div class="no-wrap"><a href="" class="text-success" data-include-input="${escapeHtml(input.CellLink)}"><i class="fa fa-plus-square"></i></a> ${escapeHtml(input.CellLink)}</div></li>`).join('')}
       </ul></div></div>

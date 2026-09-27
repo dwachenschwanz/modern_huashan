@@ -484,6 +484,55 @@ textarea.form-control {
   opacity: 1;
 }
 
+/* Search input with a clear affordance. The button only shows once there is
+ * something to clear - :placeholder-shown is true exactly while the field is
+ * empty, so this needs no JavaScript. */
+.search-field {
+  position: relative;
+  flex: none;
+  margin-bottom: 14px;
+}
+
+.search-field .form-control {
+  padding-right: 34px;
+}
+
+.search-field-clear,
+.search-box .search-field-clear {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--r-pill);
+  background: transparent;
+  color: var(--ink-subtle);
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.search-field-clear:hover {
+  color: var(--ink);
+  background: var(--surface-muted);
+}
+
+.search-field-clear:focus-visible {
+  outline: 2px solid var(--focus-outline);
+  outline-offset: 1px;
+}
+
+/* Sibling combinator, so the button must follow the input in the markup. */
+.search-field input:placeholder-shown ~ .search-field-clear,
+.search-box input:placeholder-shown ~ .search-field-clear {
+  display: none;
+}
+
 .has-error .form-control,
 .has-error.form-control {
   border-color: var(--danger);

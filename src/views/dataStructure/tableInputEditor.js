@@ -1,4 +1,5 @@
 import { escapeHtml, extractTablePreviewHtml } from '../../core/html.js';
+import { searchFieldHtml } from '../../components/searchField.js';
 
 const TABLE_INPUT_COLUMN_WIDTHS = ['5%', '38%', '32%', '15%', '10%'];
 const tableInputColgroupHtml = () => `<colgroup>${TABLE_INPUT_COLUMN_WIDTHS.map((w) => `<col style="width:${w};">`).join('')}</colgroup>`;
@@ -32,7 +33,7 @@ export function tableInputEditorHtml(state, isRowShown) {
   return `<div class="select-input">
     <div class="choose-from">
       <div class="select-template-title"><h4>Choose From</h4></div>
-      <div class="select-template-title"><input type="text" class="form-control" placeholder="Search" id="ds-search-input-table" value="${escapeHtml(state.searchInput)}"></div>
+      ${searchFieldHtml({ id: 'ds-search-input-table', value: state.searchInput })}
       <div class="panel panel-primary"><div class="list-of-templates" id="potential-tableInput-list"><ul class="list-group">
         ${available.map((table) => `<li class="list-group-item ${state.selectedCelllink === table.CellLink ? 'active' : ''}" data-choose-pti="${escapeHtml(table.CellLink)}" title="${escapeHtml(table.CellLink)}" data-toggle="tooltip"><div class="no-wrap"><button type="button" class="table-input-add text-success" data-include-pti="${escapeHtml(table.CellLink)}" aria-label="Add ${escapeHtml(table.CellLink)}"><i class="fa fa-plus-square"></i></button> ${escapeHtml(table.CellLink)}</div></li>`).join('')}
       </ul></div></div>

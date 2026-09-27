@@ -1,4 +1,5 @@
 import './styles/app.css';
+import { initSearchFieldClears } from './components/searchField.js';
 import { addRoute, otherwise, startRouter, navigate } from './core/router.js';
 import { initModals, initDropdowns } from './components/uiInteractions.js';
 import { initApiErrorBoundary } from './components/apiErrorBoundary.js';
@@ -67,3 +68,5 @@ otherwise(async (el) => {
 });
 
 startRouter(appEl);
+
+initSearchFieldClears();

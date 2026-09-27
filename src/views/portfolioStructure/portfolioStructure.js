@@ -4,6 +4,7 @@ import { session, restoreSession } from '../../core/session.js';
 import { SERVER_URL } from '../../core/config.js';
 import { setNavigationGuard, clearNavigationGuard } from '../../core/router.js';
 import { appNavHtml } from '../../components/appNav.js';
+import { searchFieldHtml } from '../../components/searchField.js';
 import { renderAlerts, wireAlertClose } from '../../components/alerts.js';
 import { commitMessageModalHtml, initCommitMessageModal, closeCommitMessageModal } from '../../components/commitMessageModal.js';
 import { loadingOverlayHtml } from '../../components/loadingOverlay.js';
@@ -1002,9 +1003,7 @@ ${appNavHtml({ active: 'portfolioStructure', isAdmin: state.isAdmin, selectedTem
 <div class="select-template fadeIn structure-editor" style="height: calc(100% - 100px)">
   <div class="structure-sidebar">
     <div class="select-template-title"><h4>${state.isPlatform ? 'Platform Portfolio Structure' : 'Portfolio Structure'}</h4></div>
-    <div class="select-template-title">
-      <input type="text" class="form-control" id="ps-search" placeholder="Search" value="${escapeAttr(state.searchText)}">
-    </div>
+    ${searchFieldHtml({ id: 'ps-search', value: state.searchText })}
     <div class="panel panel-primary structure-menu-panel">
       <div class="list-of-templates height-for-list" style="height: 100%">
         <div id="ps-menu-list" class="list-group"></div>

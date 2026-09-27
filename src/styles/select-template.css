@@ -53,6 +53,13 @@
     padding-top: 9px;
 }
 
+/* The slot is a fixed 45px, but an h4 carries the document's 20px top and
+ * 10px bottom margins, so the heading overflowed the bottom of its own box
+ * and sat on top of whatever followed - 8px into the search field below. */
+.select-template-title h4 {
+    margin: 0;
+}
+
 .textarea-json{
     float:left;
     padding-right: 2%;

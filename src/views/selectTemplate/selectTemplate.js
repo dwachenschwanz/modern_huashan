@@ -31,6 +31,7 @@ import { SERVER_URL, TOKEN_KEY } from '../../core/config.js';
 import { getRouteSignal, navigate } from '../../core/router.js';
 import { TheUte } from '../../core/textUtils.js';
 import { appNavHtml } from '../../components/appNav.js';
+import { searchFieldHtml } from '../../components/searchField.js';
 import { hideModal, flashAlert } from '../../components/uiInteractions.js';
 import { loadErrorMessage } from '../../components/loadError.js';
 import { escapeHtml, escapeAttr } from '../../core/html.js';
@@ -851,9 +852,7 @@ export function mount(container) {
 
   <div id="choose-from" class="template-sidebar">
     <div class="select-template-title"><h4>Select a Template</h4></div>
-    <div class="select-template-title">
-      <input type="text" id="st-search" class="form-control" placeholder="Search" value="${escapeAttr(state.searchText)}">
-    </div>
+    ${searchFieldHtml({ id: 'st-search', value: state.searchText })}
     <div class="panel panel-primary template-menu-panel">
       <div class="list-of-templates height-for-list" style="height: 100%">
         <div class="list-group" id="st-template-list" style="height: 100%">${templateListHtml(state)}</div>

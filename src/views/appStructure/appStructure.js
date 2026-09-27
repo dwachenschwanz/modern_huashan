@@ -5,6 +5,7 @@ import { session, restoreSession } from '../../core/session.js';
 import { SERVER_URL } from '../../core/config.js';
 import { navigate, setNavigationGuard, clearNavigationGuard } from '../../core/router.js';
 import { appNavHtml } from '../../components/appNav.js';
+import { searchFieldHtml } from '../../components/searchField.js';
 import { renderAlerts, wireAlertClose } from '../../components/alerts.js';
 import { commitMessageModalHtml, initCommitMessageModal, closeCommitMessageModal } from '../../components/commitMessageModal.js';
 import { loadingOverlayHtml } from '../../components/loadingOverlay.js';
@@ -1237,9 +1238,7 @@ export function mount(container, params) {
       <div class="select-template fadeIn structure-editor" style="height:calc(100% - 100px)">
         <div class="structure-sidebar" style="text-align:left">
           <div class="select-template-title"><h4>${state.isPlatform ? 'Platform App Structure' : 'App Structure'}</h4></div>
-          <div class="select-template-title">
-            <input type="text" class="form-control" id="as-search" placeholder="Search" value="${escapeAttr(state.searchText)}">
-          </div>
+          ${searchFieldHtml({ id: 'as-search', value: state.searchText })}
           <div class="panel panel-primary structure-menu-panel">
             <div class="list-of-templates" style="height:100%">
               <div class="list-group" id="app-structure-menu">${menuListHtml()}</div>

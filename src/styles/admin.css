@@ -311,6 +311,7 @@
   
   .search-box input[type="text"] {
     padding-left: 30px; /* Make padding for the search icon */
+    padding-right: 30px; /* ...and for the clear button */
     height: 38px; /* Height of the input field */
     border: 1px solid #ccc;
     border-radius: 4px;

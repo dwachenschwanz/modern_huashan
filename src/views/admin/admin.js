@@ -6,6 +6,7 @@ import { getRouteSignal, navigate } from '../../core/router.js';
 import { flashAlert, initDropdowns } from '../../components/uiInteractions.js';
 import { loadErrorMessage } from '../../components/loadError.js';
 import { appNavHtml } from '../../components/appNav.js';
+import { searchClearButtonHtml } from '../../components/searchField.js';
 import { escapeHtml, escapeAttr } from '../../core/html.js';
 
 const ALL_GROUP = 'ALL';
@@ -593,6 +594,7 @@ export function mount(container) {
       <div class="search-box">
         <input type="text" id="admin-search" placeholder="Search templates" value="${escapeAttr(state.searchText)}">
         <i class="fa fa-search search-icon"></i>
+        ${searchClearButtonHtml('admin-search')}
       </div>
       <div class="filter-box dropdown">
         <button type="button" class="btn dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">

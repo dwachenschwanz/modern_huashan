@@ -1,4 +1,5 @@
 import { escapeHtml } from '../../core/html.js';
+import { searchFieldHtml } from '../../components/searchField.js';
 
 const OUTPUT_COLUMN_WIDTHS = ['4%', '35%', '25%', '13%', '13%', '10%'];
 const outputColgroupHtml = () => `<colgroup>${OUTPUT_COLUMN_WIDTHS.map((w) => `<col style="width:${w};">`).join('')}</colgroup>`;
@@ -33,7 +34,7 @@ export function outputEditorHtml(state, isRowShown) {
   return `<div class="select-input">
     <div class="choose-from">
       <div class="select-template-title"><h4>Choose From</h4></div>
-      <div class="select-template-title"><input type="text" class="form-control" placeholder="Search" id="ds-search-output" value="${escapeHtml(state.searchOutput)}"></div>
+      ${searchFieldHtml({ id: 'ds-search-output', value: state.searchOutput })}
       <div class="panel panel-primary"><div class="list-of-templates"><ul class="list-group">
         ${excluded.map((output) => `<li class="list-group-item" title="${escapeHtml(output.CellLink)}" data-toggle="tooltip"><div class="no-wrap"><a href="" class="text-success" data-include-output="${escapeHtml(output.CellLink)}"><i class="fa fa-plus-square"></i></a> ${escapeHtml(output.CellLink)}</div></li>`).join('')}
       </ul></div></div>
