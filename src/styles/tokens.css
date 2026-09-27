@@ -24,6 +24,10 @@
   /* --- primitives: brand (SmartOrg maroon) ---
    * Carries both roles: identity (nav, login) and interactive primary. */
   --brand-tint: #f6e7e9;
+  /* The tonal button's boundary. Light enough to read as secondary, dark
+   * enough to clear WCAG 1.4.11's 3:1 for a control's edge (3.22:1 on
+   * white) - the old hairline border managed 1.38:1. */
+  --brand-edge: #b9808a;
   --brand:      #8b1e2b;
   --brand-deep: #6e1722;
 

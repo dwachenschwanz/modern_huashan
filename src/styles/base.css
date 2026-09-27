@@ -442,14 +442,32 @@ a.btn[disabled] {
 /* One filled action colour. Everything that is not THE action on a screen
  * uses .btn-default, so a view reads as one primary plus quiet neighbours
  * instead of a row of competing solid colours. */
-.btn-default { color: var(--ink-muted); background: var(--surface); border-color: var(--border); }
-.btn-default:hover, .btn-default:focus { background: var(--surface-sunken); border-color: var(--border-strong); }
+/* Four tiers by what the button is for, because one flat white style was
+ * covering navigation, mode toggles, secondary actions, modal dismissal and
+ * dense row controls at once - so none of them read as anything.
+ *
+ * .btn-primary  filled maroon   the one thing the screen is for
+ * .btn-tonal    maroon tint     supporting actions, and forward navigation
+ * .btn-default  neutral fill    backwards navigation, row controls
+ * .btn-ghost    no chrome       dismissal, and anything that should recede
+ *
+ * Both filled tiers carry a border that clears 3:1 against the page. That
+ * is more visible than the current fashion for secondary buttons, which is
+ * the point: the previous hairline was 1.38:1 and effectively invisible. */
+.btn-tonal { color: var(--brand-deep); background: var(--brand-tint); border-color: var(--brand-edge); }
+.btn-tonal:hover, .btn-tonal:focus { color: var(--brand-deep); background: #eed4d9; border-color: var(--brand); }
+
+.btn-default { color: var(--ink); background: var(--n-100); border-color: var(--n-500); }
+.btn-default:hover, .btn-default:focus { color: var(--ink); background: var(--n-200); border-color: var(--n-700); }
+
+.btn-ghost { color: var(--ink-muted); background: transparent; border-color: transparent; }
+.btn-ghost:hover, .btn-ghost:focus { color: var(--ink); background: var(--surface-muted); }
 .btn-primary { color: var(--ink-invert); background: var(--action); }
 .btn-primary:hover, .btn-primary:focus { color: var(--ink-invert); background: var(--action-deep); }
 .btn-success { color: var(--ink-invert); background: var(--ok); }
 .btn-success:hover, .btn-success:focus { color: var(--ink-invert); background: #1a6841; }
-.btn-info { color: var(--ink-muted); background: var(--surface); border-color: var(--border); }
-.btn-info:hover, .btn-info:focus { background: var(--surface-sunken); border-color: var(--border-strong); }
+.btn-info { color: var(--ink); background: var(--n-100); border-color: var(--n-500); }
+.btn-info:hover, .btn-info:focus { color: var(--ink); background: var(--n-200); border-color: var(--n-700); }
 /* Destructive only - never for "save". */
 .btn-danger { color: var(--danger); background: var(--surface); border-color: #e6cfcd; }
 .btn-danger:hover, .btn-danger:focus { color: var(--ink-invert); background: var(--danger); border-color: var(--danger); }

@@ -1093,7 +1093,7 @@ export function mount(container, params) {
           <div class="modal-body"><h4>Are you sure you want to delete <b>${escapeHtml(selectedName)}</b>?</h4></div>
           <div class="modal-footer">
             <button class="btn btn-primary" id="as-delete-confirm">Delete</button>
-            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-ghost" data-dismiss="modal">Close</button>
           </div>
         </div></div>
       </div>
@@ -1110,7 +1110,7 @@ export function mount(container, params) {
           </div>
           <div class="modal-footer">
             <button class="btn btn-primary" id="as-rename-confirm">Rename</button>
-            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-ghost" data-dismiss="modal">Close</button>
           </div>
         </div></div>
       </div>
@@ -1143,7 +1143,7 @@ export function mount(container, params) {
           </div>
           <div class="modal-footer">
             <button class="btn btn-primary" id="as-new-confirm">Add</button>
-            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-ghost" data-dismiss="modal">Close</button>
           </div>
         </div></div>
       </div>`;
@@ -1260,7 +1260,7 @@ export function mount(container, params) {
           <a href="#/datastructure/${encodeURIComponent(state.selectedTemplate)}" class="btn btn-default pull-left">
             <span class="fa fa-chevron-left" aria-hidden="true"></span> Previous: Data Structure
           </a>
-          <a href="#/portfoliostructure/${encodeURIComponent(state.selectedTemplate)}" class="btn btn-default pull-right">
+          <a href="#/portfoliostructure/${encodeURIComponent(state.selectedTemplate)}" class="btn btn-tonal pull-right">
             Next: Portfolio Structure <span class="fa fa-chevron-right" aria-hidden="true"></span>
           </a>
           <button class="btn btn-primary" id="as-save-btn" data-toggle="modal" data-target="#commitMessageModal" ${isUnchanged() || !state.saveComplete ? 'disabled' : ''}>

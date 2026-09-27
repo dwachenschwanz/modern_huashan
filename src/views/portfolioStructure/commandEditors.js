@@ -263,13 +263,13 @@ export function renderAddTablesEditor({ menu, state, commandHeaderHtml, outputOp
       <div class="row table-padding col-sm-4"><div class="col-sm-6 text-right" style="padding-top: 2%"><b>Min</b></div><div class="col-sm-6"><input type="number" class="form form-control" id="ps-min-precision" min="0" value="${numOrEmpty(state.minPrecision)}"></div></div>
       <div class="row table-padding col-sm-4"><div class="col-sm-6 text-right" style="padding-top: 2%"><b>Max</b></div><div class="col-sm-6"><input type="number" class="form form-control" id="ps-max-precision" min="0" value="${numOrEmpty(state.maxPrecision)}"></div></div>
       <div class="row table-padding col-sm-4"><div class="col-sm-6 text-right"><b>Default Precision</b></div><div class="col-sm-6">
-        <select class="btn btn-default form-control" id="ps-default-precision">${(menu.Parameters.PrecisionOptions || []).map((option) => `<option value="${option}" ${menu.Parameters.DefaultPrecision === option ? 'selected' : ''}>${option}</option>`).join('')}</select>
+        <select class="form-control" id="ps-default-precision">${(menu.Parameters.PrecisionOptions || []).map((option) => `<option value="${option}" ${menu.Parameters.DefaultPrecision === option ? 'selected' : ''}>${option}</option>`).join('')}</select>
       </div></div>
     </div>
     ${(menu.Parameters.Keys || []).map((key, index) => `<div class="row table-padding"><div class="col-sm-3"><select class="form form-control" data-special-key-index="${index}">${outputOptionsHtml(key)}</select></div></div>`).join('')}
     <div class="col-sm-12 row"><div class="row table-padding col-sm-4">
       <div class="col-sm-6 text-right"><b>Special Rules</b></div>
-      <div class="col-sm-6"><select class="btn btn-default form-control"><option value="1">None</option><option value="2">Ignore</option><option value="3">IRR</option><option value="4">MVSto Range</option><option value="5">Year</option><option value="6">Tooltip</option></select></div>
+      <div class="col-sm-6"><select class="form-control"><option value="1">None</option><option value="2">Ignore</option><option value="3">IRR</option><option value="4">MVSto Range</option><option value="5">Year</option><option value="6">Tooltip</option></select></div>
     </div></div>`;
 }
 

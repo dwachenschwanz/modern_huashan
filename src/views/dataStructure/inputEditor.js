@@ -84,10 +84,10 @@ function inputRowHtml(input, state, isRowShown) {
     <td>${inputValueHtml(input, cellLink, editing)}</td>
     <td>
       ${readOnly && input.Table === undefined ? `<p>${escapeHtml(input.Type)}</p>` : ''}
-      ${editing && input.Table === undefined ? `<select class="btn btn-default form-control" data-input-type="${escapeHtml(cellLink)}">${selectOptionsHtml(INPUT_TYPES, input.Type)}</select>` : ''}
+      ${editing && input.Table === undefined ? `<select class="form-control" data-input-type="${escapeHtml(cellLink)}">${selectOptionsHtml(INPUT_TYPES, input.Type)}</select>` : ''}
       ${input.Table !== undefined ? `<p>${escapeHtml(input.Type)}</p>` : ''}
     </td>
-    <td>${readOnly ? `<p>${escapeHtml(input.Constraint)}</p>` : `<select class="btn btn-default form-control" data-input-constraint="${escapeHtml(cellLink)}">${['double', 'string', 'integer', 'date', 'year'].map((constraint) => `<option value="${constraint}" ${input.Constraint === constraint ? 'selected' : ''}>${constraint}</option>`).join('')}</select>`}</td>
+    <td>${readOnly ? `<p>${escapeHtml(input.Constraint)}</p>` : `<select class="form-control" data-input-constraint="${escapeHtml(cellLink)}">${['double', 'string', 'integer', 'date', 'year'].map((constraint) => `<option value="${constraint}" ${input.Constraint === constraint ? 'selected' : ''}>${constraint}</option>`).join('')}</select>`}</td>
     <td align="center"><input type="checkbox" data-input-inherited="${escapeHtml(cellLink)}" ${input.Inherited ? 'checked' : ''} ${readOnly ? 'disabled' : ''}></td>
     <td>${readOnly ? `<button type="button" class="btn btn-default btn-sm" data-row-edit="${escapeHtml(cellLink)}"><i class="fa fa-pencil" aria-hidden="true"></i></button>` : `<button type="button" class="btn btn-primary btn-sm" data-row-done="${escapeHtml(cellLink)}"><i class="fa fa-check" aria-hidden="true"></i></button>`}</td>
   </tr>`;

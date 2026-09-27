@@ -12,7 +12,7 @@ function updateListHtml(state) {
 }
 
 function updateFooterHtml(state) {
-  return `${state.selectedPortfolioName ? '<button class="btn btn-primary" id="st-uds-run">Run</button>' : ''}<button class="btn btn-default" id="st-uds-close">Close</button>`;
+  return `${state.selectedPortfolioName ? '<button class="btn btn-primary" id="st-uds-run">Run</button>' : ''}<button class="btn btn-ghost" id="st-uds-close">Close</button>`;
 }
 
 function dialogById(container, id) {
@@ -79,7 +79,7 @@ export function renameDialogHtml(state) {
     <div class="modal-dialog"><div class="modal-content">
       <div class="modal-header"><button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button><h4 class="modal-title" id="renameModalLabel"><span id="st-rename-title">Rename ${escapeHtml(state.selectedTemplate)}</span></h4></div>
       <div class="modal-body"><h4>New Name:</h4><input type="text" id="st-rename-input" class="form form-control" value="${escapeHtml(state.newTemplateName)}"><div class="col-sm-12 save-alert text-center" id="st-rename-alerts">${renderAlerts(state.renameAlerts)}</div></div>
-      <div class="modal-footer"><button class="btn btn-primary" id="st-rename-confirm">Rename</button><button type="button" class="btn btn-default" data-dismiss="modal">Close</button></div>
+      <div class="modal-footer"><button class="btn btn-primary" id="st-rename-confirm">Rename</button><button type="button" class="btn btn-ghost" data-dismiss="modal">Close</button></div>
     </div></div>
   </div>`;
 }
@@ -102,7 +102,7 @@ export function deleteDialogHtml(state) {
     <div class="modal-dialog"><div class="modal-content">
       <div class="modal-header"><button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button><h4 class="modal-title">Delete Template</h4></div>
       <div class="modal-body"><h4 class="modal-title" id="deleteModalLabel">Are you sure to delete <b id="st-delete-name">${escapeHtml(state.selectedTemplate)}</b>?</h4><div class="col-sm-12 save-alert text-center" id="st-delete-alerts">${renderAlerts(state.deleteAlerts)}</div></div>
-      <div class="modal-footer"><button class="btn btn-primary" id="st-delete-confirm">Delete</button><button type="button" class="btn btn-default" data-dismiss="modal">Close</button></div>
+      <div class="modal-footer"><button class="btn btn-primary" id="st-delete-confirm">Delete</button><button type="button" class="btn btn-ghost" data-dismiss="modal">Close</button></div>
     </div></div>
   </div>`;
 }
@@ -128,7 +128,7 @@ export function trashDialogHtml(state) {
     <div class="modal-dialog"><div class="modal-content">
       <div class="modal-header"><button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button><h4 class="modal-title" id="trashModalLabel">Templates in Archive:</h4></div>
       <div class="modal-body"><div id="st-trash-list">${trashListHtml(state)}</div><div class="col-sm-12 save-alert text-center" id="st-undelete-alerts">${renderAlerts(state.undeleteAlerts)}</div></div>
-      <div class="modal-footer"><button class="btn btn-primary" id="st-undelete-confirm" ${state.selectedDeletedTemplate === 'Not Selected' ? 'disabled' : ''}>Unarchive</button><button type="button" class="btn btn-default" data-dismiss="modal">Close</button></div>
+      <div class="modal-footer"><button class="btn btn-primary" id="st-undelete-confirm" ${state.selectedDeletedTemplate === 'Not Selected' ? 'disabled' : ''}>Unarchive</button><button type="button" class="btn btn-ghost" data-dismiss="modal">Close</button></div>
     </div></div>
   </div>`;
 }
@@ -166,7 +166,7 @@ export function uploadDialogHtml(state) {
   return `<div class="modal fade" id="uploadModal" tabindex="-1" role="dialog" aria-labelledby="uploadModalLabel" aria-hidden="true"><div class="modal-dialog"><div class="modal-content">
     <div class="modal-header"><button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>${header}</div>
     <div class="modal-body">${body}<div class="save-alert text-center" id="st-submit-alerts">${renderAlerts(state.submitAlerts)}</div></div>
-    <div class="modal-footer">${state.ogre === false ? '<button class="btn btn-primary" id="st-upload-confirm">Upload</button><button class="btn btn-default" data-dismiss="modal">Close</button>' : ''}</div>
+    <div class="modal-footer">${state.ogre === false ? '<button class="btn btn-primary" id="st-upload-confirm">Upload</button><button class="btn btn-ghost" data-dismiss="modal">Close</button>' : ''}</div>
   </div></div></div>`;
 }
 

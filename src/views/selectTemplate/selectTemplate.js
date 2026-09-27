@@ -650,7 +650,7 @@ export function mount(container) {
   function bottomNavHtml() {
     const notSelected = state.selectedTemplate === 'Not Selected';
     return `
-    <a href="#/datastructure/${encodeURIComponent(state.selectedTemplate)}" class="btn btn-default pull-right" role="button" ${notSelected ? 'disabled' : ''}>Next: Data Structure <i class="fa fa-chevron-right" aria-hidden="true"></i></a>`;
+    <a href="#/datastructure/${encodeURIComponent(state.selectedTemplate)}" class="btn btn-tonal pull-right" role="button" ${notSelected ? 'disabled' : ''}>Next: Data Structure <i class="fa fa-chevron-right" aria-hidden="true"></i></a>`;
   }
 
   function runningBannerHtml() {
@@ -722,8 +722,8 @@ export function mount(container) {
     }
     ${state.showVersionLog ? versionLogHtml() : ''}
     <br />
-    <a href="#/json/${encodeURIComponent(state.selectedTemplate)}" class="btn btn-default" role="button">View JSON</a>
-    <a href="" id="st-download-btn" class="btn btn-default" role="button">Download Excel model</a>
+    <a href="#/json/${encodeURIComponent(state.selectedTemplate)}" class="btn btn-tonal" role="button">View JSON</a>
+    <a href="" id="st-download-btn" class="btn btn-tonal" role="button">Download Excel model</a>
     <div>
       <br>
       <a href="" class="btn btn-primary" id="st-update-ds-trigger" data-toggle="modal" data-target="#updateDataStructureModal" role="button">Update Data Structure</a>
@@ -859,7 +859,7 @@ export function mount(container) {
       </div>
     </div>
     <div class="template-actions">
-      ${state.isAdmin ? `<button class="btn btn-default pull-left" id="st-archive-btn" data-toggle="modal" data-target="#trashModal" title="Open Archive">Archive</button>` : ''}
+      ${state.isAdmin ? `<button class="btn btn-tonal pull-left" id="st-archive-btn" data-toggle="modal" data-target="#trashModal" title="Open Archive">Archive</button>` : ''}
       <button class="btn btn-success pull-right" id="st-upload-btn" data-toggle="modal" data-target="#uploadModal" title="Upload"><i class="fa fa-upload" aria-hidden="true"></i> Upload</button>
     </div>
   </div>

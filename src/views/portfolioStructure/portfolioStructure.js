@@ -1045,7 +1045,7 @@ ${appNavHtml({ active: 'portfolioStructure', isAdmin: state.isAdmin, selectedTem
       <div class="modal-body" id="ps-delete-modal-body"></div>
       <div class="modal-footer">
         <button class="btn btn-primary" id="ps-delete-confirm">Delete</button>
-        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-ghost" data-dismiss="modal">Close</button>
       </div>
     </div></div>
   </div>
@@ -1063,7 +1063,7 @@ ${appNavHtml({ active: 'portfolioStructure', isAdmin: state.isAdmin, selectedTem
       </div>
       <div class="modal-footer">
         <button class="btn btn-primary" id="ps-rename-btn">Rename</button>
-        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-ghost" data-dismiss="modal">Close</button>
       </div>
     </div></div>
   </div>
@@ -1102,7 +1102,7 @@ ${appNavHtml({ active: 'portfolioStructure', isAdmin: state.isAdmin, selectedTem
       <div class="col-sm-12 save-alert text-center" id="ps-new-alerts"></div>
       <div class="modal-footer">
         <button class="btn btn-primary" id="ps-new-add-btn" data-dismiss="modal">Add</button>
-        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-ghost" data-dismiss="modal">Close</button>
       </div>
     </div></div>
   </div>

@@ -685,7 +685,7 @@ export function mount(container) {
             </div>
             <div class="modal-footer">
               <button class="btn btn-primary" id="edit-modal-save" data-idle-label="Save" data-busy-label="Saving">Save</button>
-              <button class="btn btn-default" id="edit-modal-close2">Close</button>
+              <button class="btn btn-ghost" id="edit-modal-close2">Close</button>
             </div>
           </div>
         </div>
@@ -706,7 +706,7 @@ export function mount(container) {
             </div>
             <div class="modal-footer">
               <button class="btn btn-primary" id="delete-modal-confirm" data-idle-label="Archive" data-busy-label="Archiving">Archive</button>
-              <button class="btn btn-default" id="delete-modal-close2">Close</button>
+              <button class="btn btn-ghost" id="delete-modal-close2">Close</button>
             </div>
           </div>
         </div>
@@ -727,7 +727,7 @@ export function mount(container) {
             </div>
             <div class="modal-footer">
               <button class="btn btn-primary" id="unarchive-modal-confirm" data-idle-label="Unarchive" data-busy-label="Restoring">Unarchive</button>
-              <button class="btn btn-default" id="unarchive-modal-close2">Close</button>
+              <button class="btn btn-ghost" id="unarchive-modal-close2">Close</button>
             </div>
           </div>
         </div>
