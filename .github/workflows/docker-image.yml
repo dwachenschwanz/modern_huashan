@@ -11,10 +11,6 @@ on:
     branches:
       - qa
       - stage
-  pull_request:
-    branches:
-      - qa
-      - stage
 
 jobs:
   build:
@@ -57,4 +53,4 @@ jobs:
         run : |
           curl -X POST -H 'Content-Type: application/json' --data '{"text": "Successfully builded the image for ${{ github.repository }} from branch ${{ github.event.inputs.branch || github.ref_name }} and commit # ${{ env.short_sha }}.
           To Deploy Access the server and run below commands 
-          cd /opt/docker-app/infra && docker compose pull && docker compose up -d "}' "https://chat.googleapis.com/v1/spaces/AAAAWUct2tk/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=dw6qyCaIhlzqjslT2fF_BVDk-gFbH5-YsufDLIqrkKo"
+          cd /opt/docker-app/infra && docker compose pull && docker compose up -d "}' "${{ secrets.GCHAT_WEBHOOK_URL }}"
