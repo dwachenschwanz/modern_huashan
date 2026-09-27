@@ -8,40 +8,43 @@ import { versionNavItemHtml, initVersionModal } from '../../components/versionMo
 
 function template() {
   return `
-<nav class="navbar navbar-inverse navbar-static-top" role="navigation">
-  <div class="container-fluid">
-    <div class="navbar-header">
-      <a class="navbar-brand" href="#">Huashan</a>
-    </div>
-    <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
-      <ul class="nav navbar-nav">
-        <li class="active"><a href="#">Home</a></li>
-        ${versionNavItemHtml()}
-        <li><a href="#">Contact</a></li>
-      </ul>
-      <ul class="nav navbar-nav navbar-right">
-        <li>
-          <form name="loginForm" id="login-form" class="navbar-form navbar-left form-signin">
-            <input id="login-username" class="form-control" placeholder="User Name" required autofocus>
-            <input id="login-password" type="password" class="form-control" placeholder="Password" required>
-            <button id="login-submit" class="btn btn-primary" type="submit">Sign in</button>
-          </form>
-        </li>
-      </ul>
-    </div>
-    <div>
-      <div class="navbar-form" style="color: #cc3333;" id="login-error-row" hidden>
-        <center id="login-error-text"></center>
+<div class="login-page">
+  <div class="login-card-wrap">
+    <div class="login-card">
+      <div class="login-logo">
+        <img src="/images/smartorg-icon.png" alt="" class="login-logo-icon">
+        <img src="/images/smartorg-wordmark.png" alt="SmartOrg" class="login-logo-word">
       </div>
+
+      <div class="login-heading">
+        <h1>Huashan Wizard</h1>
+        <p>Turn an Excel workbook into a web app your team can use &mdash; no spreadsheets required.</p>
+      </div>
+
+      <div class="alert alert-danger login-error" role="alert" id="login-error-row" hidden>
+        <span id="login-error-text"></span>
+      </div>
+
+      <form id="login-form" class="login-form">
+        <div class="login-field">
+          <label for="login-username">Username</label>
+          <input id="login-username" class="login-input" required autofocus autocomplete="username">
+        </div>
+        <div class="login-field">
+          <label for="login-password">Password</label>
+          <input id="login-password" type="password" class="login-input" required autocomplete="current-password">
+        </div>
+        <button id="login-submit" class="btn login-submit" type="submit" data-idle-label="Sign in" data-busy-label="Signing in&hellip;">Sign in</button>
+      </form>
+    </div>
+
+    <div class="login-footer">
+      <span class="login-footer-text">Powered by</span>
+      <img src="/images/smartorg-wordmark.png" alt="SmartOrg" class="login-footer-logo">
+      <span class="login-footer-sep">&middot;</span>
+      <ul class="nav login-about">${versionNavItemHtml()}</ul>
     </div>
   </div>
-</nav>
-
-<div class="jumbotron">
-  <h1>The Huashan Wizard</h1>
-  <p>This service lets you convert an Excel file into a web application in a
-    few minutes! You can deploy this to your friends or clients without ever
-    needing them to touch Excel. Don't believe us, try it.</p>
 </div>`;
 }
 
@@ -53,10 +56,19 @@ export function mount(container) {
   const errorRow = container.querySelector('#login-error-row');
   const errorText = container.querySelector('#login-error-text');
   const aboutLink = container.querySelector('#huashan-about-link');
+  const submitEl = container.querySelector('#login-submit');
+
+  function setSubmitting(isSubmitting) {
+    submitEl.disabled = isSubmitting;
+    usernameEl.disabled = isSubmitting;
+    passwordEl.disabled = isSubmitting;
+    submitEl.textContent = isSubmitting ? submitEl.dataset.busyLabel : submitEl.dataset.idleLabel;
+  }
 
   function showError(message) {
     errorText.textContent = message;
     errorRow.hidden = false;
+    setSubmitting(false);
   }
 
   function loginSuccess(response) {
@@ -73,6 +85,8 @@ export function mount(container) {
 
   async function login(evt) {
     evt.preventDefault();
+    errorRow.hidden = true;
+    setSubmitting(true);
     const userName = usernameEl.value;
     const password = passwordEl.value;
     localStorage.clear();
