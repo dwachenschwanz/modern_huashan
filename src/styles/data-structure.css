@@ -68,6 +68,13 @@
     flex: none;
 }
 
+/* App/Portfolio Structure also use .selected-inputs for their own content
+ * panel and depend on this staying unscoped: their preceding sibling
+ * (.select-template-title > .col-sm-12) is a full-width float from
+ * base.css, and without an explicit width:100% here this div shrinks to
+ * fit the (zero) space left beside that float instead of dropping below
+ * it - collapsing to zero width. The flex/min-height rules are inert
+ * no-ops for their non-flex parent, so this is safe to share as-is. */
 .selected-inputs{
     padding-top:0;
     margin-top: 8px;
