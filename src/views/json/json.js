@@ -74,7 +74,7 @@ ${loadingOverlayHtml('Loading template JSON')}`;
     }
     container.innerHTML = `
 ${appNavHtml({ active: 'json', isAdmin: state.isAdmin, selectedTemplate: state.selectedTemplate })}
-<div class="select-template fadeIn" style="height:650px;background-color: #eee;margin-bottom: 60px;">
+<div class="select-template fadeIn json-canvas">
   <div class="container-fluid">
     <div class="col-sm-12">
       <h3>${escapeHtml(state.selectedTemplate)}
@@ -87,9 +87,9 @@ ${appNavHtml({ active: 'json', isAdmin: state.isAdmin, selectedTemplate: state.s
 </div>
 
 <div class="col-sm-12 text-center align-to-bottom">
-  <button class="btn btn-link pull-left" id="json-close-btn"><span class="glyphicon glyphicon-chevron-left"></span> Back to Select Template</button>
-  <button style="width:60px;" class="btn btn-danger pull-right" id="json-save-open-btn" data-toggle="modal" data-target="#commitMessageModal" ${isUnchanged() ? 'disabled' : ''}>
-    <i class="fa fa-spinner fa-spin fa-lg" ${state.saveComplete ? 'hidden' : ''}></i><span ${state.saveComplete ? '' : 'hidden'}>save</span>
+  <button class="btn btn-link pull-left" id="json-close-btn"><span class="fa fa-chevron-left"></span> Back to Select Template</button>
+  <button class="btn btn-primary pull-right" id="json-save-open-btn" data-toggle="modal" data-target="#commitMessageModal" ${isUnchanged() ? 'disabled' : ''}>
+    <i class="fa fa-spinner fa-spin fa-lg" ${state.saveComplete ? 'hidden' : ''}></i><span ${state.saveComplete ? '' : 'hidden'}>Save</span>
   </button>
   <div class="col-sm-12 save-alert" id="json-alerts">${renderAlerts(state.alerts, { prefix: 'Saving failed.' })}</div>
 </div>

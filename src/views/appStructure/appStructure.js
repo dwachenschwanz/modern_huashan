@@ -954,8 +954,8 @@ export function mount(container, params) {
             <table><tr>
               <td class="appStructList no-wrap">${escapeHtml(menu.Display || menu.ID || 'Untitled')}</td>
               <td class="appStructList" style="width:76px">
-                ${active ? `<span data-toggle="modal" data-target="#deleteAppStructureModal" data-menu-delete class="inline-icon pull-right glyphicon glyphicon-trash" title="Delete"></span>
-                <span data-toggle="modal" data-target="#editAppStructureModal" data-menu-edit class="inline-icon pull-right glyphicon glyphicon-pencil" title="Rename"></span>` : ''}
+                ${active ? `<span data-toggle="modal" data-target="#deleteAppStructureModal" data-menu-delete class="inline-icon pull-right fa fa-trash" title="Delete"></span>
+                <span data-toggle="modal" data-target="#editAppStructureModal" data-menu-edit class="inline-icon pull-right fa fa-pencil" title="Rename"></span>` : ''}
               </td>
             </tr></table>
           </a>`;
@@ -1043,8 +1043,8 @@ export function mount(container, params) {
       <div class="row table-padding"><div class="col-sm-2"><b>Total</b></div><div class="col-sm-3"><input type="checkbox" data-field="Parameters.Total" ${p.Total ? 'checked' : ''}></div></div>
       <div class="row table-padding"><div class="col-sm-2"><b>Min</b></div><div class="col-sm-3"><input type="number" class="form-control" data-field="Parameters.Min" value="${p.Min ?? ''}"></div><div class="col-sm-2"><b>Max</b></div><div class="col-sm-3"><input type="number" class="form-control" data-field="Parameters.Max" value="${p.Max ?? ''}"></div></div>
       <div class="row table-padding"><div class="col-sm-3"><b>Key</b></div><div class="col-sm-3"><b>Unit</b></div><div class="col-sm-3"><b>Title</b></div></div>
-      ${(p.Keys || []).map((key, i) => `<div class="row table-padding"><div class="col-sm-3"><select class="form-control" data-array-field="Keys:${i}">${optionHtml(state.outputs, key)}</select></div><div class="col-sm-3"><input class="form-control" data-array-field="Units:${i}" value="${escapeAttr(p.Units[i] || '')}"></div><div class="col-sm-3"><input class="form-control" data-array-field="Titles:${i}" value="${escapeAttr(p.Titles[i] || '')}"></div><div class="col-sm-1"><button class="btn btn-danger" data-cv-delete="${i}"><span class="glyphicon glyphicon-trash"></span></button></div></div>`).join('')}
-      <button class="btn btn-success" id="as-cv-add"><span class="glyphicon glyphicon-plus"></span></button>`;
+      ${(p.Keys || []).map((key, i) => `<div class="row table-padding"><div class="col-sm-3"><select class="form-control" data-array-field="Keys:${i}">${optionHtml(state.outputs, key)}</select></div><div class="col-sm-3"><input class="form-control" data-array-field="Units:${i}" value="${escapeAttr(p.Units[i] || '')}"></div><div class="col-sm-3"><input class="form-control" data-array-field="Titles:${i}" value="${escapeAttr(p.Titles[i] || '')}"></div><div class="col-sm-1"><button class="btn btn-danger" data-cv-delete="${i}"><span class="fa fa-trash"></span></button></div></div>`).join('')}
+      <button class="btn btn-success" id="as-cv-add"><span class="fa fa-plus"></span></button>`;
   }
 
   function editorHtml() {
@@ -1238,7 +1238,7 @@ export function mount(container, params) {
             </div>
           </div>
           <button class="btn btn-success" id="as-new-btn" data-toggle="modal" data-target="#newAppStructureModal" title="New">
-            <span class="glyphicon glyphicon-plus"></span>
+            <span class="fa fa-plus"></span>
           </button>
         </div>
 
@@ -1246,18 +1246,18 @@ export function mount(container, params) {
           <div class="select-template-title">
             <div class="col-sm-12"><h4 id="as-selected-title">${escapeHtml(selectedName)}</h4></div>
           </div>
-          <div class="selected-inputs" style="overflow:auto; background:#eee; padding:15px">${editorHtml()}</div>
+          <div class="selected-inputs editor-canvas">${editorHtml()}</div>
         </div>
 
         <div class="col-sm-12 text-center align-to-bottom">
-          <a href="#/datastructure/${encodeURIComponent(state.selectedTemplate)}" class="btn btn-primary pull-left">
-            <span class="glyphicon glyphicon-chevron-left"></span> Previous: Data Structure
+          <a href="#/datastructure/${encodeURIComponent(state.selectedTemplate)}" class="btn btn-default pull-left">
+            <span class="fa fa-chevron-left" aria-hidden="true"></span> Previous: Data Structure
           </a>
-          <a href="#/portfoliostructure/${encodeURIComponent(state.selectedTemplate)}" class="btn btn-primary pull-right">
-            Next: Portfolio Structure <span class="glyphicon glyphicon-chevron-right"></span>
+          <a href="#/portfoliostructure/${encodeURIComponent(state.selectedTemplate)}" class="btn btn-default pull-right">
+            Next: Portfolio Structure <span class="fa fa-chevron-right" aria-hidden="true"></span>
           </a>
-          <button class="btn btn-danger" id="as-save-btn" style="width:60px" data-toggle="modal" data-target="#commitMessageModal" ${isUnchanged() || !state.saveComplete ? 'disabled' : ''}>
-            ${state.saveComplete ? 'save' : '<i class="fa fa-spinner fa-spin fa-lg"></i>'}
+          <button class="btn btn-primary" id="as-save-btn" data-toggle="modal" data-target="#commitMessageModal" ${isUnchanged() || !state.saveComplete ? 'disabled' : ''}>
+            ${state.saveComplete ? 'Save' : '<i class="fa fa-spinner fa-spin fa-lg"></i>'}
           </button>
           <div class="col-sm-12 save-alert" id="as-save-alerts">${renderAlerts(state.saveAlerts, { prefix: 'Saving failed.' })}</div>
         </div>

@@ -1,6 +1,6 @@
 .inline-icon:hover{
     cursor: pointer;
-    color: #dff0d8 !important;
+    color: var(--brand) !important;
 }
 .inline-icon{
     padding-left: 5px;
@@ -81,4 +81,15 @@
 .structure-sidebar > .pull-left {
     flex: 0 0 auto;
     align-self: flex-start;
+}
+
+/* Replaces the inline background:#eee slab - Bootstrap's .well by another
+ * name - that App and Portfolio Structure wrapped their editors in. */
+.editor-canvas {
+    overflow: auto;
+    padding: var(--sp-5);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    box-shadow: var(--shadow-sm);
 }

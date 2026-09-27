@@ -113,7 +113,7 @@
 }
 
 .st-highlighted {
-    color: #eea236;
+    color: var(--warn);
 }
 
 .st-versionlog {
@@ -162,7 +162,7 @@
     gap: 12px;
     height: 100%;
     min-height: 300px;
-    color: #9ca3af;
+    color: var(--ink-subtle);
     text-align: center;
 }
 

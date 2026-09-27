@@ -384,15 +384,15 @@ ${appNavHtml({ active: 'dataStructure', isAdmin: state.isAdmin, selectedTemplate
 </div>
 
 <div class="col-sm-12 text-center align-to-bottom">
-  <a href="#/selectTemplate" class="btn btn-primary pull-left" role="button"><i class="fa fa-chevron-left" aria-hidden="true"></i> Previous: Select Template</a>
-  <a href="#/appstructure/${encodeURIComponent(state.selectedTemplate)}" class="btn btn-primary pull-right" role="button">Next: App Structure <i class="fa fa-chevron-right" aria-hidden="true"></i></a>
+  <a href="#/selectTemplate" class="btn btn-default pull-left" role="button"><i class="fa fa-chevron-left" aria-hidden="true"></i> Previous: Select Template</a>
+  <a href="#/appstructure/${encodeURIComponent(state.selectedTemplate)}" class="btn btn-default pull-right" role="button">Next: App Structure <i class="fa fa-chevron-right" aria-hidden="true"></i></a>
 
   ${state.show2
-    ? `<button type="button" class="btn btn-success" id="ds-edit-toggle">Edit</button>`
+    ? `<button type="button" class="btn btn-default" id="ds-edit-toggle">Edit</button>`
     : `<button type="button" class="btn btn-primary" id="ds-edit-toggle"><i class="fa fa-check" aria-hidden="true"></i></button>`}
 
-  <button class="btn btn-primary" style="width:60px;" id="ds-save-open-btn" data-toggle="modal" data-target="#commitMessageModal" ${isUnchanged() ? 'disabled' : ''}>
-    <i class="fa fa-spinner fa-spin fa-lg" ${state.saveComplete ? 'hidden' : ''}></i><span ${state.saveComplete ? '' : 'hidden'}>save</span>
+  <button class="btn btn-primary" id="ds-save-open-btn" data-toggle="modal" data-target="#commitMessageModal" ${isUnchanged() ? 'disabled' : ''}>
+    <i class="fa fa-spinner fa-spin fa-lg" ${state.saveComplete ? 'hidden' : ''}></i><span ${state.saveComplete ? '' : 'hidden'}>Save</span>
   </button>
 
   <div class="col-sm-12 save-alert" id="ds-alerts">${renderAlerts(state.alerts, { prefix: 'Saving failed.' })}</div>

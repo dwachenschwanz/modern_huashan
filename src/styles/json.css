@@ -16,7 +16,7 @@
 #json{
     height:550px;
     overflow:auto;
-    border: 1px solid #eee;
+    border: 1px solid var(--border);
 }
 
 #revision-json{
@@ -86,4 +86,10 @@
 .json-editor-status.is-invalid {
     background: #fff1f0;
     color: #a12622;
+}
+
+.json-canvas {
+    height: 650px;
+    margin-bottom: 60px;
+    background: var(--surface-sunken);
 }

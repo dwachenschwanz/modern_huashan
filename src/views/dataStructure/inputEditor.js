@@ -17,7 +17,7 @@ function selectOptionsHtml(options, currentValue) {
  * paint over a per-cell sticky header inside a table, even with
  * border-collapse: separate and a forced compositing layer; two tables
  * sharing one column spec avoids that class of bug entirely.) */
-const INPUT_COLUMN_WIDTHS = ['3.5%', '15%', '13%', '7%', '20.5%', '8%', '13%', '9%', '7%', '4%'];
+const INPUT_COLUMN_WIDTHS = ['3.5%', '14%', '13%', '6%', '17%', '8%', '14%', '10%', '7%', '7.5%'];
 const inputColgroupHtml = () => `<colgroup>${INPUT_COLUMN_WIDTHS.map((w) => `<col style="width:${w};">`).join('')}</colgroup>`;
 
 function findByCellLink(list, cellLink) {
@@ -88,7 +88,7 @@ function inputRowHtml(input, state, isRowShown) {
     </td>
     <td>${readOnly ? `<p>${escapeHtml(input.Constraint)}</p>` : `<select class="btn btn-default form-control" data-input-constraint="${escapeHtml(cellLink)}">${['double', 'string', 'integer', 'date', 'year'].map((constraint) => `<option value="${constraint}" ${input.Constraint === constraint ? 'selected' : ''}>${constraint}</option>`).join('')}</select>`}</td>
     <td align="center"><input type="checkbox" data-input-inherited="${escapeHtml(cellLink)}" ${input.Inherited ? 'checked' : ''} ${readOnly ? 'disabled' : ''}></td>
-    <td>${readOnly ? `<button type="button" class="btn btn-success btn-sm" data-row-edit="${escapeHtml(cellLink)}"><i class="fa fa-pencil" aria-hidden="true"></i></button>` : `<button type="button" class="btn btn-primary" data-row-done="${escapeHtml(cellLink)}"><i class="fa fa-check" aria-hidden="true"></i></button>`}</td>
+    <td>${readOnly ? `<button type="button" class="btn btn-default btn-sm" data-row-edit="${escapeHtml(cellLink)}"><i class="fa fa-pencil" aria-hidden="true"></i></button>` : `<button type="button" class="btn btn-primary btn-sm" data-row-done="${escapeHtml(cellLink)}"><i class="fa fa-check" aria-hidden="true"></i></button>`}</td>
   </tr>`;
 }
 

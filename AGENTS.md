@@ -67,10 +67,18 @@ Setup (only if not already done): `npm install`, then
 
 ## CSS
 
-- Plain CSS, no preprocessor, no custom-property/token system, no
-  Bootstrap/Tailwind.
+- Plain CSS, no preprocessor, no Bootstrap/Tailwind.
+- `src/styles/tokens.css` holds the design tokens (colour, spacing, radius,
+  shadow, type) as `:root` custom properties, and is imported first. Reach
+  for a token rather than a literal: `var(--border)`, not `#ddd`. Prefer the
+  semantic name (`--surface`, `--ink-muted`) over the raw ramp (`--n-0`).
+  Colour roles are distinct — `--brand` (maroon) is identity only: nav,
+  login, selection markers. `--action` (blue) is interactive primary.
+  `--danger` is destructive only, never "save".
 - `src/styles/app.css` is the single entry point; it only `@import`s the
   other files in the folder. Add a new view's stylesheet there.
+- Icons are Font Awesome throughout. Bootstrap glyphicons are gone — don't
+  reintroduce `glyphicon-*` class names.
 - One stylesheet per view (`data-structure.css`, `app-structure.css`,
   `select-template.css`, etc.); `base.css`/`main.css` hold shared/global
   rules, `admin.css`/`json.css`/`loading-overlay.css` are component/route

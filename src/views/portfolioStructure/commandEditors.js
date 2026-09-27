@@ -29,10 +29,10 @@ export function renderCompareValueEditor({ menu, commandHeaderHtml, outputOption
       <div class="col-sm-3"><select class="form form-control" data-cv-key-index="${index}">${outputOptionsHtml(key)}</select></div>
       <div class="col-sm-3"><input type="text" class="form form-control" data-cv-unit-index="${index}" value="${escapeAttr(menu.Parameters.Units[index])}"></div>
       <div class="col-sm-3"><input type="text" class="form form-control" data-cv-title-index="${index}" value="${escapeAttr(menu.Parameters.Titles[index])}"></div>
-      <div class="col-sm-1"><button class="btn btn-danger" data-cv-delete-index="${index}"><span class="glyphicon glyphicon-trash"></span></button></div>
+      <div class="col-sm-1"><button class="btn btn-danger" data-cv-delete-index="${index}"><span class="fa fa-trash"></span></button></div>
     </div>`).join('')}
     <div class="row table-padding">
-      <div class="col-sm-1"><button class="btn btn-success" id="ps-cv-add"><span class="glyphicon glyphicon-plus"></span></button></div>
+      <div class="col-sm-1"><button class="btn btn-success" id="ps-cv-add"><span class="fa fa-plus"></span></button></div>
     </div>`;
 }
 
@@ -67,11 +67,11 @@ export function renderInnovationScreenEditor({ menu, commandHeaderHtml, outputOp
         <div class="col-sm-3"><input type="number" class="form form-control" data-is-vcutoff-index="${index}" value="${numOrEmpty(set.VerticalCutoff)}"></div>
         <div class="col-sm-2"><b>Name</b></div>
         <div class="col-sm-3"><input type="text" class="form form-control" data-is-name-index="${index}" value="${escapeAttr(set.name)}"></div>
-        <div class="col-sm-1"><button class="btn btn-danger" data-is-delete-index="${index}"><span class="glyphicon glyphicon-trash"></span></button></div>
+        <div class="col-sm-1"><button class="btn btn-danger" data-is-delete-index="${index}"><span class="fa fa-trash"></span></button></div>
       </div>
     </div>`).join('')}
     <div class="row table-padding">
-      <div class="col-sm-1"><button class="btn btn-success" id="ps-is-add"><span class="glyphicon glyphicon-plus"></span></button></div>
+      <div class="col-sm-1"><button class="btn btn-success" id="ps-is-add"><span class="fa fa-plus"></span></button></div>
     </div>`;
 }
 
@@ -101,11 +101,11 @@ export function renderCfoChartEditor({ menu, commandHeaderHtml, outputOptionsHtm
       <div class="row table-padding">
         <div class="col-sm-3"><select class="form form-control" data-cfo-ykey-index="${index}">${outputOptionsHtml(getKeyFrom(set.AverageValueMinusCost))}</select></div>
         <div class="col-sm-3"><input type="text" class="form form-control" data-cfo-ytitle-index="${index}" value="${escapeAttr(set.yTitle)}"></div>
-        <div class="col-sm-1"><button class="btn btn-danger" data-cfo-delete-index="${index}"><span class="glyphicon glyphicon-trash"></span></button></div>
+        <div class="col-sm-1"><button class="btn btn-danger" data-cfo-delete-index="${index}"><span class="fa fa-trash"></span></button></div>
       </div>
     </div>`).join('')}
     <div class="row table-padding">
-      <div class="col-sm-1"><button class="btn btn-success" id="ps-cfo-add"><span class="glyphicon glyphicon-plus"></span></button></div>
+      <div class="col-sm-1"><button class="btn btn-success" id="ps-cfo-add"><span class="fa fa-plus"></span></button></div>
     </div>`;
 }
 
@@ -144,11 +144,11 @@ export function renderScatterPlotEditor({ menu, commandHeaderHtml, outputOptions
         <div class="col-sm-3"><select class="form form-control" data-sp-ykey-index="${index}">${outputOptionsHtml(getKeyFrom(set.y))}</select></div>
         <div class="col-sm-2"><b>Y Title</b></div>
         <div class="col-sm-3"><input type="text" class="form form-control" data-sp-ytitle-index="${index}" value="${escapeAttr(set.yTitle)}"></div>
-        <div class="col-sm-2"><button class="btn btn-danger" data-sp-delete-index="${index}"><span class="glyphicon glyphicon-trash"></span></button></div>
+        <div class="col-sm-2"><button class="btn btn-danger" data-sp-delete-index="${index}"><span class="fa fa-trash"></span></button></div>
       </div>
     </div>`;
     }).join('')}
-    <div class="col-sm-2"><button class="btn btn-success" id="ps-sp-add"><span class="glyphicon glyphicon-plus"></span></button></div>`;
+    <div class="col-sm-2"><button class="btn btn-success" id="ps-sp-add"><span class="fa fa-plus"></span></button></div>`;
 }
 
 export function bindCompareValueEditor({ formEl, menu, refreshSaveButton, getOutputUnitFromKey, getOutputDisplayFromKey, addItem, deleteItem }) {
@@ -279,13 +279,13 @@ function ruleOptionsHtml(options, current) {
 }
 
 function bucketRowHtml(bucket, bucketIndex, setIndex, rule1Options, rule2Options) {
-  return `<tr><td>${bucket.nameEditable === true ? `<div><input class="form-control input-sm" type="text" data-bucket-name-edit="${setIndex}:${bucketIndex}" value="${escapeAttr(bucket.Name)}"><span><button class="btn btn-primary btn-sm" style="margin-top:15px;" data-bucket-name-done="${setIndex}:${bucketIndex}">Done</button></span></div><br/>` : `<span>${escapeHtml(bucket.Name)}<br/><i class="pull-righ glyphicon glyphicon-pencil" data-bucket-name-edit-toggle="${setIndex}:${bucketIndex}"></i></span>`}</td>
+  return `<tr><td>${bucket.nameEditable === true ? `<div><input class="form-control input-sm" type="text" data-bucket-name-edit="${setIndex}:${bucketIndex}" value="${escapeAttr(bucket.Name)}"><span><button class="btn btn-primary btn-sm" style="margin-top:15px;" data-bucket-name-done="${setIndex}:${bucketIndex}">Done</button></span></div><br/>` : `<span>${escapeHtml(bucket.Name)}<br/><i class="pull-righ fa fa-pencil" data-bucket-name-edit-toggle="${setIndex}:${bucketIndex}"></i></span>`}</td>
     <td>${bucket.rulesEditable === true ? `<div>
       <select class="form-control input-sm" data-bucket-rule1-type="${setIndex}:${bucketIndex}">${ruleOptionsHtml(rule1Options, bucket.rule1Type)}</select>
       ${bucket.rule1Type.Value !== 'NONE' ? `<input type="text" class="form-control input-sm" data-bucket-rule1-value="${setIndex}:${bucketIndex}" value="${escapeAttr(bucket.rule1Value)}"/>` : ''}<br/>
       <select class="form-control input-sm" data-bucket-rule2-type="${setIndex}:${bucketIndex}">${ruleOptionsHtml(rule2Options, bucket.rule2Type)}</select>
       ${bucket.rule2Type.Value !== 'NONE' ? `<input type="text" class="form-control input-sm" data-bucket-rule2-value="${setIndex}:${bucketIndex}" value="${escapeAttr(bucket.rule2Value)}"/>` : ''}<br/>
-      <button class="btn btn-primary btn-sm" data-bucket-rules-done="${setIndex}:${bucketIndex}">Done</button></div>` : `<div>${escapeHtml(bucket.rule1Type.Label || '')}&nbsp;${escapeHtml(numOrEmpty(bucket.rule1Value))}<br/>${escapeHtml(bucket.rule2Type.Label || '')}&nbsp;${escapeHtml(numOrEmpty(bucket.rule2Value))}<br/><i class="pull-righ glyphicon glyphicon-pencil" data-bucket-rules-edit-toggle="${setIndex}:${bucketIndex}"></i></div>`}</td></tr>`;
+      <button class="btn btn-primary btn-sm" data-bucket-rules-done="${setIndex}:${bucketIndex}">Done</button></div>` : `<div>${escapeHtml(bucket.rule1Type.Label || '')}&nbsp;${escapeHtml(numOrEmpty(bucket.rule1Value))}<br/>${escapeHtml(bucket.rule2Type.Label || '')}&nbsp;${escapeHtml(numOrEmpty(bucket.rule2Value))}<br/><i class="pull-righ fa fa-pencil" data-bucket-rules-edit-toggle="${setIndex}:${bucketIndex}"></i></div>`}</td></tr>`;
 }
 
 function bucketSetHtml(set, index, menu, state, outputOptionsHtml, rule1Options, rule2Options) {
@@ -296,13 +296,13 @@ function bucketSetHtml(set, index, menu, state, outputOptionsHtml, rule1Options,
     <div class="row table-padding"><div class="col-sm-2"><b>X Axis</b></div><div class="col-sm-3"><select class="form form-control" data-bc-key-index="${index}">${outputOptionsHtml(set.Key)}</select></div><div class="col-sm-2"><b>X Label</b></div><div class="col-sm-3"><input type="text" class="form form-control" data-bc-xtitle-index="${index}" value="${escapeAttr(set.xTitle)}"></div></div>
     <div class="row table-padding"><div class="col-sm-2"><b>Y Label</b></div><div class="col-sm-3"><input type="text" class="form form-control" data-bc-ytitle-index="${index}" value="${escapeAttr(set.yTitle)}"></div></div><div class="row">&nbsp;</div>
     ${set.xBuckets.length === 0 && !manager ? `<div class="row table-padding well"><div class="col-sm-2">Buckets<br/><input type="number" min="1" class="form form-control" data-bc-numbuckets-index="${index}" value="${numOrEmpty(state.numBuckets)}"></div><div class="col-sm-2">Low<br/><input type="text" class="form-control" data-bc-low-index="${index}" value="${escapeAttr(state.bucketLow)}"></div><div class="col-sm-2">High<br/><input type="text" class="form-control" data-bc-high-index="${index}" value="${escapeAttr(state.bucketHigh)}"></div><div class="col-sm-1"><br/><button class="btn btn-primary" data-bc-generate-index="${index}">Generate Buckets</button></div></div>` : ''}
-    ${manager && manager.editing === false ? `<div class="row table-padding"><div class="col-md-9"><b>Buckets: ${manager.editableBuckets.map((bucket, bucketIndex) => `${escapeHtml(bucket.Name)}${bucketIndex < manager.editableBuckets.length - 1 ? ',' : ''}`).join(' ')}<i class="pull-righ glyphicon glyphicon-pencil" data-bc-makeeditable-index="${index}"></i></b></div></div>` : ''}
+    ${manager && manager.editing === false ? `<div class="row table-padding"><div class="col-md-9"><b>Buckets: ${manager.editableBuckets.map((bucket, bucketIndex) => `${escapeHtml(bucket.Name)}${bucketIndex < manager.editableBuckets.length - 1 ? ',' : ''}`).join(' ')}<i class="pull-righ fa fa-pencil" data-bc-makeeditable-index="${index}"></i></b></div></div>` : ''}
     ${manager && manager.editing === true ? `<div class="row table-padding"><div class="col-md-3"></div><div class="col-md-6"><table class="table table-bordered table-striped table-condensed"><thead><th>Bucket Label</th><th>Bucket Rule</th></thead><tbody>${manager.editableBuckets.map((bucket, bucketIndex) => bucketRowHtml(bucket, bucketIndex, index, rule1Options, rule2Options)).join('')}</tbody></table><div style="text-align:center"><button class="btn btn-primary" data-bc-addbucket-index="${index}">Add Bucket</button><button class="btn btn-primary" data-bc-deletebucket-index="${index}" ${manager.editableBuckets.length === 0 ? 'disabled' : ''}>Delete Bucket</button><button class="btn btn-primary" data-bc-stopediting-index="${index}">Stop Editing</button></div></div></div>` : ''}
-    </div><div class="row table-padding"><div class="col-sm-1"><button class="btn btn-danger" data-bc-deleteset-index="${index}"><span class="glyphicon glyphicon-trash"></span></button></div></div><hr>`;
+    </div><div class="row table-padding"><div class="col-sm-1"><button class="btn btn-danger" data-bc-deleteset-index="${index}"><span class="fa fa-trash"></span></button></div></div><hr>`;
 }
 
 export function renderBucketChartEditor({ menu, state, commandHeaderHtml, outputOptionsHtml, rule1Options, rule2Options }) {
-  return `${commandHeaderHtml(menu)}${menu.Parameters.Sets.map((set, index) => bucketSetHtml(set, index, menu, state, outputOptionsHtml, rule1Options, rule2Options)).join('')}<div class="row table-padding"><div class="col-sm-1"><button class="btn btn-success" id="ps-bc-add-set"><span class="glyphicon glyphicon-plus"></span></button></div></div>`;
+  return `${commandHeaderHtml(menu)}${menu.Parameters.Sets.map((set, index) => bucketSetHtml(set, index, menu, state, outputOptionsHtml, rule1Options, rule2Options)).join('')}<div class="row table-padding"><div class="col-sm-1"><button class="btn btn-success" id="ps-bc-add-set"><span class="fa fa-plus"></span></button></div></div>`;
 }
 
 export function renderPortfolioUncertaintyEditor({ menu, commandHeaderHtml, sourceIds, availableKeys, outputsByKey }) {

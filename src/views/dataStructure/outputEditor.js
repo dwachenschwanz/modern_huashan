@@ -16,7 +16,7 @@ function outputRowHtml(output, isRowShown) {
     <td>${readOnly ? `<p>${escapeHtml(output.Display)}</p>` : `<input type="text" style="width:100%;" class="form form-control" data-output-display="${escapeHtml(cellLink)}" value="${escapeHtml(output.Display)}">`}</td>
     <td>${readOnly ? `<p>${escapeHtml(output.Units)}</p>` : `<input type="text" style="width:100%;" class="form form-control" data-output-units="${escapeHtml(cellLink)}" value="${escapeHtml(output.Units)}">`}</td>
     <td align="center"><input type="checkbox" data-output-postprocessing="${escapeHtml(cellLink)}" ${output.UsePostProcessingOutputs ? 'checked' : ''} ${readOnly ? 'disabled' : ''}></td>
-    <td>${readOnly ? `<button type="button" class="btn btn-success" data-row-edit="${escapeHtml(cellLink)}"><i class="fa fa-pencil" aria-hidden="true"></i></button>` : `<button type="button" class="btn btn-primary" data-row-done="${escapeHtml(cellLink)}"><i class="fa fa-check" aria-hidden="true"></i></button>`}</td>
+    <td>${readOnly ? `<button type="button" class="btn btn-default btn-sm" data-row-edit="${escapeHtml(cellLink)}"><i class="fa fa-pencil" aria-hidden="true"></i></button>` : `<button type="button" class="btn btn-primary btn-sm" data-row-done="${escapeHtml(cellLink)}"><i class="fa fa-check" aria-hidden="true"></i></button>`}</td>
   </tr>`;
 }
 

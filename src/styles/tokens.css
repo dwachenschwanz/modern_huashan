@@ -1,0 +1,105 @@
+/* Design tokens. Imported first, so every other stylesheet can use these.
+ *
+ * Two layers: primitives (the raw ramps) and semantic aliases (what a rule
+ * should actually reach for). Prefer the semantic name - `--surface` rather
+ * than `--n-0` - so a palette change stays a change to this file.
+ *
+ * The neutrals carry a slight warm bias toward the brand maroon; they replace
+ * the three parallel greys the stylesheets used to mix (Bootstrap 3's
+ * #ddd/#ccc/#eee/#f5f5f5, Bootstrap 5's #dee2e6/#f8f9fa and Tailwind's
+ * #9ca3af/#6b7280). */
+
+:root {
+  /* --- primitives: neutral ramp --- */
+  --n-0:   #ffffff;
+  --n-25:  #fafaf9;
+  --n-50:  #f5f4f2;
+  --n-100: #ebe9e6;
+  --n-200: #dedbd7;
+  --n-300: #c6c2bd;
+  --n-500: #8a837d;
+  --n-700: #4a4542;
+  --n-900: #1f1c1a;
+
+  /* --- primitives: brand (SmartOrg maroon) ---
+   * Identity only: the nav bar, the login call to action, selection markers.
+   * Not a general-purpose action colour - that is --action below. */
+  --brand-tint: #f6e7e9;
+  --brand:      #8b1e2b;
+  --brand-deep: #6e1722;
+
+  /* --- primitives: action --- */
+  --action-tint: #e8eff8;
+  --action:      #1a5fb4;
+  --action-deep: #164e94;
+
+  /* --- primitives: semantic status --- */
+  --ok:         #1f7a4d;
+  --ok-tint:    #e6f2eb;
+  --warn:       #b26a00;
+  --warn-tint:  #fbf0df;
+  --danger:     #b3261e;
+  --danger-tint:#f9e9e8;
+
+  /* --- semantic surfaces --- */
+  --surface:        var(--n-0);
+  --surface-raised: var(--n-0);
+  --surface-sunken: var(--n-50);
+  --surface-muted:  var(--n-100);
+
+  /* --- semantic ink --- */
+  --ink:        var(--n-900);
+  --ink-muted:  var(--n-700);
+  --ink-subtle: var(--n-500);
+  --ink-invert: var(--n-0);
+
+  /* --- semantic lines --- */
+  --border:        var(--n-200);
+  --border-soft:   var(--n-100);
+  --border-strong: var(--n-300);
+
+  /* --- spacing, 4px base --- */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  --sp-7: 48px;
+  --sp-8: 72px;
+
+  /* --- radius, by role rather than one value everywhere --- */
+  --r-sm: 6px;   /* chips, pills, inline controls */
+  --r-md: 8px;   /* buttons, inputs, selects */
+  --r-lg: 12px;  /* cards, panels, tables */
+  --r-xl: 20px;  /* the login card */
+  --r-pill: 999px;
+
+  /* --- elevation --- */
+  --shadow-sm: 0 1px 2px rgba(31, 28, 26, 0.06);
+  --shadow-md: 0 2px 8px rgba(31, 28, 26, 0.08);
+  --shadow-lg: 0 20px 60px rgba(31, 28, 26, 0.08), 0 2px 8px rgba(31, 28, 26, 0.04);
+
+  /* --- focus: one ring, replacing Bootstrap's 8px blue glow --- */
+  --focus-ring: 0 0 0 3px rgba(139, 30, 43, 0.22);
+  --focus-ring-action: 0 0 0 3px rgba(26, 95, 180, 0.24);
+
+  /* --- type --- */
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+               "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+               "Liberation Mono", "Courier New", monospace;
+
+  --t-display: 24px;
+  --t-title:   19px;
+  --t-body:    15px;
+  --t-small:   13px;
+  --t-label:   12px;
+
+  --lh-tight: 1.25;
+  --lh-body:  1.5;
+
+  /* --- controls --- */
+  --control-h:    38px;
+  --control-h-sm: 30px;
+}

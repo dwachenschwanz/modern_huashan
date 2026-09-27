@@ -97,8 +97,8 @@
     min-width: 0;
     overflow: auto;
     margin-top: 8px;
-    border: 1px solid #dee2e6;
-    border-radius: 4px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
     padding: 12px;
 }
 
@@ -107,7 +107,7 @@
 }
 
 .table-input-preview-empty {
-    color: #9ca3af;
+    color: var(--ink-subtle);
     text-align: center;
     margin-top: 40px;
 }
@@ -124,9 +124,9 @@
 }
 
 .ds-table th {
-    background: #f5f5f5;
+    background: var(--surface-sunken);
     padding: 10px;
-    border-bottom: 2px solid #dee2e6;
+    border-bottom: 2px solid var(--border);
     position: sticky;
     top: 0;
     z-index: 2;
@@ -134,11 +134,11 @@
 
 .ds-table td {
     padding: 10px;
-    border-bottom: 1px solid #dee2e6;
+    border-bottom: 1px solid var(--border);
 }
 
 .ds-table tbody tr:nth-child(even) {
-    background: #f8f9fa;
+    background: var(--surface-sunken);
 }
 
 .ds-key-label {
@@ -146,13 +146,13 @@
     margin-top: 6px;
     font-size: 11px;
     font-weight: 600;
-    color: #6b7280;
+    color: var(--ink-muted);
     text-transform: uppercase;
     letter-spacing: 0.02em;
 }
 
 .data-structure-view tr.ds-row-editing > td {
-    background: #fdf3f2 !important;
+    background: var(--brand-tint) !important;
 }
 
 .data-structure-view td{
@@ -191,9 +191,8 @@
 }
 
 .selectPTI td {
-    background-color:steelblue!important;
-    color:white;
-    font-weight:bold;
+    background-color: var(--brand-tint) !important;
+    font-weight: 600;
 }
 
 .table-input-add {
@@ -215,4 +214,26 @@
 #inputTable td:nth-child(8) select {
     text-align: center;
     text-align-last: center;
+}
+
+/* The Input/Output tables are dense: at full-size control padding the
+ * editable cells clipped their own values ("Annual Revenu", "DISTRIBUTI(",
+ * "doubl"). Tighter controls inside the table only. */
+.ds-table .form-control,
+.ds-table select,
+.ds-table input[type="text"],
+.ds-table textarea {
+    height: auto;
+    min-height: 32px;
+    padding: 5px 8px;
+    font-size: var(--t-small);
+    border-radius: var(--r-sm);
+}
+
+.ds-table select {
+    padding-right: 4px;
+}
+
+.ds-table .btn-sm {
+    padding: 5px 9px;
 }

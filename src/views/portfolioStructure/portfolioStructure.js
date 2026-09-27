@@ -813,8 +813,8 @@ export function mount(container, params) {
           <tr>
             <td class="appStructList no-wrap">${escapeHtml(menu.Display)}</td>
             <td class="appStructList" style="width:76px">
-              ${active ? `<span data-toggle="modal" data-target="#deletePortfolioStructureModal" class="inline-icon pull-right glyphicon glyphicon-trash" title="Delete"></span>` : ''}
-              ${active ? `<span data-toggle="modal" data-target="#editPortfolioStructureModal" class="inline-icon pull-right glyphicon glyphicon-pencil" title="Rename"></span>` : ''}
+              ${active ? `<span data-toggle="modal" data-target="#deletePortfolioStructureModal" class="inline-icon pull-right fa fa-trash" title="Delete"></span>` : ''}
+              ${active ? `<span data-toggle="modal" data-target="#editPortfolioStructureModal" class="inline-icon pull-right fa fa-pencil" title="Rename"></span>` : ''}
             </td>
           </tr>
         </table>
@@ -1012,7 +1012,7 @@ ${appNavHtml({ active: 'portfolioStructure', isAdmin: state.isAdmin, selectedTem
     </div>
     <div class="pull-left">
       <button class="btn btn-success" id="ps-new-btn" data-toggle="modal" data-target="#newPortfolioStructureModal" title="New">
-        <span class="glyphicon glyphicon-plus"></span>
+        <span class="fa fa-plus"></span>
       </button>
     </div>
   </div>
@@ -1021,17 +1021,17 @@ ${appNavHtml({ active: 'portfolioStructure', isAdmin: state.isAdmin, selectedTem
     <div class="select-template-title">
       <div class="col-sm-12"><h4 id="ps-selected-title"></h4></div>
     </div>
-    <div class="selected-inputs" style="background-color: #eee; overflow: scroll">
+    <div class="selected-inputs editor-canvas">
       <div id="ps-action-form"></div>
     </div>
   </div>
 
   <div class="col-sm-12 text-center align-to-bottom">
-    <a href="#/appstructure/${encodeURIComponent(state.selectedTemplate)}" class="btn btn-primary pull-left" role="button">
-      <span class="glyphicon glyphicon-chevron-left"></span> Previous: App Structure
+    <a href="#/appstructure/${encodeURIComponent(state.selectedTemplate)}" class="btn btn-default pull-left" role="button">
+      <span class="fa fa-chevron-left" aria-hidden="true"></span> Previous: App Structure
     </a>
-    <button class="btn btn-danger" id="ps-save-btn" style="width:60px;" data-toggle="modal" data-target="#commitMessageModal" ${isUnchanged() ? 'disabled' : ''}>
-      <i class="fa fa-spinner fa-spin fa-lg" id="ps-save-spinner" ${state.saveComplete ? 'hidden' : ''}></i><span id="ps-save-text" ${state.saveComplete ? '' : 'hidden'}>save</span>
+    <button class="btn btn-primary" id="ps-save-btn" data-toggle="modal" data-target="#commitMessageModal" ${isUnchanged() ? 'disabled' : ''}>
+      <i class="fa fa-spinner fa-spin fa-lg" id="ps-save-spinner" ${state.saveComplete ? 'hidden' : ''}></i><span id="ps-save-text" ${state.saveComplete ? '' : 'hidden'}>Save</span>
     </button>
     <div class="col-sm-12 save-alert" id="ps-save-alerts">${renderAlerts(state.saveAlerts, { prefix: 'Saving failed.' })}</div>
   </div>

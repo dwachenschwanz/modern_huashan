@@ -3,7 +3,6 @@
     width: 100%;
     table-layout: fixed;
     border-collapse: collapse;
-    font-family: 'Arial', sans-serif;
   }
 
   .astro-table th:nth-child(1),
@@ -41,11 +40,11 @@
   }
 
   .astro-table th {
-    background-color: #e9ecef;
+    background-color: var(--surface-muted);
     color: #333;
     font-weight: normal;
     padding: 10px;
-    border-bottom: 2px solid #dee2e6;
+    border-bottom: 2px solid var(--border);
     position: sticky;
     top: 0;
     z-index: 2;
@@ -53,11 +52,11 @@
 
   .astro-table td {
     padding: 10px;
-    border-bottom: 1px solid #dee2e6;
+    border-bottom: 1px solid var(--border);
   }
 
   .astro-table tr:nth-child(even) {
-    background-color: #f8f9fa;
+    background-color: var(--surface-sunken);
   }
 
   .astro-table tr:hover {
@@ -73,7 +72,7 @@
   }
 
   .admin-table-scroll:focus-visible {
-    outline: 2px solid #337ab7;
+    outline: 2px solid var(--action);
     outline-offset: 2px;
   }
 
@@ -84,7 +83,7 @@
   }
 
   .astro-table th:last-child {
-    background-color: #e9ecef;
+    background-color: var(--surface-muted);
     z-index: 3;
   }
 
@@ -94,7 +93,7 @@
   }
 
   .astro-table tr:nth-child(even) td:last-child {
-    background-color: #f8f9fa;
+    background-color: var(--surface-sunken);
   }
 
   .astro-table tr:hover td:last-child {
@@ -120,7 +119,7 @@
   }
 
   .admin-icon-button:focus-visible {
-    outline: 2px solid #337ab7;
+    outline: 2px solid var(--action);
     outline-offset: 2px;
   }
 
@@ -128,7 +127,7 @@
     appearance: none;
     background: transparent;
     border: 0;
-    color: #337ab7;
+    color: var(--action);
     cursor: pointer;
     padding: 10px 15px;
   }
@@ -456,16 +455,16 @@
 
   .admin-sort-button:hover,
   .admin-sort-button:focus-visible {
-    color: #337ab7;
+    color: var(--action);
   }
 
   .admin-sort-button:focus-visible {
-    outline: 2px solid #337ab7;
+    outline: 2px solid var(--action);
     outline-offset: -2px;
   }
 
   th.sortable.is-sorted .admin-sort-button {
-    color: #337ab7;
+    color: var(--action);
     font-weight: 700;
   }
 
