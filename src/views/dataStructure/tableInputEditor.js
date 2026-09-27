@@ -1,5 +1,8 @@
 import { escapeHtml, extractTablePreviewHtml } from '../../core/html.js';
 
+const TABLE_INPUT_COLUMN_WIDTHS = ['5%', '38%', '32%', '15%', '10%'];
+const tableInputColgroupHtml = () => `<colgroup>${TABLE_INPUT_COLUMN_WIDTHS.map((w) => `<col style="width:${w};">`).join('')}</colgroup>`;
+
 function findByCellLink(list, cellLink) {
   return list.find((item) => item.CellLink === cellLink);
 }
@@ -8,13 +11,19 @@ function tableRowHtml(table, state, isRowShown) {
   const cellLink = table.CellLink;
   const editing = !isRowShown(cellLink) || !state.show2;
   const readOnly = !editing;
-  return `<tr class="${[state.selectedCelllink === cellLink ? 'selectPTI' : '', editing ? 'ds-row-editing' : ''].filter(Boolean).join(' ')}" data-select-pti="${escapeHtml(cellLink)}">
-    <td><a href="" class="text-danger" data-exclude-pti="${escapeHtml(cellLink)}"><i class="fa fa-minus-square"></i></a></td>
+  return `<tr class="${[!editing && state.selectedCelllink === cellLink ? 'selectPTI' : '', editing ? 'ds-row-editing' : ''].filter(Boolean).join(' ')}" data-select-pti="${escapeHtml(cellLink)}">
+    <td style="border:none;"><a href="" class="text-danger" data-exclude-pti="${escapeHtml(cellLink)}"><i class="fa fa-minus-square"></i></a></td>
     <td><div class="no-wrap" title="${escapeHtml(cellLink)}" data-toggle="tooltip">${escapeHtml(cellLink)}</div>${editing ? `<label class="ds-key-label" for="ds-pti-key-${escapeHtml(cellLink)}">Key</label><input id="ds-pti-key-${escapeHtml(cellLink)}" type="text" style="width:100%;" class="form form-control" data-pti-key="${escapeHtml(cellLink)}" value="${escapeHtml(table.Key)}">` : ''}</td>
     <td>${readOnly ? `<p>${escapeHtml(table.Display)}</p>` : `<input type="text" style="width:100%;" class="form form-control" data-pti-display="${escapeHtml(cellLink)}" value="${escapeHtml(table.Display)}">`}</td>
-    <td align="center"><input type="checkbox" data-pti-inherited="${escapeHtml(cellLink)}" ${table.Inherited ? 'checked' : ''} ${readOnly ? 'disabled' : ''}></td>
+    <td><input type="checkbox" data-pti-inherited="${escapeHtml(cellLink)}" ${table.Inherited ? 'checked' : ''} ${readOnly ? 'disabled' : ''}></td>
     <td>${readOnly ? `<button type="button" class="btn btn-success btn-sm" data-row-edit="${escapeHtml(cellLink)}"><i class="fa fa-pencil" aria-hidden="true"></i></button>` : `<button type="button" class="btn btn-primary" data-row-done="${escapeHtml(cellLink)}"><i class="fa fa-check" aria-hidden="true"></i></button>`}</td>
   </tr>`;
+}
+
+function tableInputPreviewHtml(state) {
+  if (state.htmlPreview) return extractTablePreviewHtml(state.htmlPreview);
+  if (state.imageURL) return `<img src="${escapeHtml(state.imageURL)}" alt="Table preview">`;
+  return '<p class="table-input-preview-empty">Select a table to preview it here.</p>';
 }
 
 export function tableInputEditorHtml(state, isRowShown) {
@@ -24,18 +33,19 @@ export function tableInputEditorHtml(state, isRowShown) {
     <div class="choose-from">
       <div class="select-template-title"><h4>Choose From</h4></div>
       <div class="select-template-title"><input type="text" class="form-control" placeholder="Search" id="ds-search-input-table" value="${escapeHtml(state.searchInput)}"></div>
-      <div class="panel panel-primary"><div class="list-of-templates" id="potential-tableInput-list">
-        ${available.map((table) => `<a href="" class="list-group-item ${state.selectedCelllink === table.CellLink ? 'active' : ''}" data-choose-pti="${escapeHtml(table.CellLink)}" title="${escapeHtml(table.CellLink)}" data-toggle="tooltip"><table><tr><td class="appStructList"><div class="no-wrap"><button type="button" class="table-input-add text-success" data-include-pti="${escapeHtml(table.CellLink)}" aria-label="Add ${escapeHtml(table.CellLink)}"><i class="fa fa-plus-square"></i></button> ${escapeHtml(table.CellLink)}</div></td></tr></table></a>`).join('')}
-      </div></div>
+      <div class="panel panel-primary"><div class="list-of-templates" id="potential-tableInput-list"><ul class="list-group">
+        ${available.map((table) => `<li class="list-group-item ${state.selectedCelllink === table.CellLink ? 'active' : ''}" data-choose-pti="${escapeHtml(table.CellLink)}" title="${escapeHtml(table.CellLink)}" data-toggle="tooltip"><div class="no-wrap"><button type="button" class="table-input-add text-success" data-include-pti="${escapeHtml(table.CellLink)}" aria-label="Add ${escapeHtml(table.CellLink)}"><i class="fa fa-plus-square"></i></button> ${escapeHtml(table.CellLink)}</div></li>`).join('')}
+      </ul></div></div>
     </div>
     <div class="selected">
       <div class="select-template-title"><h4>Table Inputs</h4></div>
-      <div class="col-sm-12">
-        <div class="col-sm-6"><div style="border:1px;height:400px;overflow-y:scroll;overflow-x:scroll;margin-top:30px;margin-left:10px">${state.htmlPreview ? `<div style="width:100%;height:100%;">${extractTablePreviewHtml(state.htmlPreview)}</div>` : `<img src="${escapeHtml(state.imageURL)}">`}</div></div>
-        <div class="col-sm-6"><div class="selected-inputs" id="potential-included-inputs"><div class="table-left"><table id="potentialinputTable" class="table table-striped">
-          <thead><tr><th width="5%"></th><th width="35%">Excel Range Name</th><th>Display</th><th>Inherited</th><th>Edit</th></tr></thead>
+      <div class="table-input-body">
+        <div class="table-input-preview">${tableInputPreviewHtml(state)}</div>
+        <div class="selected-inputs" id="potential-included-inputs"><table id="potentialinputTable" class="ds-table">
+          ${tableInputColgroupHtml()}
+          <thead><tr><th style="border:none;"></th><th>Excel Range Name</th><th>Display</th><th>Inherited</th><th>Edit</th></tr></thead>
           <tbody>${state.includedPotentialTableInputs.map((table) => tableRowHtml(findByCellLink(state.includedComponents.Inputs, table.CellLink) || table, state, isRowShown)).join('')}</tbody>
-        </table></div></div></div>
+        </table></div>
       </div>
     </div>
   </div>`;

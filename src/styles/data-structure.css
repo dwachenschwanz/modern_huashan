@@ -68,9 +68,37 @@
     padding-top:0;
     margin-top: 8px;
     width:100%;
+    min-width: 0;
     flex: 1;
     min-height: 0;
     overflow: auto;
+}
+
+.table-input-body {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+    gap: 24px;
+}
+
+.table-input-preview {
+    flex: 0 0 38%;
+    min-width: 0;
+    overflow: auto;
+    margin-top: 8px;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    padding: 12px;
+}
+
+.table-input-preview img {
+    max-width: 100%;
+}
+
+.table-input-preview-empty {
+    color: #9ca3af;
+    text-align: center;
+    margin-top: 40px;
 }
 
 /* Mirrors admin.css's `.astro-table`/`.admin-table-scroll` pattern exactly:
@@ -162,6 +190,8 @@
     background: transparent;
     border: 0;
     padding: 0;
+    display: inline-flex;
+    align-items: center;
 }
 
 /* The Default/Type/Kind columns' input and select controls left-align
