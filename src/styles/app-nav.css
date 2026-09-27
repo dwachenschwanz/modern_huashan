@@ -27,28 +27,9 @@
 .app-nav.navbar-inverse .navbar-nav > li > a:focus,
 .app-nav.navbar-inverse .navbar-nav > .active > a,
 .app-nav.navbar-inverse .navbar-nav > .active > a:hover,
-.app-nav.navbar-inverse .navbar-nav > .active > a:focus,
-.app-nav.navbar-inverse .navbar-nav > .open > a {
+.app-nav.navbar-inverse .navbar-nav > .active > a:focus {
   background: #8b1e2b;
   color: #fff;
-}
-
-.app-nav .dropdown-menu {
-  margin-top: 4px;
-  padding: 6px;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: 10px;
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.16), 0 2px 8px rgba(0, 0, 0, 0.08);
-}
-
-.app-nav .dropdown-menu > li > a {
-  border-radius: 6px;
-}
-
-.app-nav .dropdown-menu > li > a:hover,
-.app-nav .dropdown-menu > li > a:focus {
-  background: #f5f0ee;
-  color: #8b1e2b;
 }
 
 .app-nav-template-chip {

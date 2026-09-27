@@ -5,8 +5,8 @@
  *
  * The legacy views also linked to the "platform" variant of each structure
  * (`#/platformDataStructure/...` etc.) but that `<li>` was commented out in
- * every view (dead markup) - only the "Project X Structure" link is live, so
- * that's all this renders.
+ * every view (dead markup) - only the "Project X Structure" route is live,
+ * so each structure entry links straight there instead of behind a dropdown.
  *
  * `active` selects which nav entry gets the `active` class:
  * 'json' | 'dataStructure' | 'appStructure' | 'portfolioStructure' | 'revisions' | 'admin' | 'selectTemplate' | null
@@ -15,7 +15,6 @@ import { escapeHtml } from '../core/html.js';
 
 export function appNavHtml({ active = null, isAdmin = false, selectedTemplate = 'Not Selected', showTemplateBadge = true } = {}) {
   const hasTemplate = selectedTemplate && selectedTemplate !== 'Not Selected';
-  const cls = (name) => (active === name ? 'dropdown active' : 'dropdown');
   const encodedTemplate = encodeURIComponent(selectedTemplate || '');
 
   return `
@@ -34,24 +33,9 @@ export function appNavHtml({ active = null, isAdmin = false, selectedTemplate = 
         ${
           hasTemplate
             ? `<li${active === 'json' ? ' class="active"' : ''}><a href="#/json/${encodedTemplate}">JSON</a></li>
-        <li class="${cls('dataStructure')}">
-          <a href="" class="dropdown-toggle" data-toggle="dropdown">Data Structure <span class="caret"></span></a>
-          <ul class="dropdown-menu" role="menu">
-            <li><a href="#/datastructure/${encodedTemplate}">Project Data Structure</a></li>
-          </ul>
-        </li>
-        <li class="${cls('appStructure')}">
-          <a href="" class="dropdown-toggle" data-toggle="dropdown">App Structure <span class="caret"></span></a>
-          <ul class="dropdown-menu" role="menu">
-            <li><a href="#/appstructure/${encodedTemplate}">Project App Structure</a></li>
-          </ul>
-        </li>
-        <li class="${cls('portfolioStructure')}">
-          <a href="" class="dropdown-toggle" data-toggle="dropdown">Portfolio Structure <span class="caret"></span></a>
-          <ul class="dropdown-menu" role="menu">
-            <li><a href="#/portfoliostructure/${encodedTemplate}">Project Portfolio Structure</a></li>
-          </ul>
-        </li>
+        <li${active === 'dataStructure' ? ' class="active"' : ''}><a href="#/datastructure/${encodedTemplate}">Data Structure</a></li>
+        <li${active === 'appStructure' ? ' class="active"' : ''}><a href="#/appstructure/${encodedTemplate}">App Structure</a></li>
+        <li${active === 'portfolioStructure' ? ' class="active"' : ''}><a href="#/portfoliostructure/${encodedTemplate}">Portfolio Structure</a></li>
         <li${active === 'revisions' ? ' class="active"' : ''}><a href="#/revisions/${encodedTemplate}">Revisions</a></li>`
             : ''
         }
