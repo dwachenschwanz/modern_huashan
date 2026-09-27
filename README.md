@@ -24,14 +24,21 @@ application remains under `legacy/` as a reference only.
 - CodeMirror 6 for JSON editing
 - Highcharts for chart previews
 - Font Awesome 4 icons
-- Framework-free CSS and UI interactions
+- Framework-free UI interactions
+- Plain CSS built on a design-token layer (see
+  [User Interface and Styling](#user-interface-and-styling))
 
 Bootstrap, AngularJS, `spin.js`, and `iosOverlay.js` are not used by the modern
-application.
+application. Some Bootstrap-shaped class names survive in the markup
+(`.row`, `col-sm-*`, `.btn-primary`, `.panel`), but they are the project's own
+rules in `src/styles/base.css` — see the styling section below before changing
+them.
 
 ## Prerequisites
 
-- Node.js 20.19 or newer within the 20.x line, or Node.js 22.12 or newer
+- Node.js 20.19 or newer within the 20.x line, or Node.js 22.12 or newer.
+  This is Vite's requirement, not an enforced one: `package.json` declares no
+  `engines` field, and newer releases install and build without complaint.
 - npm
 - Network access to the configured SmartOrg/Kirk backend
 - A valid Huashan account
@@ -71,8 +78,13 @@ The automated tests cover API transport, command-response parsing, session
 restoration, navigation cancellation, hard-refresh route loading, modal
 interaction, Excel downloads, and the main Data, App, Portfolio, and Select
 Template workflows. The browser suite uses a mocked backend and validates
-saved request payloads as well as visible behavior. Install the Playwright
-browser once after installing dependencies:
+saved request payloads as well as visible behavior. It also measures layout:
+several tests assert bounding-box geometry — that sidebar and content panels
+stay side by side and on screen, that action buttons clear the fixed footer,
+that long lists scroll inside their panel, and that trailing edit icons reach
+the right edge — because a CSS regression leaves the markup intact and passes
+every assertion that only reads text or roles. Install the Playwright browser
+once after installing dependencies:
 
 ```bash
 npx playwright install chromium
@@ -196,7 +208,7 @@ current navigation menu exposes only project structure links.
 |   |-- components/            Shared UI and behavior
 |   |-- core/                  Router, session, configuration, and utilities
 |   |-- lib/                   Local third-party compatibility code
-|   |-- styles/                Global and view-specific CSS
+|   |-- styles/                Design tokens, shared rules, per-view CSS
 |   |-- views/                 Route-level screens and editor modules
 |   |   |-- appStructure/      App Structure coordinator and command editors
 |   |   |-- dataStructure/     Input, table-input, and output editors
@@ -226,6 +238,9 @@ current navigation menu exposes only project structure links.
   popovers, and transient alerts without Bootstrap JavaScript.
 - `src/components/loadingOverlay.js` provides the shared loading indicator.
 - `src/components/jsonEditor.js` configures CodeMirror for JSON documents.
+- `src/components/searchField.js` renders the search input used above every
+  list, with a clear button wired by a delegated handler so it survives the
+  full-container re-render those views perform on each keystroke.
 - `src/views/dataStructure/dataStructure.js` coordinates Data Structure
   loading, saving, navigation guards, and shared editor state.
 - `src/views/dataStructure/inputEditor.js`, `tableInputEditor.js`, and
@@ -330,6 +345,72 @@ Editor behavior includes:
 Saving validates every displayed JSON document before submitting
 `SaveTemplateJSON`. Invalid JSON is not sent to the backend.
 
+## User Interface and Styling
+
+There is no CSS framework. `src/styles/app.css` is the only entry point and
+does nothing but `@import` the rest, `tokens.css` first so every later rule
+can use it.
+
+### Design Tokens
+
+`src/styles/tokens.css` holds colour, spacing, radius, shadow, and type as
+`:root` custom properties, in two layers: primitives (the raw ramps) and
+semantic aliases. Reach for a token rather than a literal — `var(--border)`,
+not `#ddd` — and prefer the semantic name (`--surface`, `--ink-muted`) over
+the ramp it resolves to (`--n-0`).
+
+The palette is single-accent. `--action` is an alias of `--brand`, the
+SmartOrg maroon, so there is no second interactive colour; use `--action`
+where a rule means "interactive" and `--brand` where it means "SmartOrg"
+(nav, login, selection markers). The remaining hues are reserved by meaning:
+
+| Token | Role |
+| --- | --- |
+| `--brand` / `--action` | Identity, and the primary action |
+| `--edit` | Edit affordances — the Edit All toggle and per-row pencils |
+| `--ok` | Additive actions |
+| `--warn` | Cautions |
+| `--danger` | Destructive only, never "save" |
+
+### Buttons
+
+Buttons are tiered by what they are for, not by colour name:
+
+| Class | Use |
+| --- | --- |
+| `.btn-primary` | The one thing a screen is for |
+| `.btn-tonal` | Supporting actions, forward navigation |
+| `.btn-edit` | Edit affordances at any scope |
+| `.btn-default` | Backward navigation, row controls |
+| `.btn-ghost` | Dismissal, and anything that should recede |
+
+`.btn-success` and `.btn-danger` carry their meanings. `.btn-info` is a
+legacy name aliased onto the neutral fill. Any filled non-primary tier needs
+a border that clears 3:1 against the page (WCAG 1.4.11); a hairline border is
+effectively invisible.
+
+### Layout
+
+`.row` and `col-sm-*` are a 12-column CSS Grid shim in `base.css`, not
+Bootstrap. Do not give `.row` a clearfix — a pseudo-element becomes a grid
+item and occupies a real cell — and do not convert the columns back to
+floats. `.pull-left` and `.pull-right` remain for the containers that still
+hold floats.
+
+Icons are Font Awesome throughout; Bootstrap glyphicons are gone.
+
+### Stylesheet Layout
+
+`base.css` and `main.css` hold shared and global rules. Each view owns a
+stylesheet named after it (`data-structure.css`, `app-structure.css`,
+`select-template.css`, `revisions.css`, and so on); `admin.css`, `json.css`,
+and `loading-overlay.css` are route- or component-specific. Put a view's
+rules in that view's file and register new stylesheets in `app.css`. Generic
+class names shared across views have caused cross-view layout regressions
+more than once, which is why the browser suite asserts panel geometry.
+
+`animate.css` is vendored third-party code and is never hand-edited.
+
 ## API Request Model
 
 Most Wizard operations use one endpoint:
@@ -369,6 +450,10 @@ use consistent user-facing messages.
 - Destroy chart instances, editors, and listeners during route cleanup.
 - Use `escapeHtml()` when inserting server-provided text into HTML templates.
 - Use the shared components instead of adding Bootstrap or legacy vendor code.
+- Style with tokens from `src/styles/tokens.css`, not literal values, and put
+  a view's rules in that view's stylesheet rather than in `base.css`.
+- Scope new class names to the view that owns them. Generic names in shared
+  stylesheets are the recurring source of cross-view layout breakage.
 - Treat `legacy/` as behavioral reference material, not active application
   code.
 
@@ -399,6 +484,16 @@ rows on the right must be present in `GetDataStructure.Inputs` with
 `Type: "TABLE"`. Available rows on the left come from `PotentialTableInputs`
 and are omitted only when their `CellLink` is already included. Preview HTML or
 images are optional and do not control whether an included row is displayed.
+
+### A Screen's Layout Breaks After a CSS Change
+
+Check whether the rule you edited uses a class name that more than one view
+shares. Several generic names (`.list-of-templates`, `.choose-from`,
+`.select-template-title`, and the grid classes) are styled from more than one
+stylesheet, so a change made for one screen
+can collapse or push another off-screen while leaving its markup — and every
+text-based test — intact. Run `npm run test:browser`, which asserts panel
+geometry, and scope the rule to the view that needs it.
 
 ### Login Works Until the Page Is Refreshed
 
