@@ -53,7 +53,7 @@
     min-height: 0;
 }
 
-.list-of-templates {
+.data-structure-view .list-of-templates {
     max-height: 420px;
     overflow: auto;
 }

@@ -88,6 +88,7 @@
 
 .template-menu-panel .list-of-templates {
     min-height: 0;
+    overflow-y: auto;
 }
 
 .template-actions {
