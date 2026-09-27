@@ -439,9 +439,6 @@ a.btn[disabled] {
   opacity: 0.45;
 }
 
-/* One filled action colour. Everything that is not THE action on a screen
- * uses .btn-default, so a view reads as one primary plus quiet neighbours
- * instead of a row of competing solid colours. */
 /* Four tiers by what the button is for, because one flat white style was
  * covering navigation, mode toggles, secondary actions, modal dismissal and
  * dense row controls at once - so none of them read as anything.

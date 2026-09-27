@@ -72,9 +72,24 @@ Setup (only if not already done): `npm install`, then
   shadow, type) as `:root` custom properties, and is imported first. Reach
   for a token rather than a literal: `var(--border)`, not `#ddd`. Prefer the
   semantic name (`--surface`, `--ink-muted`) over the raw ramp (`--n-0`).
-  Colour roles are distinct — `--brand` (maroon) is identity only: nav,
-  login, selection markers. `--action` (blue) is interactive primary.
-  `--danger` is destructive only, never "save".
+- The app is single-accent: `--action` is an alias of `--brand` (SmartOrg
+  maroon), so there is no second interactive colour — don't add one. Say
+  `--action` where a rule means "interactive" and `--brand` where it means
+  "SmartOrg" (nav, login, selection markers); they resolve alike, but the
+  intent stays readable at the call site. Remaining hues are reserved by
+  meaning: `--edit` (teal-blue) for edit affordances, `--ok` for additive
+  actions, `--warn`, and `--danger` for destructive only, never "save".
+- Buttons are tiered by purpose: `.btn-primary` (the one thing a screen is
+  for), `.btn-tonal` (supporting actions, forward navigation), `.btn-edit`
+  (the Edit All toggle and per-row pencils), `.btn-default` (back
+  navigation, row controls), `.btn-ghost` (dismissal). `.btn-success` and
+  `.btn-danger` keep their meanings; `.btn-info` is a legacy name aliased
+  onto the neutral fill. A filled non-primary tier needs a border clearing
+  3:1 against the page (WCAG 1.4.11) — a hairline is invisible.
+- `.row` / `col-sm-*` are a CSS Grid shim in `base.css`, not Bootstrap, and
+  renaming them is churn. Don't give `.row` a clearfix (the pseudo-element
+  becomes a grid item) and don't convert the columns back to floats.
+  `.pull-left` / `.pull-right` remain for containers that still hold floats.
 - `src/styles/app.css` is the single entry point; it only `@import`s the
   other files in the folder. Add a new view's stylesheet there.
 - Icons are Font Awesome throughout. Bootstrap glyphicons are gone — don't
