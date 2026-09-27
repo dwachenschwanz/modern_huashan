@@ -534,6 +534,13 @@ a.list-group-item:hover, a.list-group-item:focus { color: #555; background: #f5f
 .list-group-item.active:hover,
 .list-group-item.active:focus { z-index: 2; color: #fff; background: #337ab7; border-color: #337ab7; }
 
+/* Include/exclude list rows across Data/App/Portfolio Structure lead with an
+ * icon link followed directly by a label - a plain text space between them
+ * is too small relative to the fa-lg icon to read as real spacing. */
+.list-group-item .no-wrap > a {
+  margin-right: 6px;
+}
+
 .nav-tabs {
   border-bottom: 1px solid #ddd;
 }
