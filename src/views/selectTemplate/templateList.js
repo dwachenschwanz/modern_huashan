@@ -23,7 +23,7 @@ export function templateListHtml(state) {
       <table><tr>
         <td class="appStructList">${escapeHtml(template.name)}</td>
         <td class="appStructList" style="width:60px">
-          ${state.selectedTemplate === template.name && state.isAdmin ? '<span data-toggle="modal" data-target="#deleteModal" class="inline-icon pull-right glyphicon glyphicon-trash" title="Delete"></span><span data-toggle="modal" data-target="#renameModal" class="inline-icon pull-right glyphicon glyphicon-pencil" title="Rename"></span>' : ''}
+          ${state.selectedTemplate === template.name && state.isAdmin ? '<span data-toggle="modal" data-target="#deleteModal" class="inline-icon pull-right fa fa-trash" aria-label="Delete" title="Delete"></span><span data-toggle="modal" data-target="#renameModal" class="inline-icon pull-right fa fa-pencil" aria-label="Rename" title="Rename"></span>' : ''}
         </td>
       </tr></table>
     </a>`).join('');

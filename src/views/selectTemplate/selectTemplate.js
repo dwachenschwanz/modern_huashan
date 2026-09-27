@@ -649,7 +649,7 @@ export function mount(container) {
   function bottomNavHtml() {
     const notSelected = state.selectedTemplate === 'Not Selected';
     return `
-    <a href="#/datastructure/${encodeURIComponent(state.selectedTemplate)}" class="btn btn-primary pull-right" role="button" ${notSelected ? 'disabled' : ''}>Next: Data Structure <span class="glyphicon glyphicon-chevron-right"></span></a>`;
+    <a href="#/datastructure/${encodeURIComponent(state.selectedTemplate)}" class="btn btn-primary pull-right" role="button" ${notSelected ? 'disabled' : ''}>Next: Data Structure <i class="fa fa-chevron-right" aria-hidden="true"></i></a>`;
   }
 
   function runningBannerHtml() {
@@ -731,6 +731,9 @@ export function mount(container) {
   }
 
   function rightPanelHtml() {
+    if (state.selectedTemplate === 'Not Selected') {
+      return `<div class="st-empty-state"><i class="fa fa-file-text-o" aria-hidden="true"></i><p>Select a template from the list to see its details.</p></div>`;
+    }
     return `
     ${runningBannerHtml()}
     <div class="st-ipointer" id="template-description">
@@ -858,7 +861,7 @@ export function mount(container) {
     </div>
     <div class="template-actions">
       ${state.isAdmin ? `<button class="btn btn-primary pull-left" id="st-archive-btn" data-toggle="modal" data-target="#trashModal" title="Open Archive">Archive</button>` : ''}
-      <button class="btn btn-success pull-right" id="st-upload-btn" data-toggle="modal" data-target="#uploadModal" title="Upload"><span class="glyphicon glyphicon-open"></span></button>
+      <button class="btn btn-success pull-right" id="st-upload-btn" data-toggle="modal" data-target="#uploadModal" title="Upload"><i class="fa fa-upload" aria-hidden="true"></i> Upload</button>
     </div>
   </div>
 
