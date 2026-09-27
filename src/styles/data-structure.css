@@ -39,12 +39,16 @@
     padding-left: 15px;
 }
 
-.choose-from {
+/* Scoped to .select-input (only used by the Data Structure tab editors) -
+ * App/Portfolio Structure reuse the bare `.choose-from` class name for
+ * their own, absolutely-positioned sidebar layout in app-structure.css, so
+ * an unscoped rule here would override that and break their layout. */
+.select-input > .choose-from {
     width: 20%;
     flex: 0 0 20%;
 }
 
-.selected {
+.select-input > .selected {
     flex: 1;
     min-width: 0;
     align-self: stretch;
