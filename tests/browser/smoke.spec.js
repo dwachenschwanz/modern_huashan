@@ -395,6 +395,28 @@ async function expectPanelLayout(page, selectors) {
   expect(['auto', 'scroll']).toContain(list.overflowY);
 }
 
+/* A trailing edit icon is right-justified by a class name, so a misspelled
+ * one fails silently: the icon still renders, still handles its click, and
+ * only the alignment is wrong. Measure it rather than asserting on the class,
+ * so any future way of moving it right also counts. */
+async function expectPulledRight(page, selector, containerSelector) {
+  const icon = page.locator(selector);
+  await expect(icon).toBeVisible();
+  const geometry = await icon.evaluate((element, container) => {
+    const iconRect = element.getBoundingClientRect();
+    const hostRect = element.closest(container).getBoundingClientRect();
+    return {
+      gap: hostRect.right - iconRect.right,
+      pastMidpoint: iconRect.left - (hostRect.left + hostRect.width / 2),
+      hostWidth: hostRect.width,
+    };
+  }, containerSelector);
+
+  expect(geometry.hostWidth, `${selector}: container has no width to align within`).toBeGreaterThan(80);
+  expect(geometry.gap, `${selector}: not flush with the right edge of ${containerSelector}`).toBeLessThan(16);
+  expect(geometry.pastMidpoint, `${selector}: still sits beside its label rather than at the right edge`).toBeGreaterThan(0);
+}
+
 let saveRequests;
 let actionRequests;
 let uploadRequests;
@@ -1196,6 +1218,19 @@ test('Portfolio Structure edits command forms and saves their settings', async (
     Max: 100,
     Sets: [{ x: "Outputs['Output']", y: "Outputs['Growth']", name: 'Series 1' }],
   });
+  assertNoPageErrors();
+});
+
+test('Portfolio Structure bucket editor right-justifies its edit pencils', async ({ page }) => {
+  const assertNoPageErrors = failOnPageErrors(page);
+  await page.goto(`/#/portfoliostructure/${TEMPLATE}`);
+  await page.getByText('Portfolio Buckets', { exact: true }).first().click();
+
+  await expectPulledRight(page, '[data-bc-makeeditable-index="0"]', '.col-md-9');
+  await page.locator('[data-bc-makeeditable-index="0"]').click();
+  await expectPulledRight(page, '[data-bucket-name-edit-toggle="0:0"]', 'td');
+  await expectPulledRight(page, '[data-bucket-rules-edit-toggle="0:0"]', 'td');
+
   assertNoPageErrors();
 });
 
