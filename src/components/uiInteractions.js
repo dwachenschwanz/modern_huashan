@@ -118,7 +118,11 @@ export function initModals(root = document) {
 
 // ---- Dropdown --------------------------------------------------------------
 
+const dropdownRoots = new WeakSet();
+
 export function initDropdowns(root = document) {
+  if (dropdownRoots.has(root)) return;
+  dropdownRoots.add(root);
   root.addEventListener('click', (evt) => {
     const toggle = evt.target.closest('[data-toggle="dropdown"]');
     document.querySelectorAll('.dropdown.open, .btn-group.open').forEach((openEl) => {

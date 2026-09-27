@@ -1,4 +1,5 @@
 .astro-table {
+    min-width: 900px;
     width: 100%;
     border-collapse: collapse;
     font-family: 'Arial', sans-serif;
@@ -10,6 +11,9 @@
     font-weight: normal;
     padding: 10px;
     border-bottom: 2px solid #dee2e6;
+    position: sticky;
+    top: 0;
+    z-index: 2;
   }
 
   .astro-table td {
@@ -25,14 +29,80 @@
     background-color: #d1e7dd;
   }
 
+  .admin-table-scroll {
+    height: 100%;
+    max-width: 100%;
+    overflow: auto;
+    overscroll-behavior-x: contain;
+    overscroll-behavior-y: contain;
+  }
+
+  .admin-table-scroll:focus-visible {
+    outline: 2px solid #337ab7;
+    outline-offset: 2px;
+  }
+
+  .astro-table th:last-child,
+  .astro-table td:last-child {
+    position: sticky;
+    right: 0;
+  }
+
+  .astro-table th:last-child {
+    background-color: #e9ecef;
+    z-index: 3;
+  }
+
+  .astro-table td:last-child {
+    background-color: #fff;
+    box-shadow: -5px 0 8px -8px #333;
+  }
+
+  .astro-table tr:nth-child(even) td:last-child {
+    background-color: #f8f9fa;
+  }
+
+  .astro-table tr:hover td:last-child {
+    background-color: #d1e7dd;
+  }
+
   .action-icons {
     justify-content: center;
     align-items: center;
   }
 
-  .action-icons span {
-    cursor: pointer;
+  .action-icons .admin-icon-button {
     margin-right: 8px;
+  }
+
+  .admin-icon-button {
+    appearance: none;
+    background: transparent;
+    border: 0;
+    color: inherit;
+    cursor: pointer;
+    padding: 4px;
+  }
+
+  .admin-icon-button:focus-visible {
+    outline: 2px solid #337ab7;
+    outline-offset: 2px;
+  }
+
+  .admin-tab-button {
+    appearance: none;
+    background: transparent;
+    border: 0;
+    color: #337ab7;
+    cursor: pointer;
+    padding: 10px 15px;
+  }
+
+  .nav-tabs > li.active > .admin-tab-button {
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-bottom-color: transparent;
+    color: #555;
   }
 
  
@@ -74,42 +144,38 @@
     100% { transform: rotate(360deg); }
   }
 
-/* Modal styles */
-.editModal {
+/* Admin action dialogs live outside the animated page container so their
+   fixed positioning and z-index are relative to the viewport. */
+.admin-action-modal {
+  background: rgba(0, 0, 0, 0.35);
+  box-sizing: border-box;
   overflow: auto;
-  overflow-y: scroll;
+  padding: 24px 16px;
   position: fixed;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: 0;
+  inset: 0;
   z-index: 1050;
   -webkit-overflow-scrolling: touch;
   outline: 0;
 }
-.deleteModal {
-  overflow: auto;
-  overflow-y: scroll;
-  position: fixed;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  z-index: 1050;
-  -webkit-overflow-scrolling: touch;
-  outline: 0;
+
+.admin-action-modal > .modal-dialog {
+  margin: 0 auto;
+  max-width: 600px;
+  width: 100%;
 }
-.unarchiveModal {
-  overflow: auto;
-  overflow-y: scroll;
-  position: fixed;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  z-index: 1050;
-  -webkit-overflow-scrolling: touch;
-  outline: 0;
+
+.admin-action-modal .modal-content {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 48px);
+}
+
+.admin-action-modal .modal-body {
+  overflow-y: auto;
+}
+
+.admin-action-modal [data-admin-dialog-error] {
+  margin-bottom: 10px;
 }
 
 .editModal-content {
@@ -166,8 +232,20 @@
 
 
   .admin-container {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
     width: 100%;
-    /* other styles if needed */
+  }
+
+  .admin-container .tab-content {
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
+  .admin-container .tab-pane.active {
+    height: 100%;
   }
   
   .tab-search-container {
@@ -204,6 +282,12 @@
   }
 
   .admin-templates{
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 60px);
+    min-height: 0;
+    overflow: hidden;
     padding: 10px;
   }
 
@@ -341,4 +425,47 @@
   }
   .group-cursor{
     cursor: pointer;
+  }
+
+  @media (max-width: 767px) {
+    .tab-search-container {
+      align-items: stretch;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .tab-search-container .nav-tabs {
+      margin-right: 0 !important;
+      width: 100%;
+    }
+
+    .search-box,
+    .filter-box {
+      margin-right: 0;
+    }
+
+    .search-box {
+      flex: 1 1 220px;
+    }
+
+    .search-box input[type="text"] {
+      width: 100%;
+    }
+
+    .filter-box {
+      flex: 0 1 auto;
+    }
+
+    .owner-details-div {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+
+    .admin-action-modal {
+      padding: 12px;
+    }
+
+    .admin-action-modal .modal-content {
+      max-height: calc(100vh - 24px);
+    }
   }

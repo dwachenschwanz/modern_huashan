@@ -197,9 +197,34 @@ const templateJson = {
   platformPortfolioStructure: 'Does not exist',
 };
 
+const adminGroups = [
+  { _id: 'finance-group', groupname: 'Finance' },
+  { _id: 'research-group', groupname: 'Research' },
+  { _id: 'admin-group', groupname: 'administrators' },
+];
+
+const adminTemplates = [
+  {
+    name: TEMPLATE,
+    history: { guid: 'commit-1' },
+    groups: [{ _id: 'finance-group', groupname: 'Finance' }],
+    creatorUsername: 'Smoke User',
+    createdDate: '2026-01-01T00:00:00Z',
+    modifiedDate: '2026-01-02T00:00:00Z',
+  },
+  {
+    name: 'ZetaTemplate',
+    history: { guid: 'commit-2' },
+    groups: [{ _id: 'research-group', groupname: 'Research' }],
+    creatorUsername: 'Other User',
+    createdDate: '2026-02-01T00:00:00Z',
+    modifiedDate: '2026-02-02T00:00:00Z',
+  },
+];
+
 function commandResult(command, url) {
   const results = {
-    GetAstroTemplates: [{ name: TEMPLATE, history: { guid: 'commit-1' }, groups: [] }],
+    GetAstroTemplates: structuredClone(adminTemplates),
     GetArchivedAstroTemplates: [{ name: 'ArchivedTemplate' }],
     FindAssociatedPortfolios: ['Smoke Portfolio'],
     GetRevisions: JSON.stringify({
@@ -235,7 +260,12 @@ async function mockBackend(page, saveRequests, actionRequests, uploadRequests) {
     const url = new URL(route.request().url());
 
     if (url.pathname === '/kirk/framework/admin/group/list') {
-      await route.fulfill({ json: { token: 'smoke-token', data: [] } });
+      await route.fulfill({ json: { token: 'smoke-token', data: structuredClone(adminGroups) } });
+      return;
+    }
+    if (url.pathname === '/kirk/domain/astro-templates' && route.request().method() === 'PUT') {
+      actionRequests.push({ command: 'EditAstroTemplate', ...route.request().postDataJSON() });
+      await route.fulfill({ json: { token: 'smoke-token', data: { status: 0, message: 'Template updated' } } });
       return;
     }
     if (url.pathname === `/kirk/domain/astro-templates/${TEMPLATE}`) {
@@ -318,6 +348,195 @@ test.beforeEach(async ({ page }) => {
   uploadRequests = [];
   await mockBackend(page, saveRequests, actionRequests, uploadRequests);
   await authenticate(page);
+});
+
+test('Admin searches, filters, sorts, and manages template access', async ({ page }) => {
+  const assertNoPageErrors = failOnPageErrors(page);
+  await page.goto('/#/admin');
+
+  const rows = page.locator('#allTemplates-tbody tr');
+  await expect(rows).toHaveCount(2);
+  await page.locator('#admin-search').fill('Zeta');
+  await expect(rows).toHaveCount(1);
+  await expect(rows.first()).toContainText('ZetaTemplate');
+  await page.locator('#admin-search').fill('');
+
+  await page.getByRole('button', { name: 'Filter by groups' }).click();
+  await page.getByRole('checkbox', { name: 'Finance' }).check();
+  await expect(rows).toHaveCount(1);
+  await expect(rows.first()).toContainText(TEMPLATE);
+  await page.getByRole('button', { name: 'Clear group filters' }).click();
+  await expect(rows).toHaveCount(2);
+
+  await page.getByRole('columnheader', { name: /Template Name/ }).click();
+  await expect(rows.first()).toContainText('ZetaTemplate');
+
+  const manageAccessButton = page.getByRole('button', { name: `Manage access for ${TEMPLATE}` });
+  await manageAccessButton.click();
+  const dialog = page.getByRole('dialog', { name: 'Manage Template Access' });
+  await expect(dialog).toBeVisible();
+  await expect(dialog).toBeFocused();
+  const dialogBox = await dialog.locator('.modal-content').boundingBox();
+  const viewport = page.viewportSize();
+  expect(dialogBox).not.toBeNull();
+  expect(viewport).not.toBeNull();
+  expect(dialogBox.y).toBeGreaterThanOrEqual(0);
+  expect(dialogBox.y + dialogBox.height).toBeLessThanOrEqual(viewport.height);
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeHidden();
+  await expect(manageAccessButton).toBeFocused();
+
+  await manageAccessButton.click();
+  await expect(dialog.getByRole('button', { name: 'Remove Finance' })).toBeVisible();
+  await dialog.getByRole('button', { name: 'Add Research' }).click();
+  await dialog.getByRole('button', { name: 'Save' }).click();
+  await expect(dialog).toBeHidden();
+  await expect.poll(() => actionRequests.some((request) => (
+    request.command === 'EditAstroTemplate'
+      && request.groups.some((group) => group.groupname === 'Finance')
+      && request.groups.some((group) => group.groupname === 'Research')
+  ))).toBe(true);
+  assertNoPageErrors();
+});
+
+test('Admin archives and restores templates', async ({ page }) => {
+  const assertNoPageErrors = failOnPageErrors(page);
+  await page.route('**/kirk/wizard/main**', async (route) => {
+    const url = new URL(route.request().url());
+    if (url.searchParams.get('command') === 'GetArchivedAstroTemplates') {
+      await route.fulfill({ json: commandEnvelope(['ArchivedTemplate']) });
+      return;
+    }
+    await route.fallback();
+  });
+  await page.goto('/#/admin');
+
+  await page.getByRole('button', { name: `Archive ${TEMPLATE}` }).click();
+  const archiveDialog = page.getByRole('dialog', { name: 'Archive Template' });
+  await archiveDialog.getByRole('button', { name: 'Archive' }).click();
+  await expect(archiveDialog).toBeHidden();
+  await expect.poll(() => actionRequests.some((request) => (
+    request.command === 'DeleteTemplate' && request.templateName === TEMPLATE
+  ))).toBe(true);
+
+  await page.getByRole('tab', { name: 'Archive' }).click();
+  await expect(page.locator('#archive-tbody')).toContainText('ArchivedTemplate');
+  await page.getByRole('button', { name: 'Restore ArchivedTemplate' }).click();
+  const restoreDialog = page.getByRole('dialog', { name: 'Unarchive Template' });
+  await restoreDialog.getByRole('button', { name: 'Unarchive' }).click();
+  await expect(restoreDialog).toBeHidden();
+  await expect.poll(() => actionRequests.some((request) => (
+    request.command === 'UndeleteTemplate' && request.templateName === 'ArchivedTemplate'
+  ))).toBe(true);
+  assertNoPageErrors();
+});
+
+test('Admin exposes retry after the template list fails', async ({ page }) => {
+  const assertNoPageErrors = failOnPageErrors(page);
+  let failTemplates = true;
+  await page.route('**/kirk/wizard/main**', async (route) => {
+    const url = new URL(route.request().url());
+    if (failTemplates && url.searchParams.get('command') === 'GetAstroTemplates') {
+      await route.fulfill({ status: 500, json: { message: 'Temporary admin failure' } });
+      return;
+    }
+    await route.fallback();
+  });
+
+  await page.goto('/#/admin');
+  await expect(page.getByText(/GetAstroTemplates failed with HTTP 500/i).first()).toBeVisible();
+  failTemplates = false;
+  await page.getByRole('button', { name: 'Retry' }).click();
+  await expect(page.getByRole('button', { name: `Manage access for ${TEMPLATE}` })).toBeVisible();
+  assertNoPageErrors();
+});
+
+test('Admin keeps update failures actionable inside the access dialog', async ({ page }) => {
+  const assertNoPageErrors = failOnPageErrors(page);
+  let releaseUpdate;
+  await page.route('**/kirk/domain/astro-templates', async (route) => {
+    await new Promise((resolve) => { releaseUpdate = resolve; });
+    await route.fulfill({ json: { data: { status: 1, message: 'Access update was rejected' } } });
+  });
+
+  await page.goto('/#/admin');
+  await page.getByRole('button', { name: `Manage access for ${TEMPLATE}` }).click();
+  const dialog = page.getByRole('dialog', { name: 'Manage Template Access' });
+  const saveButton = dialog.getByRole('button', { name: 'Save' });
+  await saveButton.click();
+  await expect(dialog.getByRole('button', { name: 'Saving' })).toBeDisabled();
+  await expect.poll(() => typeof releaseUpdate).toBe('function');
+  releaseUpdate();
+
+  await expect(dialog.getByRole('alert')).toHaveText('Access update was rejected');
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole('button', { name: 'Save' })).toBeEnabled();
+  assertNoPageErrors();
+});
+
+test('Admin keeps the action column available on narrow screens', async ({ page }) => {
+  const assertNoPageErrors = failOnPageErrors(page);
+  await page.setViewportSize({ width: 600, height: 700 });
+  await page.goto('/#/admin');
+
+  const tableRegion = page.getByRole('region', { name: 'All templates table' });
+  await expect(tableRegion).toBeVisible();
+  const dimensions = await tableRegion.evaluate((element) => ({
+    clientWidth: element.clientWidth,
+    scrollWidth: element.scrollWidth,
+  }));
+  expect(dimensions.scrollWidth).toBeGreaterThan(dimensions.clientWidth);
+  await expect(page.getByRole('button', { name: `Manage access for ${TEMPLATE}` })).toBeVisible();
+  assertNoPageErrors();
+});
+
+test('Admin scrolls table rows while keeping controls and column headers fixed', async ({ page }) => {
+  const assertNoPageErrors = failOnPageErrors(page);
+  const manyTemplates = Array.from({ length: 40 }, (_, index) => ({
+    name: `Template${String(index + 1).padStart(2, '0')}`,
+    groups: [{ _id: 'finance-group', groupname: 'Finance' }],
+    creatorUsername: 'Smoke User',
+    createdDate: '2026-01-01T00:00:00Z',
+    modifiedDate: '2026-01-02T00:00:00Z',
+  }));
+  await page.route('**/kirk/wizard/main**', async (route) => {
+    const url = new URL(route.request().url());
+    if (url.searchParams.get('command') === 'GetAstroTemplates') {
+      await route.fulfill({ json: commandEnvelope(manyTemplates) });
+      return;
+    }
+    await route.fallback();
+  });
+  await page.setViewportSize({ width: 1000, height: 600 });
+  await page.goto('/#/admin');
+
+  const tableRegion = page.getByRole('region', { name: 'All templates table' });
+  await expect(tableRegion).toBeVisible();
+  const toolbar = page.locator('#admin-toolbar');
+  const firstHeader = page.locator('#allTemplates .astro-table th').first();
+  const before = {
+    toolbar: await toolbar.boundingBox(),
+    header: await firstHeader.boundingBox(),
+  };
+  const scrollPosition = await tableRegion.evaluate((element) => {
+    element.scrollTop = 500;
+    return {
+      clientHeight: element.clientHeight,
+      scrollHeight: element.scrollHeight,
+      scrollTop: element.scrollTop,
+    };
+  });
+  expect(scrollPosition.scrollHeight).toBeGreaterThan(scrollPosition.clientHeight);
+  expect(scrollPosition.scrollTop).toBeGreaterThan(0);
+
+  const after = {
+    toolbar: await toolbar.boundingBox(),
+    header: await firstHeader.boundingBox(),
+  };
+  expect(Math.abs(after.toolbar.y - before.toolbar.y)).toBeLessThanOrEqual(1);
+  expect(Math.abs(after.header.y - before.header.y)).toBeLessThanOrEqual(1);
+  expect(await page.evaluate(() => globalThis.scrollY)).toBe(0);
+  assertNoPageErrors();
 });
 
 test('select template supports modal interaction and Excel download', async ({ page }) => {
