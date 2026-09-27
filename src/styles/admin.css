@@ -398,9 +398,39 @@
     height: 100%;
   }
 
-  th.sortable:hover {
+  .astro-table th.sortable {
+    padding: 0;
     cursor: pointer;
-    text-decoration: underline;
+  }
+
+  .admin-sort-button {
+    appearance: none;
+    background: transparent;
+    border: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    padding: 10px;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+  }
+
+  .admin-sort-button:hover,
+  .admin-sort-button:focus-visible {
+    color: #337ab7;
+  }
+
+  .admin-sort-button:focus-visible {
+    outline: 2px solid #337ab7;
+    outline-offset: -2px;
+  }
+
+  th.sortable.is-sorted .admin-sort-button {
+    color: #337ab7;
+    font-weight: 700;
   }
   
   .owner-details-div{
