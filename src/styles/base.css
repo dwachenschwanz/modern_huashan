@@ -33,6 +33,15 @@ textarea {
   font: inherit;
 }
 
+/* Native checkboxes and radios default to the platform blue, which was the
+ * last blue left in a single-accent app. */
+input[type="checkbox"],
+input[type="radio"],
+input[type="range"],
+progress {
+  accent-color: var(--action);
+}
+
 button,
 select {
   text-transform: none;
@@ -400,7 +409,7 @@ ol {
 }
 
 .btn:focus-visible {
-  outline: 2px solid var(--action);
+  outline: 2px solid var(--focus-outline);
   outline-offset: 2px;
 }
 
@@ -781,8 +790,8 @@ a.list-group-item:hover, a.list-group-item:focus { color: var(--ink); background
 .text-left { text-align: left; }
 .text-right { text-align: right; }
 .text-center { text-align: center; }
-.text-success { color: #3c763d; }
-.text-danger { color: #a94442; }
+.text-success { color: var(--ok); }
+.text-danger { color: var(--danger); }
 .sr-only {
   position: absolute;
   width: 1px;

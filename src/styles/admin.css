@@ -360,8 +360,8 @@
   }
   
   .styled-checkbox:checked + .checkbox-label:before {
-    background-color: #007bff; /* Checked color */
-    border-color: #007bff;
+    background-color: var(--action);
+    border-color: var(--action);
   }
   
   .styled-checkbox:checked + .checkbox-label:after {

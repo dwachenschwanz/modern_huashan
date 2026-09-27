@@ -22,24 +22,30 @@
   --n-900: #1f1c1a;
 
   /* --- primitives: brand (SmartOrg maroon) ---
-   * Identity only: the nav bar, the login call to action, selection markers.
-   * Not a general-purpose action colour - that is --action below. */
+   * Carries both roles: identity (nav, login) and interactive primary. */
   --brand-tint: #f6e7e9;
   --brand:      #8b1e2b;
   --brand-deep: #6e1722;
 
-  /* --- primitives: action --- */
-  --action-tint: #e8eff8;
-  --action:      #1a5fb4;
-  --action-deep: #164e94;
+  /* --- primitives: action ---
+   * The app is single-accent: --action resolves to the brand maroon rather
+   * than a separate blue. Kept as its own name so the roles stay legible at
+   * the call site - a rule that means "this is interactive" says --action,
+   * a rule that means "this is SmartOrg" says --brand - and so the decision
+   * can be revisited here rather than across every stylesheet. */
+  --action:      var(--brand);
+  --action-deep: var(--brand-deep);
 
-  /* --- primitives: semantic status --- */
+  /* --- primitives: semantic status ---
+   * --danger sits deliberately brighter and more orange than the maroon it
+   * now has to be told apart from; destructive buttons are also outlined
+   * rather than filled, so hue is not the only thing separating them. */
   --ok:         #1f7a4d;
   --ok-tint:    #e6f2eb;
   --warn:       #b26a00;
   --warn-tint:  #fbf0df;
-  --danger:     #b3261e;
-  --danger-tint:#f9e9e8;
+  --danger:     #c62828;
+  --danger-tint:#fbeaea;
 
   /* --- semantic surfaces --- */
   --surface:        var(--n-0);
@@ -82,7 +88,8 @@
 
   /* --- focus: one ring, replacing Bootstrap's 8px blue glow --- */
   --focus-ring: 0 0 0 3px rgba(139, 30, 43, 0.22);
-  --focus-ring-action: 0 0 0 3px rgba(26, 95, 180, 0.24);
+  /* Dark, so it stays visible against a filled maroon control too. */
+  --focus-outline: var(--n-900);
 
   /* --- type --- */
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
