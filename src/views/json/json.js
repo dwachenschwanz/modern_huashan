@@ -87,7 +87,7 @@ ${appNavHtml({ active: 'json', isAdmin: state.isAdmin, selectedTemplate: state.s
 </div>
 
 <div class="col-sm-12 text-center align-to-bottom">
-  <button class="btn btn-link pull-left" id="json-close-btn"><span class="fa fa-chevron-left"></span> Back to Select Template</button>
+  <button class="btn btn-default pull-left" id="json-close-btn"><span class="fa fa-chevron-left"></span> Back to Select Template</button>
   <button class="btn btn-primary pull-right" id="json-save-open-btn" data-toggle="modal" data-target="#commitMessageModal" ${isUnchanged() ? 'disabled' : ''}>
     <i class="fa fa-spinner fa-spin fa-lg" ${state.saveComplete ? 'hidden' : ''}></i><span ${state.saveComplete ? '' : 'hidden'}>Save</span>
   </button>

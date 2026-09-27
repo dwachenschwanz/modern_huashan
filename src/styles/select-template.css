@@ -69,6 +69,11 @@
 .align-to-bottom{
     position:fixed;
     bottom:0px;
+    /* Without an explicit left, a fixed element keeps its *static* position
+     * horizontally - so on the pages where this bar sits inside a padded
+     * ancestor it started 15px in and ran 15px past the right edge, putting
+     * the Next button flush against the screen. */
+    left:0;
     /* Fixed elements shrink-wrap, and this bar used to get its width from
      * .col-sm-12's width:100%. The grid columns carry no width, so it has
      * to state its own. */

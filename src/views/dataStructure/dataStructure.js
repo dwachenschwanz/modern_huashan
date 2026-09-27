@@ -414,7 +414,7 @@ ${appNavHtml({ active: 'dataStructure', isAdmin: state.isAdmin, selectedTemplate
 
 <div class="col-sm-12 text-center align-to-bottom">
   <a href="#/selectTemplate" class="btn btn-default pull-left" role="button"><i class="fa fa-chevron-left" aria-hidden="true"></i> Previous: Select Template</a>
-  <a href="#/appstructure/${encodeURIComponent(state.selectedTemplate)}" class="btn btn-tonal pull-right" role="button">Next: App Structure <i class="fa fa-chevron-right" aria-hidden="true"></i></a>
+  <a href="#/appstructure/${encodeURIComponent(state.selectedTemplate)}" class="btn btn-default pull-right" role="button">Next: App Structure <i class="fa fa-chevron-right" aria-hidden="true"></i></a>
 
   ${state.show2
     ? `<button type="button" class="btn btn-tonal" id="ds-edit-toggle">Edit</button>`

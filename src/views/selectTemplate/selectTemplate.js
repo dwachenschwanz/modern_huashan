@@ -650,7 +650,7 @@ export function mount(container) {
   function bottomNavHtml() {
     const notSelected = state.selectedTemplate === 'Not Selected';
     return `
-    <a href="#/datastructure/${encodeURIComponent(state.selectedTemplate)}" class="btn btn-tonal pull-right" role="button" ${notSelected ? 'disabled' : ''}>Next: Data Structure <i class="fa fa-chevron-right" aria-hidden="true"></i></a>`;
+    <a href="#/datastructure/${encodeURIComponent(state.selectedTemplate)}" class="btn btn-default pull-right" role="button" ${notSelected ? 'disabled' : ''}>Next: Data Structure <i class="fa fa-chevron-right" aria-hidden="true"></i></a>`;
   }
 
   function runningBannerHtml() {

@@ -1260,7 +1260,7 @@ export function mount(container, params) {
           <a href="#/datastructure/${encodeURIComponent(state.selectedTemplate)}" class="btn btn-default pull-left">
             <span class="fa fa-chevron-left" aria-hidden="true"></span> Previous: Data Structure
           </a>
-          <a href="#/portfoliostructure/${encodeURIComponent(state.selectedTemplate)}" class="btn btn-tonal pull-right">
+          <a href="#/portfoliostructure/${encodeURIComponent(state.selectedTemplate)}" class="btn btn-default pull-right">
             Next: Portfolio Structure <span class="fa fa-chevron-right" aria-hidden="true"></span>
           </a>
           <button class="btn btn-primary" id="as-save-btn" data-toggle="modal" data-target="#commitMessageModal" ${isUnchanged() || !state.saveComplete ? 'disabled' : ''}>
