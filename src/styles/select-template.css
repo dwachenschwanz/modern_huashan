@@ -178,3 +178,15 @@
     margin: 0;
     font-size: 15px;
 }
+
+/* The template row's table is auto-width by default, so its icon cell sits
+ * flush against the name instead of the row's right edge. Matches what
+ * app-structure.css does for the App/Portfolio Structure menus. */
+.template-sidebar table {
+    width: 100%;
+}
+
+.template-sidebar .inline-icon {
+    font-size: 18px;
+    padding-left: 10px;
+}

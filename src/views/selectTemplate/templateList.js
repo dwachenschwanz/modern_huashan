@@ -22,7 +22,7 @@ export function templateListHtml(state) {
     <a href="" class="list-group-item ${state.selectedTemplate === template.name ? 'active' : ''}" data-template-index="${index}" data-toggle="tooltip" title="${escapeHtml(template.name)}">
       <table><tr>
         <td class="appStructList">${escapeHtml(template.name)}</td>
-        <td class="appStructList" style="width:60px">
+        <td class="appStructList" style="width:76px">
           ${state.selectedTemplate === template.name && state.isAdmin ? '<span data-toggle="modal" data-target="#deleteModal" class="inline-icon pull-right fa fa-trash" aria-label="Delete" title="Delete"></span><span data-toggle="modal" data-target="#renameModal" class="inline-icon pull-right fa fa-pencil" aria-label="Rename" title="Rename"></span>' : ''}
         </td>
       </tr></table>
