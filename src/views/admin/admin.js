@@ -681,8 +681,8 @@ export function mount(container) {
               </div>
             </div>
             <div class="modal-footer">
-              <button class="btn btn-default" id="edit-modal-close2">Close</button>
               <button class="btn btn-primary" id="edit-modal-save" data-idle-label="Save" data-busy-label="Saving">Save</button>
+              <button class="btn btn-default" id="edit-modal-close2">Close</button>
             </div>
           </div>
         </div>
