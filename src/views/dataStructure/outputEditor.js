@@ -1,5 +1,8 @@
 import { escapeHtml } from '../../core/html.js';
 
+const OUTPUT_COLUMN_WIDTHS = ['4%', '35%', '25%', '13%', '13%', '10%'];
+const outputColgroupHtml = () => `<colgroup>${OUTPUT_COLUMN_WIDTHS.map((w) => `<col style="width:${w};">`).join('')}</colgroup>`;
+
 function findByCellLink(list, cellLink) {
   return list.find((item) => item.CellLink === cellLink);
 }
@@ -7,13 +10,13 @@ function findByCellLink(list, cellLink) {
 function outputRowHtml(output, isRowShown) {
   const cellLink = output.CellLink;
   const readOnly = isRowShown(cellLink);
-  return `<tr>
-    <td style="border:none;background-color:white;min-width:20px;max-width:20px;"><a href="" class="text-danger" data-exclude-output="${escapeHtml(cellLink)}"><i class="fa fa-minus-square"></i></a></td>
-    <td style="min-width:400px;max-width:400px;"><div class="no-wrap" title="${escapeHtml(cellLink)}" data-toggle="tooltip">${escapeHtml(cellLink)}</div>${readOnly ? '' : `<input type="text" style="width:100%;" class="form form-control" data-output-key="${escapeHtml(cellLink)}" value="${escapeHtml(output.Key)}">`}</td>
-    <td style="min-width:300px;max-width:300px;">${readOnly ? `<p>${escapeHtml(output.Display)}</p>` : `<input type="text" style="width:100%;" class="form form-control" data-output-display="${escapeHtml(cellLink)}" value="${escapeHtml(output.Display)}">`}</td>
-    <td style="min-width:150px;max-width:150px;">${readOnly ? `<p>${escapeHtml(output.Units)}</p>` : `<input type="text" style="width:100%;" class="form form-control" data-output-units="${escapeHtml(cellLink)}" value="${escapeHtml(output.Units)}">`}</td>
-    <td align="center" style="min-width:150px;max-width:150px;"><input type="checkbox" data-output-postprocessing="${escapeHtml(cellLink)}" ${output.UsePostProcessingOutputs ? 'checked' : ''} ${readOnly ? 'disabled' : ''}></td>
-    <td style="min-width:70px;max-width:70px;">${readOnly ? `<button type="button" class="btn btn-success" data-row-edit="${escapeHtml(cellLink)}"><span class="glyphicon glyphicon-pencil"></span></button>` : `<button type="button" class="btn btn-danger" data-row-done="${escapeHtml(cellLink)}"><span class="glyphicon glyphicon-ok"></span></button>`}</td>
+  return `<tr class="${readOnly ? '' : 'ds-row-editing'}">
+    <td style="border:none;background-color:white;"><a href="" class="text-danger" data-exclude-output="${escapeHtml(cellLink)}"><i class="fa fa-minus-square"></i></a></td>
+    <td><div class="no-wrap" title="${escapeHtml(cellLink)}" data-toggle="tooltip">${escapeHtml(cellLink)}</div>${readOnly ? '' : `<label class="ds-key-label" for="ds-output-key-${escapeHtml(cellLink)}">Key</label><input id="ds-output-key-${escapeHtml(cellLink)}" type="text" style="width:100%;" class="form form-control" data-output-key="${escapeHtml(cellLink)}" value="${escapeHtml(output.Key)}">`}</td>
+    <td>${readOnly ? `<p>${escapeHtml(output.Display)}</p>` : `<input type="text" style="width:100%;" class="form form-control" data-output-display="${escapeHtml(cellLink)}" value="${escapeHtml(output.Display)}">`}</td>
+    <td>${readOnly ? `<p>${escapeHtml(output.Units)}</p>` : `<input type="text" style="width:100%;" class="form form-control" data-output-units="${escapeHtml(cellLink)}" value="${escapeHtml(output.Units)}">`}</td>
+    <td align="center"><input type="checkbox" data-output-postprocessing="${escapeHtml(cellLink)}" ${output.UsePostProcessingOutputs ? 'checked' : ''} ${readOnly ? 'disabled' : ''}></td>
+    <td>${readOnly ? `<button type="button" class="btn btn-success" data-row-edit="${escapeHtml(cellLink)}"><i class="fa fa-pencil" aria-hidden="true"></i></button>` : `<button type="button" class="btn btn-primary" data-row-done="${escapeHtml(cellLink)}"><i class="fa fa-check" aria-hidden="true"></i></button>`}</td>
   </tr>`;
 }
 
@@ -37,8 +40,9 @@ export function outputEditorHtml(state, isRowShown) {
     </div>
     <div class="selected">
       <div class="select-template-title"><h4>Outputs</h4></div>
-      <div class="selected-inputs" id="included-outputs"><table id="outputTable" class="table table-striped" style="min-width:1100px;max-width:1100px;">
-        <thead><tr><th style="border:none;min-width:20px;max-width:20px;"></th><th style="min-width:400px;max-width:400px;">Excel Range Name</th><th style="min-width:300px;max-width:300px;">Display</th><th style="min-width:150px;max-width:150px;">Units</th><th style="min-width:150px;max-width:150px;">Postprocessing</th><th style="min-width:70px;max-width:70px;">Edit</th></tr></thead>
+      <div class="selected-inputs" id="included-outputs"><table id="outputTable" class="ds-table" style="min-width:900px;">
+        ${outputColgroupHtml()}
+        <thead><tr><th style="border:none;"></th><th>Excel Range Name</th><th>Display</th><th>Units</th><th>Postprocessing</th><th>Edit</th></tr></thead>
         <tbody>${state.includedComponents.Outputs.map((output) => outputRowHtml(output, isRowShown)).join('')}</tbody>
       </table></div>
     </div>

@@ -1,6 +1,24 @@
 import { escapeHtml } from '../../core/html.js';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const INPUT_TYPES = ['DISTRIBUTION', 'SCALAR', 'TABLE', 'DATE'];
+
+/* A blank, hidden placeholder option is selected when the current value
+ * isn't one of the known choices, so the select shows blank instead of
+ * silently defaulting to the first option. */
+function selectOptionsHtml(options, currentValue) {
+  const blank = options.includes(currentValue) ? '' : '<option value="" selected hidden></option>';
+  return blank + options.map((option) => `<option value="${option}" ${currentValue === option ? 'selected' : ''}>${option}</option>`).join('');
+}
+
+/* Column widths shared between the fixed header-only table and the
+ * scrollable body-only table below it, so a <colgroup> keeps both aligned.
+ * (Not using position: sticky on <th> - Chromium can let scrolled rows
+ * paint over a per-cell sticky header inside a table, even with
+ * border-collapse: separate and a forced compositing layer; two tables
+ * sharing one column spec avoids that class of bug entirely.) */
+const INPUT_COLUMN_WIDTHS = ['3.5%', '15%', '13%', '7%', '20.5%', '8%', '13%', '9%', '7%', '4%'];
+const inputColgroupHtml = () => `<colgroup>${INPUT_COLUMN_WIDTHS.map((w) => `<col style="width:${w};">`).join('')}</colgroup>`;
 
 function findByCellLink(list, cellLink) {
   return list.find((item) => item.CellLink === cellLink);
@@ -56,21 +74,21 @@ function inputRowHtml(input, state, isRowShown) {
   const cellLink = input.CellLink;
   const editing = !isRowShown(cellLink) || !state.show2;
   const readOnly = !editing;
-  return `<tr>
-    <td style="min-width:20px;max-width:20px;border:none;background-color:white;"><a href="" class="text-danger" data-exclude-input="${escapeHtml(cellLink)}"><i class="fa fa-minus-square"></i></a></td>
-    <td style="min-width:150px;max-width:150px;"><div class="no-wrap" title="${escapeHtml(cellLink)}" data-toggle="tooltip">${escapeHtml(cellLink)}</div>${editing ? `<input type="text" style="width:100%;" class="form form-control" data-input-key="${escapeHtml(cellLink)}" value="${escapeHtml(input.Key)}">` : ''}</td>
-    <td style="min-width:100px;max-width:100px;">${readOnly ? `<p>${escapeHtml(input.Display)}</p>` : `<input type="text" style="width:100%;" class="form form-control" data-input-display="${escapeHtml(cellLink)}" value="${escapeHtml(input.Display)}">`}</td>
-    <td style="min-width:70px;max-width:70px;">${readOnly ? `<p>${escapeHtml(input.Units)}</p>` : `<input type="text" style="width:100%;" class="form form-control" data-input-units="${escapeHtml(cellLink)}" value="${escapeHtml(input.Units)}">`}</td>
-    <td style="min-width:260px;max-width:260px;">${readOnly ? `<p>${escapeHtml(input.Description)}</p>` : `<textarea class="form form-control" style="height:100px;" data-input-description="${escapeHtml(cellLink)}">${escapeHtml(input.Description)}</textarea>`}</td>
-    <td style="min-width:100px;max-width:100px;">${inputValueHtml(input, cellLink, editing)}</td>
-    <td style="min-width:150px;max-width:150px;">
+  return `<tr class="${editing ? 'ds-row-editing' : ''}">
+    <td style="border:none;background-color:white;"><a href="" class="text-danger" data-exclude-input="${escapeHtml(cellLink)}"><i class="fa fa-minus-square"></i></a></td>
+    <td><div class="no-wrap" title="${escapeHtml(cellLink)}" data-toggle="tooltip">${escapeHtml(cellLink)}</div>${editing ? `<label class="ds-key-label" for="ds-input-key-${escapeHtml(cellLink)}">Key</label><input id="ds-input-key-${escapeHtml(cellLink)}" type="text" style="width:100%;" class="form form-control" data-input-key="${escapeHtml(cellLink)}" value="${escapeHtml(input.Key)}">` : ''}</td>
+    <td>${readOnly ? `<p>${escapeHtml(input.Display)}</p>` : `<input type="text" style="width:100%;" class="form form-control" data-input-display="${escapeHtml(cellLink)}" value="${escapeHtml(input.Display)}">`}</td>
+    <td>${readOnly ? `<p>${escapeHtml(input.Units)}</p>` : `<input type="text" style="width:100%;" class="form form-control" data-input-units="${escapeHtml(cellLink)}" value="${escapeHtml(input.Units)}">`}</td>
+    <td>${readOnly ? `<p>${escapeHtml(input.Description)}</p>` : `<textarea class="form form-control" style="height:100px;" data-input-description="${escapeHtml(cellLink)}">${escapeHtml(input.Description)}</textarea>`}</td>
+    <td>${inputValueHtml(input, cellLink, editing)}</td>
+    <td>
       ${readOnly && input.Table === undefined ? `<p>${escapeHtml(input.Type)}</p>` : ''}
-      ${editing && input.Table === undefined ? `<select class="btn btn-default form-control" data-input-type="${escapeHtml(cellLink)}">${['DISTRIBUTION', 'SCALAR', 'TABLE', 'DATE'].map((type) => `<option value="${type}" ${input.Type === type ? 'selected' : ''}>${type}</option>`).join('')}</select>` : ''}
+      ${editing && input.Table === undefined ? `<select class="btn btn-default form-control" data-input-type="${escapeHtml(cellLink)}">${selectOptionsHtml(INPUT_TYPES, input.Type)}</select>` : ''}
       ${input.Table !== undefined ? `<p>${escapeHtml(input.Type)}</p>` : ''}
     </td>
-    <td style="min-width:100px;max-width:100px;">${readOnly ? `<p>${escapeHtml(input.Constraint)}</p>` : `<select class="btn btn-default form-control" data-input-constraint="${escapeHtml(cellLink)}">${['double', 'string', 'integer', 'date', 'year'].map((constraint) => `<option value="${constraint}" ${input.Constraint === constraint ? 'selected' : ''}>${constraint}</option>`).join('')}</select>`}</td>
-    <td align="center" style="min-width:70px;max-width:70px;"><input type="checkbox" data-input-inherited="${escapeHtml(cellLink)}" ${input.Inherited ? 'checked' : ''} ${readOnly ? 'disabled' : ''}></td>
-    <td style="min-width:70px;max-width:70px;">${readOnly ? `<button type="button" class="btn btn-success btn-sm" data-row-edit="${escapeHtml(cellLink)}"><span class="glyphicon glyphicon-pencil"></span></button>` : `<button type="button" class="btn btn-danger" data-row-done="${escapeHtml(cellLink)}"><span class="glyphicon glyphicon-ok"></span></button>`}</td>
+    <td>${readOnly ? `<p>${escapeHtml(input.Constraint)}</p>` : `<select class="btn btn-default form-control" data-input-constraint="${escapeHtml(cellLink)}">${['double', 'string', 'integer', 'date', 'year'].map((constraint) => `<option value="${constraint}" ${input.Constraint === constraint ? 'selected' : ''}>${constraint}</option>`).join('')}</select>`}</td>
+    <td align="center"><input type="checkbox" data-input-inherited="${escapeHtml(cellLink)}" ${input.Inherited ? 'checked' : ''} ${readOnly ? 'disabled' : ''}></td>
+    <td>${readOnly ? `<button type="button" class="btn btn-success btn-sm" data-row-edit="${escapeHtml(cellLink)}"><i class="fa fa-pencil" aria-hidden="true"></i></button>` : `<button type="button" class="btn btn-primary" data-row-done="${escapeHtml(cellLink)}"><i class="fa fa-check" aria-hidden="true"></i></button>`}</td>
   </tr>`;
 }
 
@@ -87,8 +105,9 @@ export function inputEditorHtml(state, isRowShown) {
     </div>
     <div class="selected">
       <div class="select-template-title"><h4>Inputs</h4></div>
-      <div class="selected-inputs" id="included-inputs"><table id="inputTable" class="table table-striped" style="min-width:1100px;max-width:1100px;">
-        <thead><tr><th style="border:none;min-width:20px;max-width:20px;"></th><th style="min-width:150px;max-width:150px;">Excel Range Name</th><th style="min-width:100px;max-width:100px;">Display</th><th style="min-width:70px;max-width:70px;">Units</th><th style="min-width:260px;max-width:260px;">Description</th><th style="min-width:100px;max-width:100px;">Default</th><th style="min-width:150px;max-width:150px;">Type</th><th style="min-width:100px;max-width:100px;">Kind</th><th style="min-width:70px;max-width:70px;">Inherited</th><th style="min-width:70px;max-width:70px;">Edit</th></tr></thead>
+      <div class="selected-inputs" id="included-inputs"><table id="inputTable" class="ds-table" style="min-width:900px;">
+        ${inputColgroupHtml()}
+        <thead><tr><th style="border:none;"></th><th>Excel Range Name</th><th>Display</th><th>Units</th><th>Description</th><th>Default</th><th>Type</th><th>Kind</th><th>Inherited</th><th>Edit</th></tr></thead>
         <tbody>${state.includedComponents.Inputs.map((input) => inputRowHtml(input, state, isRowShown)).join('')}</tbody>
       </table></div>
     </div>

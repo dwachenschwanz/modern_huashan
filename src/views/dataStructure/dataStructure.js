@@ -14,7 +14,6 @@ import { setNavigationGuard, clearNavigationGuard } from '../../core/router.js';
 import { appNavHtml } from '../../components/appNav.js';
 import { renderAlerts, wireAlertClose } from '../../components/alerts.js';
 import { commitMessageModalHtml, initCommitMessageModal, closeCommitMessageModal } from '../../components/commitMessageModal.js';
-import { applyFixedHeader } from '../../components/fixedHeader.js';
 import { initTooltips } from '../../components/uiInteractions.js';
 import { loadingOverlayHtml } from '../../components/loadingOverlay.js';
 import { handleLoadError, loadErrorHtml, loadErrorMessage, requireResponseResult } from '../../components/loadError.js';
@@ -351,6 +350,7 @@ export function mount(container, params) {
 
   function render() {
     if (disposed) return;
+    const selectedInputsScrollTop = container.querySelector('.selected-inputs')?.scrollTop;
     if (state.loadError) {
       container.innerHTML = `
 ${appNavHtml({ active: 'dataStructure', isAdmin: state.isAdmin, selectedTemplate: state.selectedTemplate })}
@@ -368,7 +368,7 @@ ${loadingOverlayHtml()}`;
     container.innerHTML = `
 ${appNavHtml({ active: 'dataStructure', isAdmin: state.isAdmin, selectedTemplate: state.selectedTemplate })}
 
-<div class="select-template no-padding">
+<div class="select-template no-padding data-structure-view">
   <div class="animated fadeIn">
     <ul class="nav nav-tabs">
       <li class="${state.activeTab === 'input' ? 'active' : ''}"><a href="" data-tab="input">Input</a></li>
@@ -384,14 +384,14 @@ ${appNavHtml({ active: 'dataStructure', isAdmin: state.isAdmin, selectedTemplate
 </div>
 
 <div class="col-sm-12 text-center align-to-bottom">
-  <a href="#/selectTemplate" class="btn btn-primary pull-left" role="button"><span class="glyphicon glyphicon-chevron-left"></span> Previous: Select Template</a>
-  <a href="#/appstructure/${encodeURIComponent(state.selectedTemplate)}" class="btn btn-primary pull-right" role="button">Next: App Structure <span class="glyphicon glyphicon-chevron-right"></span></a>
+  <a href="#/selectTemplate" class="btn btn-primary pull-left" role="button"><i class="fa fa-chevron-left" aria-hidden="true"></i> Previous: Select Template</a>
+  <a href="#/appstructure/${encodeURIComponent(state.selectedTemplate)}" class="btn btn-primary pull-right" role="button">Next: App Structure <i class="fa fa-chevron-right" aria-hidden="true"></i></a>
 
   ${state.show2
     ? `<button type="button" class="btn btn-success" id="ds-edit-toggle">Edit</button>`
-    : `<button type="button" class="btn btn-danger" id="ds-edit-toggle"><span class="glyphicon glyphicon-ok"></span></button>`}
+    : `<button type="button" class="btn btn-primary" id="ds-edit-toggle"><i class="fa fa-check" aria-hidden="true"></i></button>`}
 
-  <button class="btn btn-danger" style="width:60px;" id="ds-save-open-btn" data-toggle="modal" data-target="#commitMessageModal" ${isUnchanged() ? 'disabled' : ''}>
+  <button class="btn btn-primary" style="width:60px;" id="ds-save-open-btn" data-toggle="modal" data-target="#commitMessageModal" ${isUnchanged() ? 'disabled' : ''}>
     <i class="fa fa-spinner fa-spin fa-lg" ${state.saveComplete ? 'hidden' : ''}></i><span ${state.saveComplete ? '' : 'hidden'}>save</span>
   </button>
 
@@ -402,10 +402,8 @@ ${commitMessageModalHtml()}`;
 
     wireEvents();
     initTooltips(container);
-    const inputTable = container.querySelector('#inputTable');
-    if (inputTable) applyFixedHeader(inputTable);
-    const outputTable = container.querySelector('#outputTable');
-    if (outputTable) applyFixedHeader(outputTable);
+    const selectedInputsEl = container.querySelector('.selected-inputs');
+    if (selectedInputsEl && selectedInputsScrollTop) selectedInputsEl.scrollTop = selectedInputsScrollTop;
     initCommitMessageModal(container, saveWithCommit);
     wireAlertClose(container.querySelector('#ds-alerts'), state.alerts, render);
   }

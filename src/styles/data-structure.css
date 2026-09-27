@@ -1,79 +1,143 @@
-.choose-from{
-    width:20%;
-    position: absolute;
+/* Fill the viewport height not used by the nav bar, tab strip, and the
+ * bottom Previous/Next/Edit/Save bar, then hand that space down through the
+ * tab/column chain to `.selected-inputs`, the one element that actually
+ * scrolls. Mirrors the same calc(100vh - N) + flex + min-height:0 pattern
+ * admin.css uses for `.admin-templates`/`.admin-table-scroll`. The compound
+ * selector (two classes) beats select-template.css's single-class
+ * `.select-template{height:690px}` regardless of import order, since this
+ * element also carries that class for its padding. */
+.select-template.data-structure-view {
+    height: calc(100vh - 210px);
+    min-height: 0;
+    overflow: visible;
+    display: flex;
+    flex-direction: column;
 }
 
-.select-input{
-    height:640px;
-    width:100%;
-    overflow: auto;
-    position: relative;
+.data-structure-view .animated.fadeIn {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
+
+.data-structure-view .tab-content {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
+
+.select-input {
+    width: 100%;
+    display: flex;
+    align-items: flex-start;
+    flex: 1;
+    min-height: 0;
+    gap: 24px;
     padding-right: 15px;
     padding-left: 15px;
 }
 
-.selected{
-    position: absolute;
-    left:22%;
-    width:77%;
+.choose-from {
+    width: 20%;
+    flex: 0 0 20%;
 }
-.list-of-templates{
-    height:420px;
+
+.selected {
+    flex: 1;
+    min-width: 0;
+    align-self: stretch;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.list-of-templates {
+    max-height: 420px;
     overflow: auto;
 }
 
 .select-template-title{
     height:45px;
     padding-top: 9px;
-}
-
-.textarea-json{
-    float:left;
-    padding-right: 20px;
-    white-space: nowrap;
+    flex: none;
 }
 
 .selected-inputs{
-    height:570px;
-    padding-top:9px;
+    padding-top:0;
+    margin-top: 8px;
     width:100%;
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
 }
 
-.pager .save > a,
-.pager .save > span {
-  background-color: #d9534f;
-  color:white;
+/* Mirrors admin.css's `.astro-table`/`.admin-table-scroll` pattern exactly:
+ * one table (not the earlier two-table split, which fixed a vertical-scroll
+ * paint bug but broke horizontal scroll sync between the two tables) with a
+ * plain position: sticky header inside a single overflow: auto container.
+ * Admin's table has no such bug even with many rows scrolled up and down,
+ * so the earlier "sticky breaks under border-collapse" diagnosis was wrong -
+ * something specific to the two-table setup was the actual problem. */
+.ds-table {
+    border-collapse: collapse;
 }
 
-.pager .save > a:hover,
-.pager .save > a:focus {
-  color: #a94442;
-  background-color: #ebcccc;
+.ds-table th {
+    background: #f5f5f5;
+    padding: 10px;
+    border-bottom: 2px solid #dee2e6;
+    position: sticky;
+    top: 0;
+    z-index: 2;
 }
 
-td{
+.ds-table td {
+    padding: 10px;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.ds-table tbody tr:nth-child(even) {
+    background: #f8f9fa;
+}
+
+.ds-key-label {
+    display: block;
+    margin-top: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.data-structure-view tr.ds-row-editing > td {
+    background: #fdf3f2 !important;
+}
+
+.data-structure-view td{
     height:70px !important;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-textarea{
+.data-structure-view textarea{
     width:100%;
     height:100%;
 }
 
-table{
+.data-structure-view table{
     width:100%;
     table-layout: fixed;
 }
-table,th,td{
+.data-structure-view table,
+.data-structure-view th,
+.data-structure-view td{
     text-align: center;
 }
 
-td.vert-align{
-    vertical-align: middle;
-}
-th{
+.data-structure-view th{
     overflow:hidden;
 }
 
@@ -83,17 +147,8 @@ th{
     overflow: hidden;
 }
 
-html, body{
-	height:100%;
-}
-
 .table-left{
     float: right;
-}
-
-.right-image{
-    width:30%;
-    float:left;
 }
 
 .selectPTI td {
@@ -107,4 +162,16 @@ html, body{
     background: transparent;
     border: 0;
     padding: 0;
+}
+
+/* The Default/Type/Kind columns' input and select controls left-align
+ * their own text inside their padding by default, so even though the
+ * control's box is centered under its header, the visible text inside it
+ * reads shifted left. text-align-last is what actually re-centers a
+ * <select>'s rendered value in Chromium. */
+#inputTable td:nth-child(6) input,
+#inputTable td:nth-child(7) select,
+#inputTable td:nth-child(8) select {
+    text-align: center;
+    text-align-last: center;
 }

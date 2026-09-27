@@ -8,12 +8,12 @@ function tableRowHtml(table, state, isRowShown) {
   const cellLink = table.CellLink;
   const editing = !isRowShown(cellLink) || !state.show2;
   const readOnly = !editing;
-  return `<tr class="${state.selectedCelllink === cellLink ? 'selectPTI' : ''}" data-select-pti="${escapeHtml(cellLink)}">
+  return `<tr class="${[state.selectedCelllink === cellLink ? 'selectPTI' : '', editing ? 'ds-row-editing' : ''].filter(Boolean).join(' ')}" data-select-pti="${escapeHtml(cellLink)}">
     <td><a href="" class="text-danger" data-exclude-pti="${escapeHtml(cellLink)}"><i class="fa fa-minus-square"></i></a></td>
-    <td><div class="no-wrap" title="${escapeHtml(cellLink)}" data-toggle="tooltip">${escapeHtml(cellLink)}</div>${editing ? `<input type="text" style="width:100%;" class="form form-control" data-pti-key="${escapeHtml(cellLink)}" value="${escapeHtml(table.Key)}">` : ''}</td>
+    <td><div class="no-wrap" title="${escapeHtml(cellLink)}" data-toggle="tooltip">${escapeHtml(cellLink)}</div>${editing ? `<label class="ds-key-label" for="ds-pti-key-${escapeHtml(cellLink)}">Key</label><input id="ds-pti-key-${escapeHtml(cellLink)}" type="text" style="width:100%;" class="form form-control" data-pti-key="${escapeHtml(cellLink)}" value="${escapeHtml(table.Key)}">` : ''}</td>
     <td>${readOnly ? `<p>${escapeHtml(table.Display)}</p>` : `<input type="text" style="width:100%;" class="form form-control" data-pti-display="${escapeHtml(cellLink)}" value="${escapeHtml(table.Display)}">`}</td>
     <td align="center"><input type="checkbox" data-pti-inherited="${escapeHtml(cellLink)}" ${table.Inherited ? 'checked' : ''} ${readOnly ? 'disabled' : ''}></td>
-    <td>${readOnly ? `<button type="button" class="btn btn-success btn-sm" data-row-edit="${escapeHtml(cellLink)}"><span class="glyphicon glyphicon-pencil"></span></button>` : `<button type="button" class="btn btn-danger" data-row-done="${escapeHtml(cellLink)}"><span class="glyphicon glyphicon-ok"></span></button>`}</td>
+    <td>${readOnly ? `<button type="button" class="btn btn-success btn-sm" data-row-edit="${escapeHtml(cellLink)}"><i class="fa fa-pencil" aria-hidden="true"></i></button>` : `<button type="button" class="btn btn-primary" data-row-done="${escapeHtml(cellLink)}"><i class="fa fa-check" aria-hidden="true"></i></button>`}</td>
   </tr>`;
 }
 
