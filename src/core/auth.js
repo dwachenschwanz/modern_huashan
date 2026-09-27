@@ -15,14 +15,12 @@ window.addEventListener('beforeunload', () => {
 });
 
 async function autoAuth() {
-  console.log('Auto auth!');
   try {
     const res = await fetch(`${DOMAIN}/${ENDPOINT}/framework/login/b`, {
       method: 'POST',
       headers: { Authorization: 'jwttoken ' + (localStorage.getItem(TOKEN_KEY) || '') },
     });
     const data = await res.json();
-    console.log('Auto auth success!', data);
     if (data && data.token) {
       localStorage.setItem(TOKEN_KEY, data.token);
     } else {
@@ -46,8 +44,5 @@ function startAutoAuth() {
 }
 
 export const autoAuthService = {
-  // NOTE: the legacy app.ts left this call commented out ("//startAutoAuth();"),
-  // so the periodic re-auth interval never actually ran in production. Kept
-  // inert here to match existing behavior; call startAutoAuth() above to enable it.
-  startAutoAuth() {},
+  startAutoAuth,
 };
