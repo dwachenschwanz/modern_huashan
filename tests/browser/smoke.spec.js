@@ -762,6 +762,40 @@ test('left-column action buttons remain above the fixed footer', async ({ page }
   assertNoPageErrors();
 });
 
+test('search fields accept continuous typing and can be cleared', async ({ page }) => {
+  const assertNoPageErrors = failOnPageErrors(page);
+
+  /* These views re-render their whole container on every keystroke, so a
+   * search field that is not restored afterwards takes one character and
+   * then drops focus. */
+  const fields = [
+    { route: `/datastructure/${TEMPLATE}`, id: 'ds-search-input' },
+    { route: `/datastructure/${TEMPLATE}`, id: 'ds-search-output', tab: 'output' },
+    { route: `/datastructure/${TEMPLATE}`, id: 'ds-search-input-table', tab: 'table' },
+    { route: `/appstructure/${TEMPLATE}`, id: 'as-search' },
+    { route: `/portfoliostructure/${TEMPLATE}`, id: 'ps-search' },
+    { route: '/selectTemplate', id: 'st-search' },
+    { route: '/admin', id: 'admin-search' },
+  ];
+
+  for (const field of fields) {
+    await page.goto(`/#${field.route}`);
+    if (field.tab) await page.locator(`[data-tab="${field.tab}"]`).click();
+
+    const input = page.locator(`[id="${field.id}"]`);
+    await input.click();
+    await page.keyboard.type('Alpha');
+
+    await expect(input).toHaveValue('Alpha');
+    await expect(input).toBeFocused();
+
+    await page.locator(`[data-clears="${field.id}"]`).click();
+    await expect(page.locator(`[id="${field.id}"]`)).toHaveValue('');
+  }
+
+  assertNoPageErrors();
+});
+
 test('sidebar and content panels stay side by side and on screen', async ({ page }) => {
   const assertNoPageErrors = failOnPageErrors(page);
   // Short viewport so the menu lists actually overflow their panels.

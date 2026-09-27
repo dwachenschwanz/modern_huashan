@@ -348,9 +348,38 @@ export function mount(container, params) {
 
   // ---- rendering ----
 
+  /* render() replaces the container's whole innerHTML, which destroys
+   * whatever the user was typing in. The search fields re-render on every
+   * keystroke, so without this you get one character and then lose focus. */
+  function captureFocus() {
+    const active = document.activeElement;
+    if (!active || !active.id || !container.contains(active)) return null;
+    let selection = null;
+    try {
+      selection = { start: active.selectionStart, end: active.selectionEnd };
+    } catch (error) {
+      selection = null;
+    }
+    return { id: active.id, selection };
+  }
+
+  function restoreFocus(focused) {
+    if (!focused) return;
+    const element = container.querySelector(`[id="${focused.id}"]`);
+    if (!element) return;
+    element.focus();
+    if (!focused.selection || focused.selection.start === null) return;
+    try {
+      element.setSelectionRange(focused.selection.start, focused.selection.end);
+    } catch (error) {
+      // Not every input type supports a selection range; focus is enough.
+    }
+  }
+
   function render() {
     if (disposed) return;
     const selectedInputsScrollTop = container.querySelector('.selected-inputs')?.scrollTop;
+    const focused = captureFocus();
     if (state.loadError) {
       container.innerHTML = `
 ${appNavHtml({ active: 'dataStructure', isAdmin: state.isAdmin, selectedTemplate: state.selectedTemplate })}
@@ -404,6 +433,7 @@ ${commitMessageModalHtml()}`;
     initTooltips(container);
     const selectedInputsEl = container.querySelector('.selected-inputs');
     if (selectedInputsEl && selectedInputsScrollTop) selectedInputsEl.scrollTop = selectedInputsScrollTop;
+    restoreFocus(focused);
     initCommitMessageModal(container, saveWithCommit);
     wireAlertClose(container.querySelector('#ds-alerts'), state.alerts, render);
   }
