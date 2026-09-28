@@ -134,9 +134,26 @@ export function renderBucketChartEditor({ menu, state, commandHeaderHtml, option
   }).join('')}<button class="btn btn-success as-add-row" id="as-bucket-set-add"><span class="fa fa-plus"></span></button>`;
 }
 
+/* The sets come first: they are what this editor is for, and they used to
+ * sit under a full-width table list that pushed them off the bottom of the
+ * page. The table picker and its preview follow, so a preview appears below
+ * the inputs it belongs to. */
 export function renderWaterfallEditor({ menu, state, commandHeaderHtml, previewHtml }) {
   const sets = menu.Parameters.Sets || [];
-  return `${commandHeaderHtml(menu)}<div class="row"><div class="col-sm-3"><div class="list-group">${state.potentialTables.map((table, index) => `<a href="" class="list-group-item ${table === state.selectedPotentialTable ? 'active' : ''}" data-waterfall-table="${index}">${escapeHtml(table.CellLink)}</a>`).join('')}</div></div><div class="col-sm-9">${previewHtml(state.selectedPotentialTable)}</div></div><div class="col-sm-12">${sets.map((set, index) => `<div class="well"><div class="row table-padding"><div class="col-sm-2"><b>OutputKey</b></div><div class="col-sm-3"><input class="form-control" data-waterfall-field="OutputKey:${index}" value="${escapeHtml(set.OutputKey || '')}"></div><div class="col-sm-2"><b>Units</b></div><div class="col-sm-3"><input class="form-control" data-waterfall-field="Units:${index}" value="${escapeHtml(set.Units || '')}"></div></div><div class="row table-padding"><div class="col-sm-2"><b>Name</b></div><div class="col-sm-3"><input class="form-control" data-waterfall-field="name:${index}" value="${escapeHtml(set.name || '')}"></div><div class="col-sm-2"><b>Y Title</b></div><div class="col-sm-3"><input class="form-control" data-waterfall-field="yTitle:${index}" value="${escapeHtml(set.yTitle || '')}"></div><div class="col-sm-1"><button class="btn btn-danger" data-waterfall-delete="${index}"><span class="fa fa-trash"></span></button></div></div></div>`).join('')}<button class="btn btn-success as-add-row" id="as-waterfall-add"><span class="fa fa-plus"></span></button></div>`;
+  const selectedCellLink = state.selectedPotentialTable ? state.selectedPotentialTable.CellLink : null;
+  return `<div class="as-split-editor">
+    ${commandHeaderHtml(menu)}
+    <div class="as-waterfall-sets">
+      ${sets.map((set, index) => `<div class="well"><div class="row table-padding"><div class="col-sm-2"><b>OutputKey</b></div><div class="col-sm-3"><input class="form-control" data-waterfall-field="OutputKey:${index}" value="${escapeHtml(set.OutputKey || '')}"></div><div class="col-sm-2"><b>Units</b></div><div class="col-sm-3"><input class="form-control" data-waterfall-field="Units:${index}" value="${escapeHtml(set.Units || '')}"></div></div><div class="row table-padding"><div class="col-sm-2"><b>Name</b></div><div class="col-sm-3"><input class="form-control" data-waterfall-field="name:${index}" value="${escapeHtml(set.name || '')}"></div><div class="col-sm-2"><b>Y Title</b></div><div class="col-sm-3"><input class="form-control" data-waterfall-field="yTitle:${index}" value="${escapeHtml(set.yTitle || '')}"></div><div class="col-sm-1"><button class="btn btn-danger" data-waterfall-delete="${index}"><span class="fa fa-trash"></span></button></div></div></div>`).join('')}
+      <button class="btn btn-success as-add-row" id="as-waterfall-add"><span class="fa fa-plus"></span></button>
+    </div>
+    <div class="row as-split-body">
+      <div class="col-sm-3 as-split-list"><div class="list-group">
+        ${state.potentialTables.map((table, index) => `<a href="" class="list-group-item ${table.CellLink === selectedCellLink ? 'active' : ''}" data-waterfall-table="${index}">${escapeHtml(table.CellLink)}</a>`).join('')}
+      </div></div>
+      <div class="col-sm-9 as-split-detail">${previewHtml(state.selectedPotentialTable)}</div>
+    </div>
+  </div>`;
 }
 
 function bindAll(root, selector, eventName, handler) {

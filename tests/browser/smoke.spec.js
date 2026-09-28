@@ -77,6 +77,18 @@ const appStructure = {
       },
     },
     {
+      /* Its cell link names a sheet this workbook no longer has, so only the
+       * stored OutputKey can identify the table it refers to. */
+      ID: 'waterfall-legacy',
+      Display: 'Waterfall Legacy',
+      Command: 'WATERFALL',
+      Parameters: {
+        CellLink: 'OldSheet!Table',
+        OutputKey: 'Table',
+        Sets: [{ CellLink: 'OldSheet!Table', OutputKey: 'Table', Units: 'USD', name: 'Base', yTitle: 'Value' }],
+      },
+    },
+    {
       ID: 'image',
       Display: 'Image',
       Command: 'IMAGE',
@@ -1314,6 +1326,82 @@ test('App Structure editor lists scroll inside the page rather than past it', as
       expect(height, `${item}: list ${index} is still near the old 420px cap`).toBeGreaterThan(600);
     }
   }
+
+  assertNoPageErrors();
+});
+
+test('Waterfall puts its fields above the table picker and preview', async ({ page }) => {
+  const assertNoPageErrors = failOnPageErrors(page);
+  await page.setViewportSize({ width: 1280, height: 850 });
+  await page.goto(`/#/appstructure/${TEMPLATE}`);
+  await page.getByText('Waterfall', { exact: true }).first().click();
+  await expect(page.locator('[data-waterfall-field^="OutputKey:"]').first()).toBeVisible();
+
+  const read = () => page.evaluate(() => {
+    const sets = document.querySelector('.as-waterfall-sets');
+    const list = document.querySelector('.as-split-list');
+    const detail = document.querySelector('.as-split-detail');
+    const firstField = document.querySelector('[data-waterfall-field^="OutputKey:"]').getBoundingClientRect();
+    const setsRect = sets.getBoundingClientRect();
+    return {
+      setsBottom: setsRect.bottom,
+      setsHeight: setsRect.height,
+      setsScrolls: sets.scrollHeight > sets.clientHeight + 1,
+      firstFieldWhollyInside: firstField.top >= setsRect.top - 1 && firstField.bottom <= setsRect.bottom + 1,
+      listTop: list.getBoundingClientRect().top,
+      listBottom: list.getBoundingClientRect().bottom,
+      listScrolls: list.scrollHeight > list.clientHeight + 1,
+      detailTop: detail.getBoundingClientRect().top,
+      editorHeight: document.querySelector('.as-split-editor').getBoundingClientRect().height,
+      footerTop: document.querySelector('.align-to-bottom').getBoundingClientRect().top,
+      documentScrolls: document.documentElement.scrollHeight > document.documentElement.clientHeight,
+    };
+  });
+
+  const one = await read();
+  // Fields first, picker and preview under them.
+  expect(one.setsBottom).toBeLessThanOrEqual(one.listTop + 1);
+  expect(one.setsBottom).toBeLessThanOrEqual(one.detailTop + 1);
+  // A single set fits, so nothing is clipped or scrolled away.
+  expect(one.setsScrolls, 'a single set should not need to scroll').toBe(false);
+  expect(one.firstFieldWhollyInside, 'the first field row is clipped').toBe(true);
+  // The long table list is what used to run off the bottom.
+  expect(one.listBottom).toBeLessThanOrEqual(one.footerTop + 1);
+  expect(one.documentScrolls, 'the editor pushed the page into scroll').toBe(false);
+  expect(one.listScrolls, 'the table list should scroll inside its pane').toBe(true);
+
+  /* With enough sets to outgrow the editor the fields scroll among
+   * themselves rather than pushing the picker off the page again. */
+  for (let i = 0; i < 5; i += 1) await page.locator('#as-waterfall-add').click();
+  await expect(page.locator('[data-waterfall-field^="OutputKey:"]')).toHaveCount(6);
+
+  const many = await read();
+  expect(many.setsScrolls, 'six sets should scroll inside their pane').toBe(true);
+  expect(many.setsHeight).toBeLessThanOrEqual(many.editorHeight * 0.55);
+  expect(many.firstFieldWhollyInside, 'the first field row is clipped').toBe(true);
+  expect(many.setsBottom).toBeLessThanOrEqual(many.listTop + 1);
+  expect(many.listBottom).toBeLessThanOrEqual(many.footerTop + 1);
+  expect(many.documentScrolls, 'six sets pushed the page into scroll').toBe(false);
+
+  assertNoPageErrors();
+});
+
+test('Waterfall highlights the table its OutputKey names', async ({ page }) => {
+  const assertNoPageErrors = failOnPageErrors(page);
+  await page.goto(`/#/appstructure/${TEMPLATE}`);
+
+  // Cell link and output key agree: the plain case.
+  await page.getByText('Waterfall', { exact: true }).first().click();
+  await expect(page.locator('.as-split-list .list-group-item.active')).toHaveText('Sheet1!Table');
+
+  /* Cell link names a sheet that no longer exists, so matching on it alone
+   * highlighted nothing. The stored OutputKey still names the table. */
+  await page.getByText('Waterfall Legacy', { exact: true }).first().click();
+  await expect(page.locator('[data-waterfall-field="OutputKey:0"]')).toHaveValue('Table');
+  await expect(page.locator('.as-split-list .list-group-item.active')).toHaveText('Sheet1!Table');
+
+  // And the preview follows the same table rather than going blank.
+  await expect(page.locator('.as-split-detail')).toContainText('Smoke table');
 
   assertNoPageErrors();
 });

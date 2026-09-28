@@ -295,10 +295,7 @@ export function mount(container, params) {
       state.maxPrecision = !opts || opts.length === 0 ? null : opts[opts.length - 1];
     } else if (menu.Command === 'WATERFALL') {
       state.waterfall = menu.Parameters.Sets;
-      const index = state.waterfall.length - 1;
-      state.selectedPotentialTable = index >= 0
-        ? (state.potentialTables || []).find((table) => table.CellLink === state.waterfall[index].CellLink)
-        : undefined;
+      state.selectedPotentialTable = findPotentialTableForSet(state.waterfall[state.waterfall.length - 1]);
     }
     if (menu.Command === 'COMPARE_VALUE') {
       if (menu.Parameters.Min === undefined && menu.Parameters.min !== undefined) menu.Parameters.Min = menu.Parameters.min;
@@ -897,10 +894,28 @@ export function mount(container, params) {
 
   // ---- WATERFALL ----
 
+  /* A potential table's output key is the part of its cell link after the
+   * sheet name, which is exactly how insertParamsToWaterfallTables() derives
+   * the key it stores. */
+  function outputKeyOfCellLink(cellLink) {
+    return typeof cellLink === 'string' ? cellLink.slice(cellLink.indexOf('!') + 1) : '';
+  }
+
+  /* Match on the stored OutputKey as well as the cell link, so a set whose
+   * cell link names a sheet this workbook no longer uses - or that was saved
+   * without one - still highlights its table. Compared by value rather than
+   * by object identity, since getPotentialTables() replaces the array. */
+  function findPotentialTableForSet(set) {
+    if (!set) return undefined;
+    const tables = state.potentialTables || [];
+    return tables.find((table) => table.CellLink === set.CellLink)
+      || (set.OutputKey ? tables.find((table) => outputKeyOfCellLink(table.CellLink) === set.OutputKey) : undefined);
+  }
+
   function insertParamsToWaterfallTables(table) {
     const index = state.waterfall.length - 1;
     state.waterfall[index].CellLink = table.CellLink;
-    state.waterfall[index].OutputKey = table.CellLink.slice(table.CellLink.indexOf('!') + 1);
+    state.waterfall[index].OutputKey = outputKeyOfCellLink(table.CellLink);
     state.selectedPotentialTable = table;
     state.selectedMenu.Parameters.CellLink = state.waterfall[0].CellLink;
     state.selectedMenu.Parameters.OutputKey = state.waterfall[0].OutputKey;
@@ -915,8 +930,7 @@ export function mount(container, params) {
     if (state.waterfall.length === 1) {
       state.selectedPotentialTable = undefined;
     } else if (state.waterfall.length === index + 1) {
-      const cellLink = state.waterfall[index - 1].CellLink;
-      state.selectedPotentialTable = (state.potentialTables || []).find((table) => table.CellLink === cellLink);
+      state.selectedPotentialTable = findPotentialTableForSet(state.waterfall[index - 1]);
     }
     state.waterfall.splice(index, 1);
   }
