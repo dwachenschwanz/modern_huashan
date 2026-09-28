@@ -19,6 +19,15 @@
     padding-left: 10px;
 }
 
+/* The button that appends a row sits as a bare sibling after the rows it
+ * adds to. Those rows space themselves with .table-padding's padding-top,
+ * which a button cannot use - padding would inflate the control rather than
+ * separate it - so without this it ends up flush against the delete button
+ * of the last row, reading as overlapping it. */
+.as-add-row {
+    margin-top: var(--sp-5);
+}
+
 .no-padding{
     padding:0px !important;
 }

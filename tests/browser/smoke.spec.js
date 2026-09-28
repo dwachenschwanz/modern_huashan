@@ -1318,6 +1318,47 @@ test('App Structure editor lists scroll inside the page rather than past it', as
   assertNoPageErrors();
 });
 
+test('App Structure add-row buttons clear the row above them', async ({ page }) => {
+  const assertNoPageErrors = failOnPageErrors(page);
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto(`/#/appstructure/${TEMPLATE}`);
+
+  /* These buttons are bare siblings of the rows they append to. The rows
+   * space themselves with .table-padding's padding-top, which a button
+   * cannot use, so the button used to sit flush against the delete control
+   * of the last row - touching it, which reads as overlapping. */
+  const gapAbove = (selector) => page.locator(selector).evaluate((button) => {
+    const previous = button.previousElementSibling;
+    const buttonRect = button.getBoundingClientRect();
+    const previousRect = previous.getBoundingClientRect();
+    return {
+      gap: buttonRect.top - previousRect.bottom,
+      overlaps: buttonRect.top < previousRect.bottom,
+    };
+  });
+
+  const editors = [
+    { name: 'tornado post processing', menu: 'Tornado', tab: '[data-tornado-tab="post"]', add: '#as-sendback-add', rows: '[data-sendback-delete]' },
+    { name: 'metalog failure branch', menu: 'Metalog', tab: '[data-metalog-tab="failure"]', add: '#as-failure-add', rows: '[data-failure-delete]' },
+    { name: 'waterfall', menu: 'Waterfall', add: '#as-waterfall-add', rows: '[data-waterfall-delete]' },
+  ];
+
+  for (const editor of editors) {
+    await page.getByText(editor.menu, { exact: true }).first().click();
+    if (editor.tab) await page.locator(editor.tab).click();
+
+    // A row above is the whole point - add one if the fixture starts empty.
+    if (await page.locator(editor.rows).count() === 0) await page.locator(editor.add).click();
+    await expect(page.locator(editor.rows).first()).toBeVisible();
+
+    const { gap, overlaps } = await gapAbove(editor.add);
+    expect(overlaps, `${editor.name}: add button overlaps the row above`).toBe(false);
+    expect(gap, `${editor.name}: add button is flush against the row above`).toBeGreaterThanOrEqual(12);
+  }
+
+  assertNoPageErrors();
+});
+
 test('App Structure image preview grows to the available height', async ({ page }) => {
   const assertNoPageErrors = failOnPageErrors(page);
 

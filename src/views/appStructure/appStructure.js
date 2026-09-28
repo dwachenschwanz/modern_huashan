@@ -1065,7 +1065,7 @@ export function mount(container, params) {
       <div class="row table-padding"><div class="col-sm-2"><b>Min</b></div><div class="col-sm-3"><input type="number" class="form-control" data-field="Parameters.Min" value="${p.Min ?? ''}"></div><div class="col-sm-2"><b>Max</b></div><div class="col-sm-3"><input type="number" class="form-control" data-field="Parameters.Max" value="${p.Max ?? ''}"></div></div>
       <div class="row table-padding"><div class="col-sm-3"><b>Key</b></div><div class="col-sm-3"><b>Unit</b></div><div class="col-sm-3"><b>Title</b></div></div>
       ${(p.Keys || []).map((key, i) => `<div class="row table-padding"><div class="col-sm-3"><select class="form-control" data-array-field="Keys:${i}">${optionHtml(state.outputs, key)}</select></div><div class="col-sm-3"><input class="form-control" data-array-field="Units:${i}" value="${escapeAttr(p.Units[i] || '')}"></div><div class="col-sm-3"><input class="form-control" data-array-field="Titles:${i}" value="${escapeAttr(p.Titles[i] || '')}"></div><div class="col-sm-1"><button class="btn btn-danger" data-cv-delete="${i}"><span class="fa fa-trash"></span></button></div></div>`).join('')}
-      <button class="btn btn-success" id="as-cv-add"><span class="fa fa-plus"></span></button>`;
+      <button class="btn btn-success as-add-row" id="as-cv-add"><span class="fa fa-plus"></span></button>`;
   }
 
   function editorHtml() {
