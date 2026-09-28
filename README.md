@@ -159,10 +159,16 @@ location /kirk/ {
 
 Adjust the upstream host and path for the target environment.
 
+Also copy the cache headers from the checked-in `nginx.conf`: `no-cache` on
+`index.html` (and the other unhashed files), and a long `immutable` lifetime
+on `/assets/`. Without them, browsers may keep a stale `index.html` after a
+deployment, and users would need a hard refresh to see the new version.
+
 ### Docker Image
 
 The checked-in multi-stage `Dockerfile` builds the Vite application with
-Node.js and serves `dist/` from Nginx:
+Node.js and serves `dist/` from Nginx, using the checked-in `nginx.conf`
+(SPA fallback to `index.html` plus the cache headers described above):
 
 ```bash
 docker build -t huashan-wizard .
@@ -201,10 +207,11 @@ current navigation menu exposes only project structure links.
 .
 |-- index.html                 Vite entry document
 |-- public/
-|   |-- images/                Static images
+|   |-- images/                Unreferenced legacy images
 |   `-- vendor/smartorg.js     SmartOrg browser API loaded as a global
 |-- src/
 |   |-- api/                   Kirk/CalcEngine API client
+|   |-- assets/                Favicon and images (hashed by the build)
 |   |-- components/            Shared UI and behavior
 |   |-- core/                  Router, session, configuration, and utilities
 |   |-- lib/                   Local third-party compatibility code
@@ -219,6 +226,7 @@ current navigation menu exposes only project structure links.
 |-- test/                      Node API-client tests
 |-- tests/browser/             Playwright workflow tests
 |-- Dockerfile                 Production frontend image
+|-- nginx.conf                 Image's Nginx config and cache headers
 |-- playwright.config.js       Browser-test server and Chromium configuration
 |-- vite.config.js             Development and preview proxy configuration
 `-- package.json               Dependencies and npm scripts
@@ -454,6 +462,12 @@ use consistent user-facing messages.
   a view's rules in that view's stylesheet rather than in `base.css`.
 - Scope new class names to the view that owns them. Generic names in shared
   stylesheets are the recurring source of cross-view layout breakage.
+- Put images and icons in `src/assets/` and reference them through an
+  `import` (for example `import iconUrl from '../assets/icon.png'`), or with a
+  `/src/assets/...` path in `index.html`. The build then puts a content hash
+  in the filename, so browsers fetch a changed file without a hard refresh.
+  Files in `public/` keep a fixed URL and are only rechecked, never
+  fingerprinted.
 - Treat `legacy/` as behavioral reference material, not active application
   code.
 
@@ -494,6 +508,15 @@ stylesheet, so a change made for one screen
 can collapse or push another off-screen while leaving its markup — and every
 text-based test — intact. Run `npm run test:browser`, which asserts panel
 geometry, and scope the rule to the view that needs it.
+
+### The Browser Shows an Old Version After a Deployment
+
+Check the response headers in the browser's developer tools. `index.html`
+must return `Cache-Control: no-cache`, and files under `/assets/` should
+return a long `immutable` lifetime. If the server sends neither, apply the
+rules from `nginx.conf`. In `npm run dev`, Vite already sends `no-cache`; an
+old favicon there is the browser's separate favicon cache, which clears
+when every tab for the site is closed and reopened.
 
 ### Login Works Until the Page Is Refreshed
 

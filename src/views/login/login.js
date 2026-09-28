@@ -5,6 +5,8 @@ import { session } from '../../core/session.js';
 import { autoAuthService } from '../../core/auth.js';
 import { getRouteSignal, navigate } from '../../core/router.js';
 import { versionNavItemHtml, initVersionModal } from '../../components/versionModal.js';
+import smartorgIconUrl from '../../assets/smartorg-icon.png';
+import smartorgWordmarkUrl from '../../assets/smartorg-wordmark.png';
 
 function template() {
   return `
@@ -12,8 +14,8 @@ function template() {
   <div class="login-card-wrap">
     <div class="login-card">
       <div class="login-logo">
-        <img src="/images/smartorg-icon.png" alt="" class="login-logo-icon">
-        <img src="/images/smartorg-wordmark.png" alt="SmartOrg" class="login-logo-word">
+        <img src="${smartorgIconUrl}" alt="" class="login-logo-icon">
+        <img src="${smartorgWordmarkUrl}" alt="SmartOrg" class="login-logo-word">
       </div>
 
       <div class="login-heading">
@@ -40,7 +42,7 @@ function template() {
 
     <div class="login-footer">
       <span class="login-footer-text">Powered by</span>
-      <img src="/images/smartorg-wordmark.png" alt="SmartOrg" class="login-footer-logo">
+      <img src="${smartorgWordmarkUrl}" alt="SmartOrg" class="login-footer-logo">
       <span class="login-footer-sep">&middot;</span>
       <ul class="nav login-about">${versionNavItemHtml()}</ul>
     </div>

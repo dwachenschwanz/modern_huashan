@@ -14,6 +14,7 @@
 import { escapeHtml } from '../core/html.js';
 import { getUserName } from '../core/user.js';
 import { logout } from '../core/session.js';
+import smartorgIconUrl from '../assets/smartorg-icon.png';
 
 /* `userName` defaults from the session rather than being threaded through
  * every view the way `isAdmin` is: it is the same for every screen, so a
@@ -30,7 +31,7 @@ export function appNavHtml({
   <div class="container-fluid">
     <div class="navbar-header">
       <a class="app-nav-brand navbar-brand" href="#/selectTemplate">
-        <img src="/images/smartorg-icon.png" alt="" class="app-nav-brand-icon">
+        <img src="${smartorgIconUrl}" alt="" class="app-nav-brand-icon">
         <span class="app-nav-brand-text">Huashan Wizard</span>
       </a>
     </div>

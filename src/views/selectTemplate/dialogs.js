@@ -1,6 +1,8 @@
 import { escapeHtml } from '../../core/html.js';
 import { renderAlerts, wireAlertClose } from '../../components/alerts.js';
 import { initTooltips } from '../../components/uiInteractions.js';
+import cubeUrl from '../../assets/cube.png';
+import complexCrystalUrl from '../../assets/complexCrystal.png';
 
 function updateListHtml(state) {
   if (state.loadingPortfolioNames) return '<div class="loader-small" aria-label="Loading associated portfolios"></div>';
@@ -158,7 +160,7 @@ export function uploadDialogHtml(state) {
     body = '<h4>Please choose an Excel file.</h4><p class="text-danger">No spaces or underscores allowed in file name.</p><input type="file" name="zFileToUpload" id="FileToUploadID">';
   } else if (state.ogreStage === 'SelectModel') {
     header = '<h2 class="modal-title" id="uploadModalLabel">Help the Smart Ogre out</h2>';
-    body = '<h4>What evaluation model is this?</h4><table class="table"><tr><td class="centeredText"><img src="images/cube.png" align="middle" id="st-ogre-product"><br>Product Portfolio (R&amp;D)</td><td align="center"><img src="images/complexCrystal.png" align="middle" id="st-ogre-platform"><br>Platform Product Portfolio (R&amp;D)</td></tr></table>';
+    body = `<h4>What evaluation model is this?</h4><table class="table"><tr><td class="centeredText"><img src="${cubeUrl}" align="middle" id="st-ogre-product"><br>Product Portfolio (R&amp;D)</td><td align="center"><img src="${complexCrystalUrl}" align="middle" id="st-ogre-platform"><br>Platform Product Portfolio (R&amp;D)</td></tr></table>`;
   } else {
     header = '<h2 class="modal-title" id="uploadModalLabel">Smart Ogre is doing its thing...</h2>';
     body = `<h4>Building ${escapeHtml(state.templateName)} with a ${escapeHtml(state.selectedOgreModel)} model</h4>${state.ogreBuildCompleted ? '<span>Build completed! Check your template.</span>' : '<i class="fa fa-circle-o-notch fa-spin"></i>'}`;
