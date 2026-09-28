@@ -248,6 +248,9 @@ function commandResult(command, url) {
       PotentialTableOutputs: [
         { CellLink: 'Sheet1!Table', HtmlPreview: '<table><tr><td>Smoke table</td></tr></table>' },
         { CellLink: 'Sheet1!Preview', PreviewURL: '/preview.svg' },
+        /* Enough entries that the editor's list is taller than any window,
+         * which is the case that used to run off the bottom of the page. */
+        ...Array.from({ length: 40 }, (unused, i) => ({ CellLink: `Sheet1!Filler${i}` })),
       ],
     },
     GetCharts: { Charts: [] },
@@ -1244,6 +1247,56 @@ test('Portfolio Structure edits command forms and saves their settings', async (
   assertNoPageErrors();
 });
 
+test('App Structure editor lists scroll inside the page rather than past it', async ({ page }) => {
+  const assertNoPageErrors = failOnPageErrors(page);
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto(`/#/appstructure/${TEMPLATE}`);
+
+  /* A list longer than the window used to take the whole editor with it: the
+   * form scrolled as one block, so the fields above the list scrolled away
+   * and the list itself had no end on screen. Each list should now be bounded
+   * by the space available and scroll inside it. */
+  for (const item of ['Portfolio Table', 'Inputs', 'Image']) {
+    await page.getByText(item, { exact: true }).first().click();
+    await expect(page.locator('.as-split-list').first()).toBeVisible();
+
+    const layout = await page.evaluate(() => ({
+      documentScrolls: document.documentElement.scrollHeight > document.documentElement.clientHeight,
+      footerTop: document.querySelector('.align-to-bottom').getBoundingClientRect().top,
+      viewport: document.documentElement.clientHeight,
+      lists: [...document.querySelectorAll('.as-split-list')].map((list) => ({
+        bottom: list.getBoundingClientRect().bottom,
+        height: list.getBoundingClientRect().height,
+        overflowY: getComputedStyle(list).overflowY,
+      })),
+    }));
+
+    expect(layout.documentScrolls, `${item}: the list pushed the page into scroll`).toBe(false);
+    expect(layout.lists.length, `${item}: no list found`).toBeGreaterThan(0);
+    for (const list of layout.lists) {
+      expect(list.height, `${item}: list collapsed`).toBeGreaterThan(100);
+      expect(list.bottom, `${item}: list runs past the footer`).toBeLessThanOrEqual(layout.footerTop + 1);
+      expect(list.bottom, `${item}: list runs off screen`).toBeLessThanOrEqual(layout.viewport + 1);
+      expect(['auto', 'scroll']).toContain(list.overflowY);
+    }
+  }
+
+  /* The long one is genuinely overflowing, so the assertions above are about
+   * a list that had something to clip rather than one that happened to fit.
+   * The field above it stays put while the list scrolls. */
+  await page.getByText('Portfolio Table', { exact: true }).first().click();
+  const outputKey = page.locator('[data-field="Parameters.OutputKey"]');
+  const before = await outputKey.boundingBox();
+  await page.locator('.as-split-list').evaluate((list) => { list.scrollTop = list.scrollHeight; });
+  const after = await outputKey.boundingBox();
+
+  expect(await page.locator('.as-split-list').evaluate((list) => list.scrollHeight > list.clientHeight + 1),
+    'the 40-entry list should have overflowed its pane').toBe(true);
+  expect(after.y, 'scrolling the list moved the form above it').toBeCloseTo(before.y, 0);
+
+  assertNoPageErrors();
+});
+
 test('App Structure image preview grows to the available height', async ({ page }) => {
   const assertNoPageErrors = failOnPageErrors(page);
 
@@ -1253,9 +1306,9 @@ test('App Structure image preview grows to the available height', async ({ page 
    * the pane has to scroll, and the page itself never scrolls. */
   const measure = async (height) => {
     await page.setViewportSize({ width: 1280, height });
-    await expect(page.locator('.as-image-preview img')).toBeVisible();
+    await expect(page.locator('.as-split-detail img')).toBeVisible();
     return page.evaluate(() => {
-      const pane = document.querySelector('.as-image-preview');
+      const pane = document.querySelector('.as-split-detail');
       const rect = pane.getBoundingClientRect();
       const image = pane.querySelector('img').getBoundingClientRect();
       return {
@@ -1301,7 +1354,7 @@ test('App Structure image preview grows to the available height', async ({ page 
   await page.locator('[data-image-type="CHART"]').check();
   const chart = await page.evaluate(() => ({
     container: document.querySelector('#appstructure-image-chart').getBoundingClientRect().height,
-    pane: document.querySelector('.as-image-preview').getBoundingClientRect().height,
+    pane: document.querySelector('.as-split-detail').getBoundingClientRect().height,
   }));
   expect(chart.container).toBeGreaterThan(500);
   expect(chart.container).toBeGreaterThan(chart.pane - 2);

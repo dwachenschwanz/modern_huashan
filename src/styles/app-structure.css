@@ -68,14 +68,6 @@
     min-height: 0;
 }
 
-/* Most editors are forms and should hug their content, so the canvas stays
- * content-sized by default. The image editor is the exception - it has a
- * preview that should use the whole column - and opts in with this class,
- * which hands it whatever height the title bar left over. */
-.editor-canvas-fill {
-    flex: 1 1 auto;
-    min-height: 0;
-}
 
 .structure-menu-panel {
     flex: 1 1 auto;
@@ -96,9 +88,17 @@
 }
 
 /* Replaces the inline background:#eee slab - Bootstrap's .well by another
- * name - that App and Portfolio Structure wrapped their editors in. */
+ * name - that App and Portfolio Structure wrapped their editors in.
+ *
+ * The canvas takes whatever height the title bar left and scrolls its own
+ * overflow. Without a height it grew to fit its editor instead, and since
+ * .structure-editor hides overflow, anything past the fold was painted
+ * nowhere and could not be reached - a long table list or a bucket chart
+ * with several sets simply lost its bottom. */
 .editor-canvas {
     overflow: auto;
+    flex: 1 1 auto;
+    min-height: 0;
     padding: var(--sp-5);
     background: var(--surface);
     border: 1px solid var(--border);
@@ -106,13 +106,17 @@
     box-shadow: var(--shadow-sm);
 }
 
-/* The IMAGE editor previously gave its preview a hard 500px box (and the
- * chart inside it 480px), which wasted most of a tall window and clipped on
- * a short one. Chain the height through instead: the editor fills the
- * canvas, the header rows take what they need, and the list/preview row
- * takes the rest, so the preview is as large as it can be without putting
- * the page into scroll. */
-.as-image-editor {
+/* Several editors are the same shape: pick something from a list on the
+ * left, see it on the right. Each used to size that pair with a hard pixel
+ * height - 500px for the image preview, 480px for its chart, 420px for the
+ * input screen's two lists - or with no height at all, which is what put a
+ * long table list past the bottom of the page.
+ *
+ * Chain the height through instead. The editor fills the canvas, its header
+ * rows take what they need, and the list/detail row takes the rest, so each
+ * pane is as large as the window allows and scrolls its own overflow rather
+ * than the page's. */
+.as-split-editor {
     display: flex;
     flex-direction: column;
     height: 100%;
@@ -122,31 +126,32 @@
 /* .row is a grid that start-aligns its columns, which leaves them content-
  * sized. This one row has a height to give away, so size its single track to
  * the container and let the columns stretch into it. */
-.as-image-body {
+.as-split-body {
     flex: 1 1 auto;
     min-height: 0;
     grid-template-rows: minmax(0, 1fr);
     align-items: stretch;
 }
 
-/* Both columns are stretched to the row by the grid, so they only need to
+/* The columns are stretched to the row by the grid, so they only need to
  * scroll their own overflow rather than push the row taller. */
-.as-image-list,
-.as-image-preview {
+.as-split-list,
+.as-split-detail {
     min-height: 0;
     overflow: auto;
 }
 
-/* The preview keeps its own proportions - a range preview is usually a
+/* A preview keeps its own proportions - a range preview is usually a
  * screenshot of a table, and scaling it to the pane would shrink the text.
  * The pane grows instead, so more of a tall preview is readable before it
  * has to be scrolled. */
-.as-image-preview img {
+.as-split-detail img {
     width: 100%;
     height: auto;
 }
 
-.as-image-preview > #appstructure-image-chart {
+/* A chart has no intrinsic size, so it does fill its pane. */
+.as-split-detail > #appstructure-image-chart {
     width: 100%;
     height: 100%;
 }

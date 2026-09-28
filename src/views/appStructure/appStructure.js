@@ -989,51 +989,61 @@ export function mount(container, params) {
 
   function tableInputFormHtml(menu) {
     const selected = findKey(state.tableInputs)(menu.Parameters.InputKey);
-    return `${commandHeaderHtml(menu)}
-      <div class="row">
-      <div class="col-sm-3 no-padding"><div class="list-of-templates"><div class="list-group">
+    return `<div class="as-split-editor">
+      ${commandHeaderHtml(menu)}
+      <div class="row as-split-body">
+      <div class="col-sm-3 no-padding as-split-list"><div class="list-of-templates"><div class="list-group">
         ${state.tableInputs.map((input) => `<a href="" class="list-group-item ${input.Key === menu.Parameters.InputKey ? 'active' : ''}" data-table-input="${escapeAttr(input.Key)}">${escapeHtml(input.Display)}</a>`).join('')}
       </div></div></div>
-      <div class="col-sm-9">
+      <div class="col-sm-9 as-split-detail">
         <div class="row"><div class="col-sm-2 text-right"><h4>Cell Link</h4></div><div class="col-sm-10"><h5>${escapeHtml(selected && selected.CellLink)}</h5></div></div>
         <div class="row"><div class="col-sm-2 text-right"><h4>Description</h4></div><div class="col-sm-10"><h5>${escapeHtml(selected && selected.Description)}</h5></div></div>
         ${previewHtml(selected && findCellLink(selected.CellLink))}
       </div>
-      </div>`;
+      </div>
+    </div>`;
   }
 
   function inputScreenFormHtml(menu) {
-    return `${commandHeaderHtml(menu)}
+    /* The headings sit in their own row: .as-split-body forces a single grid
+     * track, so leaving them in with the lists would pile all four into it. */
+    return `<div class="as-split-editor">
+      ${commandHeaderHtml(menu)}
       <div class="row">
       <div class="col-sm-6"><h4>Included Inputs</h4></div><div class="col-sm-6"><h4>Excluded Inputs</h4></div>
-      <div class="col-sm-6" style="height:420px;overflow:auto"><ul class="list-group">
+      </div>
+      <div class="row as-split-body">
+      <div class="col-sm-6 as-split-list"><ul class="list-group">
         ${(menu.Parameters.InputKeys || []).map((key) => `<li class="list-group-item"><div class="no-wrap"><a class="text-danger"><i class="fa fa-minus-square fa-lg" data-exclude-input="${escapeAttr(key)}"></i></a> ${escapeHtml((findKey(state.inputs)(key) || {}).Display || key)}</div></li>`).join('')}
       </ul></div>
-      <div class="col-sm-6" style="height:420px;overflow:auto"><ul class="list-group">
+      <div class="col-sm-6 as-split-list"><ul class="list-group">
         ${state.excludedInputs.filter(Boolean).map((input) => `<li class="list-group-item"><div class="no-wrap"><a class="text-success"><i class="fa fa-plus-square fa-lg" data-include-input="${escapeAttr(input.Key)}"></i></a> ${escapeHtml(input.Display)}</div></li>`).join('')}
       </ul></div>
-      </div>`;
+      </div>
+    </div>`;
   }
 
   function tableFormHtml(menu) {
-    return `${commandHeaderHtml(menu)}
+    return `<div class="as-split-editor">
+      ${commandHeaderHtml(menu)}
       <div class="row table-padding"><div class="col-sm-2 text-right"><b>OutputKey</b></div><div class="col-sm-3"><input class="form-control" data-field="Parameters.OutputKey" value="${escapeAttr(menu.Parameters.OutputKey || '')}"></div><div class="col-sm-2"><label><input type="checkbox" data-field="Parameters.Pnl" ${menu.Parameters.Pnl ? 'checked' : ''}> Pnl</label></div></div>
-      <div class="row">
-        <div class="col-sm-3"><div class="list-of-templates"><div class="list-group">${state.potentialTables.map((table, i) => `<a href="" class="list-group-item ${table === state.selectedPotentialTable ? 'active' : ''}" data-potential-table="${i}">${escapeHtml(table.CellLink)}</a>`).join('')}</div></div></div>
-        <div class="col-sm-9">${previewHtml(state.selectedPotentialTable)}</div>
-      </div>`;
+      <div class="row as-split-body">
+        <div class="col-sm-3 as-split-list"><div class="list-of-templates"><div class="list-group">${state.potentialTables.map((table, i) => `<a href="" class="list-group-item ${table === state.selectedPotentialTable ? 'active' : ''}" data-potential-table="${i}">${escapeHtml(table.CellLink)}</a>`).join('')}</div></div></div>
+        <div class="col-sm-9 as-split-detail">${previewHtml(state.selectedPotentialTable)}</div>
+      </div>
+    </div>`;
   }
 
   function imageFormHtml(menu) {
     const isChart = menu.Parameters.Type === 'CHART';
-    return `<div class="as-image-editor">
+    return `<div class="as-split-editor">
       ${commandHeaderHtml(menu)}
       <div class="row table-padding"><div class="col-sm-3"><label><input type="radio" name="image-type" data-image-type="RANGE" ${!isChart ? 'checked' : ''}> RANGE</label> &nbsp; <label><input type="radio" name="image-type" data-image-type="CHART" ${isChart ? 'checked' : ''}> CHART</label></div><div class="col-sm-3"><label><input type="checkbox" data-field="Parameters.FitToScreen" ${menu.Parameters.FitToScreen ? 'checked' : ''}> Fit To Screen</label></div></div>
-      <div class="row as-image-body">
-      <div class="col-sm-3 as-image-list"><div class="list-of-templates"><div class="list-group">
+      <div class="row as-split-body">
+      <div class="col-sm-3 as-split-list"><div class="list-of-templates"><div class="list-group">
         ${isChart ? state.charts.map((chart, i) => `<a href="" class="list-group-item ${chart === state.selectedImageChart ? 'active' : ''}" data-image-chart="${i}">${escapeHtml(chart.ChartName)}</a>`).join('') : state.potentialTables.map((table, i) => `<a href="" class="list-group-item ${table === state.selectedImageTable ? 'active' : ''}" data-image-table="${i}">${escapeHtml(table.CellLink)}</a>`).join('')}
       </div></div></div>
-      <div class="col-sm-9 as-image-preview">${isChart ? '<div id="appstructure-image-chart"></div>' : previewHtml(state.selectedImageTable)}</div>
+      <div class="col-sm-9 as-split-detail">${isChart ? '<div id="appstructure-image-chart"></div>' : previewHtml(state.selectedImageTable)}</div>
       </div>
     </div>`;
   }
@@ -1255,7 +1265,7 @@ export function mount(container, params) {
           <div class="select-template-title">
             <div class="col-sm-12"><h4 id="as-selected-title">${escapeHtml(selectedName)}</h4></div>
           </div>
-          <div class="selected-inputs editor-canvas${state.selectedMenu && state.selectedMenu.Command === 'IMAGE' ? ' editor-canvas-fill' : ''}">${editorHtml()}</div>
+          <div class="selected-inputs editor-canvas">${editorHtml()}</div>
         </div>
 
         <div class="col-sm-12 text-center align-to-bottom">
