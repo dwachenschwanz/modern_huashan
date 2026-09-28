@@ -19,6 +19,34 @@
     padding-left: 10px;
 }
 
+/* A post-processing row reads as a sentence - "Send <statistic> of <tornado
+ * output> Back To <field>" - so it is laid out as one, not on the twelve
+ * column grid the rest of the editors use. In a single grid column "Back To"
+ * needs 69px and gets 66 at a 1100px window, and spills over its neighbour;
+ * as a flex row each label is simply as wide as its own text. */
+.as-sendback-row {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3);
+}
+
+.as-sendback-row > .btn,
+.as-sendback-label {
+    flex: 0 0 auto;
+    white-space: nowrap;
+}
+
+/* The selects share what the labels leave. The statistic is one short word;
+ * the output and field names are long, so they get more of it. */
+.as-sendback-row > select {
+    flex: 3 1 0;
+    min-width: 0;
+}
+
+.as-sendback-row > select.as-sendback-stat {
+    flex: 2 1 0;
+}
+
 /* The button that appends a row sits as a bare sibling after the rows it
  * adds to. Those rows space themselves with .table-padding's padding-top,
  * which a button cannot use - padding would inflate the control rather than

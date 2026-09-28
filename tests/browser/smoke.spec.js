@@ -1318,6 +1318,73 @@ test('App Structure editor lists scroll inside the page rather than past it', as
   assertNoPageErrors();
 });
 
+test('Tornado post processing rows read as a labelled sentence', async ({ page }) => {
+  const assertNoPageErrors = failOnPageErrors(page);
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto(`/#/appstructure/${TEMPLATE}`);
+  await page.getByText('Tornado', { exact: true }).first().click();
+  await page.locator('[data-tornado-tab="post"]').click();
+  await page.locator('#as-sendback-add').click();
+  await expect(page.locator('[data-sendback-delete]')).toHaveCount(1);
+
+  const readRow = () => page.locator('.as-sendback-row').first().evaluate((element) => {
+    const measure = (node) => {
+      const rect = node.getBoundingClientRect();
+      return {
+        text: node.textContent.trim(),
+        left: rect.left,
+        right: rect.right,
+        width: rect.width,
+        middle: rect.top + rect.height / 2,
+        height: rect.height,
+        clipped: node.scrollWidth > Math.ceil(rect.width),
+      };
+    };
+    return {
+      labels: [...element.querySelectorAll('.as-sendback-label')].map(measure),
+      statistic: measure(element.querySelector('[data-sendback-to]')),
+      output: measure(element.querySelector('[data-sendback-tornado]')),
+      field: measure(element.querySelector('[data-sendback-field]')),
+      lineHeight: parseFloat(getComputedStyle(element).lineHeight) || 24,
+    };
+  });
+
+  /* Narrow windows are the interesting case: laid out on the twelve column
+   * grid, "Back To" wanted 69px and its single column gave it 66 at 1100,
+   * so it spilled over the control beside it. */
+  for (const width of [1600, 1280, 1100, 900]) {
+    await page.setViewportSize({ width, height: 900 });
+    const row = await readRow();
+    const at = `at ${width}px`;
+
+    expect(row.labels.map((label) => label.text), `${at}: labels`).toEqual(['Send', 'of', 'Back To']);
+
+    /* The labels have to introduce the right control, so assert the reading
+     * order rather than just their presence: Send <statistic> of <output>
+     * Back To <field>. */
+    const [send, of, backTo] = row.labels;
+    expect(send.right, `${at}: Send is not before the statistic`).toBeLessThanOrEqual(row.statistic.left);
+    expect(of.left, `${at}: of is not after the statistic`).toBeGreaterThanOrEqual(row.statistic.right - 1);
+    expect(of.right, `${at}: of is not before the output`).toBeLessThanOrEqual(row.output.left);
+    expect(backTo.left, `${at}: Back To is not after the output`).toBeGreaterThanOrEqual(row.output.right - 1);
+    expect(backTo.right, `${at}: Back To is not before the field`).toBeLessThanOrEqual(row.field.left);
+
+    for (const label of row.labels) {
+      expect(label.clipped, `${at}: ${label.text} does not fit its box`).toBe(false);
+      expect(label.height, `${at}: ${label.text} wrapped onto a second line`).toBeLessThan(row.lineHeight * 1.6);
+      // Centred on the controls, not stranded at the top of the row.
+      expect(Math.abs(label.middle - row.statistic.middle), `${at}: ${label.text} is not aligned with the row`).toBeLessThan(4);
+    }
+
+    // All three controls stay usable rather than one being squeezed out.
+    for (const control of [row.statistic, row.output, row.field]) {
+      expect(control.width, `${at}: a select collapsed`).toBeGreaterThan(60);
+    }
+  }
+
+  assertNoPageErrors();
+});
+
 test('App Structure add-row buttons clear the row above them', async ({ page }) => {
   const assertNoPageErrors = failOnPageErrors(page);
   await page.setViewportSize({ width: 1280, height: 900 });
