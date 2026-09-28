@@ -1330,7 +1330,7 @@ test('App Structure editor lists scroll inside the page rather than past it', as
   assertNoPageErrors();
 });
 
-test('Waterfall puts its fields above the table picker and preview', async ({ page }) => {
+test('Waterfall runs its table list full height beside the fields', async ({ page }) => {
   const assertNoPageErrors = failOnPageErrors(page);
   await page.setViewportSize({ width: 1280, height: 850 });
   await page.goto(`/#/appstructure/${TEMPLATE}`);
@@ -1338,49 +1338,52 @@ test('Waterfall puts its fields above the table picker and preview', async ({ pa
   await expect(page.locator('[data-waterfall-field^="OutputKey:"]').first()).toBeVisible();
 
   const read = () => page.evaluate(() => {
-    const sets = document.querySelector('.as-waterfall-sets');
+    const rect = (selector) => document.querySelector(selector).getBoundingClientRect();
     const list = document.querySelector('.as-split-list');
     const detail = document.querySelector('.as-split-detail');
-    const firstField = document.querySelector('[data-waterfall-field^="OutputKey:"]').getBoundingClientRect();
-    const setsRect = sets.getBoundingClientRect();
     return {
-      setsBottom: setsRect.bottom,
-      setsHeight: setsRect.height,
-      setsScrolls: sets.scrollHeight > sets.clientHeight + 1,
-      firstFieldWhollyInside: firstField.top >= setsRect.top - 1 && firstField.bottom <= setsRect.bottom + 1,
-      listTop: list.getBoundingClientRect().top,
-      listBottom: list.getBoundingClientRect().bottom,
+      body: rect('.as-split-body'),
+      list: rect('.as-split-list'),
       listScrolls: list.scrollHeight > list.clientHeight + 1,
-      detailTop: detail.getBoundingClientRect().top,
-      editorHeight: document.querySelector('.as-split-editor').getBoundingClientRect().height,
-      footerTop: document.querySelector('.align-to-bottom').getBoundingClientRect().top,
+      detail: rect('.as-split-detail'),
+      detailScrolls: detail.scrollHeight > detail.clientHeight + 1,
+      firstField: rect('[data-waterfall-field^="OutputKey:"]'),
+      lastField: [...document.querySelectorAll('[data-waterfall-field^="yTitle:"]')].pop().getBoundingClientRect(),
+      preview: rect('.as-waterfall-preview'),
+      footerTop: rect('.align-to-bottom').top,
       documentScrolls: document.documentElement.scrollHeight > document.documentElement.clientHeight,
     };
   });
 
   const one = await read();
-  // Fields first, picker and preview under them.
-  expect(one.setsBottom).toBeLessThanOrEqual(one.listTop + 1);
-  expect(one.setsBottom).toBeLessThanOrEqual(one.detailTop + 1);
-  // A single set fits, so nothing is clipped or scrolled away.
-  expect(one.setsScrolls, 'a single set should not need to scroll').toBe(false);
-  expect(one.firstFieldWhollyInside, 'the first field row is clipped').toBe(true);
-  // The long table list is what used to run off the bottom.
-  expect(one.listBottom).toBeLessThanOrEqual(one.footerTop + 1);
+
+  // The list starts at the top of the picker row and runs its full height.
+  expect(Math.abs(one.list.top - one.body.top), 'the list does not start at the top').toBeLessThan(2);
+  expect(one.list.height).toBeGreaterThan(one.body.height - 2);
+
+  // The fields sit to its right, not underneath it.
+  expect(one.list.right, 'the fields are not to the right of the list').toBeLessThanOrEqual(one.firstField.left);
+  expect(Math.abs(one.detail.top - one.body.top), 'the fields do not start at the top').toBeLessThan(2);
+
+  // The preview follows the fields.
+  expect(one.preview.top).toBeGreaterThanOrEqual(one.lastField.bottom);
+
+  // Nothing runs past the footer and the page itself does not scroll.
+  expect(one.list.bottom).toBeLessThanOrEqual(one.footerTop + 1);
+  expect(one.detail.bottom).toBeLessThanOrEqual(one.footerTop + 1);
   expect(one.documentScrolls, 'the editor pushed the page into scroll').toBe(false);
   expect(one.listScrolls, 'the table list should scroll inside its pane').toBe(true);
 
-  /* With enough sets to outgrow the editor the fields scroll among
-   * themselves rather than pushing the picker off the page again. */
+  /* Enough sets to outgrow the column: they scroll within it rather than
+   * growing the editor, and the list keeps its full height regardless. */
   for (let i = 0; i < 5; i += 1) await page.locator('#as-waterfall-add').click();
   await expect(page.locator('[data-waterfall-field^="OutputKey:"]')).toHaveCount(6);
 
   const many = await read();
-  expect(many.setsScrolls, 'six sets should scroll inside their pane').toBe(true);
-  expect(many.setsHeight).toBeLessThanOrEqual(many.editorHeight * 0.55);
-  expect(many.firstFieldWhollyInside, 'the first field row is clipped').toBe(true);
-  expect(many.setsBottom).toBeLessThanOrEqual(many.listTop + 1);
-  expect(many.listBottom).toBeLessThanOrEqual(many.footerTop + 1);
+  expect(many.detailScrolls, 'six sets should scroll inside the right column').toBe(true);
+  expect(Math.abs(many.list.top - many.body.top), 'the list stopped starting at the top').toBeLessThan(2);
+  expect(many.list.height).toBeGreaterThan(many.body.height - 2);
+  expect(many.list.bottom).toBeLessThanOrEqual(many.footerTop + 1);
   expect(many.documentScrolls, 'six sets pushed the page into scroll').toBe(false);
 
   assertNoPageErrors();

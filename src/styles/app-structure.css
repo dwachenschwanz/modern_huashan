@@ -19,17 +19,10 @@
     padding-left: 10px;
 }
 
-/* The waterfall sets take the height they need and no more, capped at half
- * the editor so the table picker below them always has somewhere to be. Past
- * that they scroll, rather than growing the editor until the picker is off
- * the page - which is where they used to put it. */
-.as-waterfall-sets {
-    /* Must not shrink: as a shrinkable item with min-height 0 it collapsed to
-     * 65px and clipped the first field row. It keeps its content height, and
-     * the cap - not the flex algorithm - is what bounds it. */
-    flex: 0 0 auto;
-    max-height: 50%;
-    overflow-y: auto;
+/* The waterfall's preview follows the set fields and the button that adds
+ * one, so it needs its own separation from them. */
+.as-waterfall-preview {
+    margin-top: var(--sp-5);
 }
 
 /* A post-processing row reads as a sentence - "Send <statistic> of <tornado
