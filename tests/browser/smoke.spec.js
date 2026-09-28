@@ -352,10 +352,15 @@ async function authenticate(page) {
     value: encodeURIComponent(credentials),
     url: 'http://127.0.0.1:4173',
   }]);
+  /* Seeded only while the session cookie is there. An init script re-runs on
+   * every navigation including a reload, so seeding unconditionally would put
+   * the credentials back after a logout cleared them and quietly hide whether
+   * the logout worked. */
   await page.addInitScript(({ info }) => {
+    if (!document.cookie.includes('huashansession=')) return;
     localStorage.setItem('JWT-TOKEN', 'smoke-token');
     localStorage.setItem('INFO', info);
-  }, { info: Buffer.from(JSON.stringify({ is_admin: true })).toString('base64') });
+  }, { info: Buffer.from(JSON.stringify({ is_admin: true, username: 'smoke_user' })).toString('base64') });
 }
 
 function failOnPageErrors(page) {
@@ -783,6 +788,131 @@ test('Select Template exposes retry after the template list fails', async ({ pag
   failTemplates = false;
   await page.getByRole('button', { name: 'Retry' }).click();
   await expect(page.getByText(TEMPLATE, { exact: true })).toBeVisible();
+  assertNoPageErrors();
+});
+
+test('the navbar names the signed-in user', async ({ page }) => {
+  const assertNoPageErrors = failOnPageErrors(page);
+  await page.goto('/#/selectTemplate');
+
+  const toggle = page.locator('.app-nav-user-toggle');
+  await expect(toggle).toContainText('smoke_user');
+
+  await toggle.click();
+  const menu = page.locator('.app-nav-user-menu');
+  await expect(menu).toBeVisible();
+  await expect(menu).toContainText('Signed in as');
+  await expect(menu.locator('.app-nav-user-identity-name')).toHaveText('smoke_user');
+  await expect(menu.locator('.app-nav-user-role')).toHaveText('Admin');
+
+  // Opening off the right edge of the bar, so it cannot leave the window.
+  const box = await menu.boundingBox();
+  const width = page.viewportSize().width;
+  expect(box.x + box.width).toBeLessThanOrEqual(width + 1);
+  expect(box.x).toBeGreaterThanOrEqual(0);
+
+  assertNoPageErrors();
+});
+
+test('the navbar stays one row at every width', async ({ page }) => {
+  const assertNoPageErrors = failOnPageErrors(page);
+
+  /* Adding the account menu made the bar overflow at 1280px, and floated it
+   * answered by wrapping to a second row - 51px tall became 101px, which
+   * pushes every view down by 50px and put four editors' lists under the
+   * footer. The bar has to keep its height whatever it is asked to carry. */
+  for (const width of [1600, 1440, 1280, 1100, 900]) {
+    await page.setViewportSize({ width, height: 800 });
+    await page.goto(`/#/appstructure/${TEMPLATE}`);
+    await expect(page.locator('.app-nav-user-toggle')).toBeVisible();
+
+    const bar = await page.evaluate(() => {
+      const nav = document.querySelector('.app-nav').getBoundingClientRect();
+      const user = document.querySelector('.app-nav-user').getBoundingClientRect();
+      const brand = document.querySelector('.navbar-header').getBoundingClientRect();
+      const middle = (box) => box.top + box.height / 2;
+      return {
+        height: nav.height,
+        // Centres, not tops: the brand box is the full height of the bar
+        // while the menu item is centred within it.
+        centreGap: Math.abs(middle(user) - middle(brand)),
+        userRight: user.right,
+      };
+    });
+
+    expect(bar.height, `at ${width}px: the navbar grew a second row`).toBeLessThan(60);
+    expect(bar.centreGap, `at ${width}px: the account menu dropped below the brand`).toBeLessThan(12);
+    // Still anchored to the right edge rather than trailing the tabs.
+    expect(bar.userRight, `at ${width}px: the account menu is not on the right`).toBeGreaterThan(width - 40);
+  }
+
+  assertNoPageErrors();
+});
+
+test('logging out clears the session and locks the deep links', async ({ page }) => {
+  const assertNoPageErrors = failOnPageErrors(page);
+  await page.goto('/#/selectTemplate');
+
+  const readSession = async () => ({
+    storage: await page.evaluate(() => ({
+      token: localStorage.getItem('JWT-TOKEN'),
+      info: localStorage.getItem('INFO'),
+    })),
+    cookies: (await page.context().cookies()).map((cookie) => cookie.name),
+  });
+
+  const before = await readSession();
+  expect(before.storage.token, 'the fixture should start signed in').toBe('smoke-token');
+  expect(before.cookies).toContain('huashansession');
+
+  await page.locator('.app-nav-user-toggle').click();
+  await page.locator('[data-logout]').click();
+  await page.waitForURL(/#\/login$/);
+
+  /* Every one of these is load-bearing: the cookie restores the session on
+   * the next view, and the token is what the API sends. */
+  const after = await readSession();
+  expect(after.storage.token, 'JWT-TOKEN survived the logout').toBeNull();
+  expect(after.storage.info, 'INFO survived the logout').toBeNull();
+  expect(after.cookies, 'the session cookie survived the logout').not.toContain('huashansession');
+
+  // A deep link no longer gets in.
+  await page.goto(`/#/appstructure/${TEMPLATE}`);
+  await page.waitForURL(/#\/login$/);
+  await expect(page.locator('#login-username')).toBeVisible();
+
+  assertNoPageErrors();
+});
+
+test('logging out asks before discarding unsaved changes', async ({ page }) => {
+  const assertNoPageErrors = failOnPageErrors(page);
+  await page.goto(`/#/appstructure/${TEMPLATE}`);
+  await page.getByText('Tornado', { exact: true }).first().click();
+  await page.locator('[data-tornado-tab="settings"]').click();
+  await page.locator('[data-field="Parameters.ChartTitle"]').fill('Unsaved edit');
+  await expect(page.locator('#as-save-btn')).toBeEnabled();
+
+  /* The log out link is a real #/login anchor, so the router's unsaved
+   * changes guard intercepts it like any other in-app link. Declining the
+   * prompt has to leave the session alone - a logout that skipped the guard
+   * would throw the edit away silently. */
+  const prompts = [];
+  page.once('dialog', (dialog) => { prompts.push(dialog.message()); return dialog.dismiss(); });
+  await page.locator('.app-nav-user-toggle').click();
+  await page.locator('[data-logout]').click();
+
+  expect(prompts, 'logging out did not consult the unsaved-changes guard').toHaveLength(1);
+  expect(prompts[0]).toContain('unsaved changes');
+  expect(page.url()).toContain('/appstructure/');
+  expect(await page.evaluate(() => localStorage.getItem('JWT-TOKEN'))).toBe('smoke-token');
+
+  // Accepting goes through.
+  page.once('dialog', (dialog) => dialog.accept());
+  await page.locator('.app-nav-user-toggle').click();
+  await page.locator('[data-logout]').click();
+  await page.waitForURL(/#\/login$/);
+  expect(await page.evaluate(() => localStorage.getItem('JWT-TOKEN'))).toBeNull();
+
   assertNoPageErrors();
 });
 

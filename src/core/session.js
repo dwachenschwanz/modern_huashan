@@ -2,9 +2,10 @@
  * string returned by the Auth command for the lifetime of the tab.
  * `credentials` is a plain public field (some legacy controllers read
  * `session.credentials` directly instead of calling `getCredentials()`). */
-import { getCookie } from './cookies.js';
+import { deleteCookie, getCookie } from './cookies.js';
 import { navigate } from './router.js';
-import { smartorg } from './config.js';
+import { smartorg, INFO_KEY, TOKEN_KEY } from './config.js';
+import { autoAuthService } from './auth.js';
 import { TheUte } from './textUtils.js';
 
 const SESSION_COOKIE = 'huashansession';
@@ -60,4 +61,27 @@ export function restoreSession() {
   }
   navigate('/login');
   return false;
+}
+
+/**
+ * Tears down everything a login established. Every item here is load-bearing:
+ * leave the cookie and restoreSession() reads the session back on the next
+ * view; leave the SmartOrg credentials and the vendored global still holds
+ * this user's secret for whoever sits down next; leave the renewal interval
+ * and it writes a new token into the storage cleared below.
+ *
+ * Callers follow this with a full page load rather than a route change, so
+ * nothing that was missed here can survive in module state either.
+ */
+export function logout() {
+  autoAuthService.stopAutoAuth();
+  session.destroy();
+  try {
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(INFO_KEY);
+  } catch (error) {
+    console.warn('Could not clear stored credentials on logout.', error);
+  }
+  deleteCookie(SESSION_COOKIE);
+  if (smartorg.protocols) smartorg.protocols.credentials = null;
 }

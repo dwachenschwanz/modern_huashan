@@ -10,20 +10,10 @@ import { createJsonEditor } from '../../components/jsonEditor.js';
 import { loadingOverlayHtml } from '../../components/loadingOverlay.js';
 import { handleLoadError, loadErrorHtml, loadErrorMessage, requireResponseResult } from '../../components/loadError.js';
 import { escapeHtml } from '../../core/html.js';
+import { getIsAdmin } from '../../core/user.js';
 
 function stringify(jsonObject) {
   return JSON.stringify(jsonObject, undefined, 2);
-}
-
-function getIsAdmin() {
-  try {
-    const infoGot = localStorage.getItem('INFO');
-    if (!infoGot) return false;
-    const userInfo = JSON.parse(atob(infoGot));
-    return !!userInfo.is_admin;
-  } catch (e) {
-    return false;
-  }
 }
 
 export function mount(container, params) {

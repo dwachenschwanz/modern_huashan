@@ -20,16 +20,7 @@ import { handleLoadError, loadErrorHtml, loadErrorMessage, requireResponseResult
 import { inputEditorHtml, wireInputEditor } from './inputEditor.js';
 import { tableInputEditorHtml, wireTableInputEditor } from './tableInputEditor.js';
 import { outputEditorHtml, wireOutputEditor } from './outputEditor.js';
-
-function getIsAdmin() {
-  try {
-    const infoGot = localStorage.getItem('INFO');
-    if (!infoGot) return false;
-    return !!JSON.parse(atob(infoGot)).is_admin;
-  } catch (e) {
-    return false;
-  }
-}
+import { getIsAdmin } from '../../core/user.js';
 
 export function mount(container, params) {
   if (!restoreSession()) return () => {};

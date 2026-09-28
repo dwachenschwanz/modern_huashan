@@ -1,3 +1,64 @@
+/* The bar is laid out as a flex row rather than on base.css's floats.
+ * Floated, the right-hand group drops to a second line as soon as the tabs
+ * and the template chip together exceed the window - at 1280px they overran
+ * it by 13px - and a navbar that silently becomes 101px tall instead of 51px
+ * pushes every view down with it. Here it cannot wrap: the view tabs are the
+ * only flexible part, and they scroll rather than the bar growing. */
+.app-nav > .container-fluid {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+}
+
+.app-nav .navbar-header {
+  float: none;
+  flex: 0 0 auto;
+}
+
+.app-nav .navbar-collapse {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.app-nav .navbar-nav {
+  float: none;
+  display: flex;
+  flex-wrap: nowrap;
+  margin: 0;
+}
+
+.app-nav .navbar-nav > li {
+  float: none;
+}
+
+.app-nav .navbar-nav > li > a {
+  white-space: nowrap;
+}
+
+/* Scrolls instead of wrapping or clipping when the window is too narrow for
+ * every tab. The scrollbar is hidden - it would sit across the bottom of the
+ * bar - but the strip still scrolls by wheel, drag and keyboard focus. */
+.app-nav-views {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.app-nav-views::-webkit-scrollbar {
+  display: none;
+}
+
+.app-nav .navbar-right {
+  float: none;
+  flex: 0 0 auto;
+  margin-right: 0;
+  margin-left: auto;
+}
+
 .app-nav-brand.navbar-brand {
   display: flex;
   align-items: center;
@@ -30,6 +91,85 @@
 .app-nav.navbar-inverse .navbar-nav > .active > a:focus {
   background: #8b1e2b;
   color: #fff;
+}
+
+/* The account menu closes the bar on the right. It carries the one piece of
+ * information the app never showed - who you are signed in as - so logging
+ * out has somewhere to live that is not a link beside the view tabs, where
+ * it would be one misclick away from a structure screen holding unsaved
+ * edits. */
+.app-nav-user > .app-nav-user-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.app-nav-user-name {
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Hangs off the right edge of the bar rather than the left of its toggle,
+ * so the menu cannot run off the side of the window. */
+.app-nav-user .dropdown-menu {
+  right: 0;
+  left: auto;
+  min-width: 200px;
+}
+
+.app-nav-user-identity {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 20px 10px;
+}
+
+.app-nav-user-identity-label {
+  color: var(--ink-subtle);
+  font-size: var(--t-label);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.app-nav-user-identity-name {
+  color: var(--ink);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.app-nav-user-role {
+  align-self: flex-start;
+  margin-top: 4px;
+  padding: 1px 8px;
+  border-radius: var(--r-pill);
+  background: var(--brand-tint);
+  color: var(--brand-deep);
+  font-size: var(--t-label);
+  font-weight: 600;
+}
+
+.app-nav-user-divider {
+  height: 1px;
+  margin: 4px 0;
+  background: var(--border);
+}
+
+.app-nav-user-menu > li > a {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 20px;
+}
+
+/* The bar carries seven view tabs plus the template chip, and at 1280px the
+ * three together do not fit. The name is the first thing to give up, since
+ * the icon still opens the same menu and the menu repeats the name inside. */
+@media (max-width: 1400px) {
+  .app-nav-user-name {
+    display: none;
+  }
 }
 
 .app-nav-template-chip {

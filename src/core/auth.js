@@ -43,6 +43,20 @@ function startAutoAuth() {
   }
 }
 
+/*
+ * Logging out is a route change, not a page unload, so the beforeunload
+ * handler above does not run and this interval outlives the session that
+ * started it - renewing the JWT, and writing a fresh token back into the
+ * localStorage the logout just cleared. Clearing the handle (rather than only
+ * the interval) lets startAutoAuth arm a new one on the next login.
+ */
+function stopAutoAuth() {
+  isLogin = false;
+  clearInterval(autoAuthInterval);
+  autoAuthInterval = undefined;
+}
+
 export const autoAuthService = {
   startAutoAuth,
+  stopAutoAuth,
 };

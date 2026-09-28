@@ -314,10 +314,14 @@ ol {
     float: left;
   }
 
+  /* The !important these two carried in Bootstrap overrode the collapsed
+   * state's `.collapse { display: none }`. Nothing collapses here - there is
+   * no toggle button and no rule to beat - and they blocked a view from
+   * laying its own navbar out, so they are gone. */
   .navbar-collapse {
-    display: block !important;
+    display: block;
     width: auto;
-    overflow: visible !important;
+    overflow: visible;
     border-top: 0;
   }
 
