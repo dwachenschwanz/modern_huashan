@@ -63,12 +63,17 @@ export function renderTornadoEditor({ menu, state, commandHeaderHtml, findKey, o
   const includedKeys = parameters.ValueMetricKeys || (parameters.ValueMetricKeys = []);
   const excludedOutputs = state.outputs.filter((output) => !includedKeys.includes(output.Key));
   const weights = parameters.Weights || (parameters.Weights = { High: 0.25, Med: 0.5, Low: 0.25 });
-  return `${commandHeaderHtml(menu)}
+  /* The headings sit in their own row: .as-split-body forces a single grid
+   * track, so leaving them in with the lists would pile all four into it. */
+  return `<div class="as-split-editor">
+    ${commandHeaderHtml(menu)}
     <ul class="nav nav-tabs"><li class="${state.tornadoTab === 'output' ? 'active' : ''}"><a href="" data-tornado-tab="output">Tornado Output</a></li><li class="${state.tornadoTab === 'settings' ? 'active' : ''}"><a href="" data-tornado-tab="settings">Parameters</a></li><li class="${state.tornadoTab === 'post' ? 'active' : ''}"><a href="" data-tornado-tab="post">Post Processing</a></li></ul>
-    ${state.tornadoTab === 'output' ? `<div class="tornado-output-picker row">
+    ${state.tornadoTab === 'output' ? `<div class="row">
       <div class="col-sm-6"><h4>Included Outputs</h4></div>
       <div class="col-sm-6"><h4>Excluded Outputs</h4></div>
-      <div class="col-sm-6" style="height:420px;overflow:auto">
+    </div>
+    <div class="row as-split-body">
+      <div class="col-sm-6 as-split-list">
         <div class="list-of-templates"><ul class="list-group">
           ${includedKeys.map((key) => {
             const output = findKey(state.outputs)(key);
@@ -76,14 +81,15 @@ export function renderTornadoEditor({ menu, state, commandHeaderHtml, findKey, o
           }).join('')}
         </ul></div>
       </div>
-      <div class="col-sm-6" style="height:420px;overflow:auto">
+      <div class="col-sm-6 as-split-list">
         <div class="list-of-templates"><ul class="list-group">
           ${excludedOutputs.map((output) => `<li class="list-group-item"><div class="no-wrap"><a class="text-success" href="" data-tornado-key="${escapeHtml(output.Key)}" title="Include output"><i class="fa fa-plus-square fa-lg"></i></a> ${escapeHtml(output.Display)}</div></li>`).join('')}
         </ul></div>
       </div>
     </div>` : ''}
     ${state.tornadoTab === 'settings' ? `<div class="container-fluid"><div class="row table-padding"><div class="col-sm-3 text-right"><b>Chart Title</b></div><div class="col-sm-6"><input class="form-control" data-field="Parameters.ChartTitle" value="${escapeHtml(parameters.ChartTitle || '')}"></div></div><div class="row table-padding"><div class="col-sm-3 text-right"><b>Combined Uncertainty Label</b></div><div class="col-sm-6"><input class="form-control" data-field="Parameters.CombinedUncertaintyLabel" value="${escapeHtml(parameters.CombinedUncertaintyLabel || '')}"></div></div><div class="row table-padding"><div class="col-sm-3 text-right"><b>Depth</b></div><div class="col-sm-3"><input type="number" class="form-control" data-field="Parameters.Depth" value="${parameters.Depth ?? 2}"></div></div>${['High','Med','Low'].map((key) => `<div class="row table-padding"><div class="col-sm-3 text-right"><b>${key === 'Med' ? 'Medium' : key}</b></div><div class="col-sm-3"><input type="number" min="0" max="1" step="0.01" class="form-control" data-field="Parameters.Weights.${key}" value="${weights[key]}"></div></div>`).join('')}</div>` : ''}
-    ${state.tornadoTab === 'post' ? `<div class="container-fluid">${state.postProcessing.map((sendback, i) => `<div class="row table-padding"><div class="col-sm-1"><button class="btn btn-danger" data-sendback-delete="${i}"><span class="fa fa-trash"></span></button></div><div class="col-sm-2"><select class="form-control" data-sendback-to="${i}">${state.sendBackElements.map((item) => `<option value="${escapeHtml(item.value)}" ${sendback.Reference && sendback.Reference.slice(22) === item.value ? 'selected' : ''}>${escapeHtml(item.display)}</option>`).join('')}</select></div><div class="col-sm-3"><select class="form-control" data-sendback-tornado="${i}">${includedKeys.map((key, keyIndex) => `<option value="${keyIndex}" ${sendback.Reference && Number(sendback.Reference[19]) === keyIndex ? 'selected' : ''}>${escapeHtml((findKey(state.outputs)(key) || {}).Display || key)}</option>`).join('')}</select></div><div class="col-sm-4"><select class="form-control" data-sendback-field="${i}">${optionHtml(state.allDataStructureComponents, sendback.SendBack, (item) => item.CellLink, (item) => item.Display)}</select></div></div>`).join('')}<button class="btn btn-success" id="as-sendback-add"><span class="fa fa-plus"></span></button></div>` : ''}`;
+    ${state.tornadoTab === 'post' ? `<div class="container-fluid">${state.postProcessing.map((sendback, i) => `<div class="row table-padding"><div class="col-sm-1"><button class="btn btn-danger" data-sendback-delete="${i}"><span class="fa fa-trash"></span></button></div><div class="col-sm-2"><select class="form-control" data-sendback-to="${i}">${state.sendBackElements.map((item) => `<option value="${escapeHtml(item.value)}" ${sendback.Reference && sendback.Reference.slice(22) === item.value ? 'selected' : ''}>${escapeHtml(item.display)}</option>`).join('')}</select></div><div class="col-sm-3"><select class="form-control" data-sendback-tornado="${i}">${includedKeys.map((key, keyIndex) => `<option value="${keyIndex}" ${sendback.Reference && Number(sendback.Reference[19]) === keyIndex ? 'selected' : ''}>${escapeHtml((findKey(state.outputs)(key) || {}).Display || key)}</option>`).join('')}</select></div><div class="col-sm-4"><select class="form-control" data-sendback-field="${i}">${optionHtml(state.allDataStructureComponents, sendback.SendBack, (item) => item.CellLink, (item) => item.Display)}</select></div></div>`).join('')}<button class="btn btn-success" id="as-sendback-add"><span class="fa fa-plus"></span></button></div>` : ''}
+  </div>`;
 }
 
 export function renderMetalogEditor({ menu, state, commandHeaderHtml, findKey, optionHtml }) {
@@ -91,12 +97,15 @@ export function renderMetalogEditor({ menu, state, commandHeaderHtml, findKey, o
   const includedKeys = parameters.MetaLogKeys || (parameters.MetaLogKeys = []);
   const availableKeys = state.tornadoValueMetricKeys.filter((key) => !includedKeys.includes(key));
   const failureBranch = parameters.FailureBranch;
-  return `${commandHeaderHtml(menu)}
+  return `<div class="as-split-editor">
+    ${commandHeaderHtml(menu)}
     <ul class="nav nav-tabs"><li class="${state.metalogTab === 'metalogKeys' ? 'active' : ''}"><a href="" data-metalog-tab="metalogKeys">MetalogKeys</a></li><li class="${state.metalogTab === 'explanation' ? 'active' : ''}"><a href="" data-metalog-tab="explanation">Explanation</a></li><li class="${state.metalogTab === 'failure' ? 'active' : ''}"><a href="" data-metalog-tab="failure">FailureBranch</a></li><li class="${state.metalogTab === 'simulation' ? 'active' : ''}"><a href="" data-metalog-tab="simulation">Simulation</a></li></ul>
-    ${state.metalogTab === 'metalogKeys' ? `<div class="row"><div class="col-sm-6"><h4>Included MetalogKeys</h4></div><div class="col-sm-6"><h4>Excluded MetalogKeys</h4></div><div class="col-sm-6" style="height:420px;overflow:auto"><ul class="list-group">${includedKeys.map((key) => `<li class="list-group-item"><a class="text-danger"><i class="fa fa-minus-square fa-lg" data-metalog-key="${escapeHtml(key)}"></i></a> ${escapeHtml((findKey(state.outputs)(key) || {}).Display || key)}</li>`).join('')}</ul></div><div class="col-sm-6" style="height:420px;overflow:auto"><ul class="list-group">${availableKeys.map((key) => `<li class="list-group-item"><a class="text-success"><i class="fa fa-plus-square fa-lg" data-metalog-key="${escapeHtml(key)}"></i></a> ${escapeHtml((findKey(state.outputs)(key) || {}).Display || key)}</li>`).join('')}</ul></div></div>` : ''}
+    ${state.metalogTab === 'metalogKeys' ? `<div class="row"><div class="col-sm-6"><h4>Included MetalogKeys</h4></div><div class="col-sm-6"><h4>Excluded MetalogKeys</h4></div></div>
+    <div class="row as-split-body"><div class="col-sm-6 as-split-list"><ul class="list-group">${includedKeys.map((key) => `<li class="list-group-item"><a class="text-danger"><i class="fa fa-minus-square fa-lg" data-metalog-key="${escapeHtml(key)}"></i></a> ${escapeHtml((findKey(state.outputs)(key) || {}).Display || key)}</li>`).join('')}</ul></div><div class="col-sm-6 as-split-list"><ul class="list-group">${availableKeys.map((key) => `<li class="list-group-item"><a class="text-success"><i class="fa fa-plus-square fa-lg" data-metalog-key="${escapeHtml(key)}"></i></a> ${escapeHtml((findKey(state.outputs)(key) || {}).Display || key)}</li>`).join('')}</ul></div></div>` : ''}
     ${state.metalogTab === 'explanation' ? `<div class="container-fluid"><div class="row table-padding"><div class="col-sm-8"><p>The text entered here will be used to explain the metalog in the system.</p><textarea rows="10" class="form-control" data-field="Parameters.FittedPointExplanation">${escapeHtml(parameters.FittedPointExplanation || '')}</textarea></div></div></div>` : ''}
     ${state.metalogTab === 'failure' ? `<div class="container-fluid">${failureBranch ? failureBranch.Stages.map((stage, index) => `<div class="row table-padding"><div class="col-sm-2"><b>Probability of Failure of Stage Key</b></div><div class="col-sm-3"><select class="form-control" data-failure-field="ProbabilityFailureOfStageKey:${index}">${optionHtml(state.outputs, stage.ProbabilityFailureOfStageKey, (item) => item.Key, (item) => item.Key)}</select></div><div class="col-sm-2"><b>Cumulative Cost of Stage Key</b></div><div class="col-sm-3"><select class="form-control" data-failure-field="CumeCostOfStageKey:${index}">${optionHtml(state.outputs, stage.CumeCostOfStageKey, (item) => item.Key, (item) => item.Key)}</select></div><div class="col-sm-1"><button class="btn btn-danger" data-failure-delete="${index}"><span class="fa fa-trash"></span></button></div></div>`).join('') : ''}<button class="btn btn-success" id="as-failure-add"><span class="fa fa-plus"></span></button></div>` : ''}
-    ${state.metalogTab === 'simulation' ? `<div class="container-fluid"><div class="row table-padding"><div class="col-sm-8"><label><input type="checkbox" data-field="Parameters.CalcMVSFromFittedPoints" ${parameters.CalcMVSFromFittedPoints ? 'checked' : ''}> <b>Calculate Mean, Variance and Skewness from Fitted Points</b></label></div></div></div>` : ''}`;
+    ${state.metalogTab === 'simulation' ? `<div class="container-fluid"><div class="row table-padding"><div class="col-sm-8"><label><input type="checkbox" data-field="Parameters.CalcMVSFromFittedPoints" ${parameters.CalcMVSFromFittedPoints ? 'checked' : ''}> <b>Calculate Mean, Variance and Skewness from Fitted Points</b></label></div></div></div>` : ''}
+  </div>`;
 }
 
 export function renderSeriesEditor({ menu, state, commandHeaderHtml, optionHtml, getKeyFrom, getOutputDisplayFromKey }) {

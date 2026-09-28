@@ -1256,7 +1256,7 @@ test('App Structure editor lists scroll inside the page rather than past it', as
    * form scrolled as one block, so the fields above the list scrolled away
    * and the list itself had no end on screen. Each list should now be bounded
    * by the space available and scroll inside it. */
-  for (const item of ['Portfolio Table', 'Inputs', 'Image']) {
+  for (const item of ['Portfolio Table', 'Inputs', 'Image', 'Tornado', 'Metalog']) {
     await page.getByText(item, { exact: true }).first().click();
     await expect(page.locator('.as-split-list').first()).toBeVisible();
 
@@ -1293,6 +1293,27 @@ test('App Structure editor lists scroll inside the page rather than past it', as
   expect(await page.locator('.as-split-list').evaluate((list) => list.scrollHeight > list.clientHeight + 1),
     'the 40-entry list should have overflowed its pane').toBe(true);
   expect(after.y, 'scrolling the list moved the form above it').toBeCloseTo(before.y, 0);
+
+  /* Bounded is not the same as using the space: these lists were bounded
+   * before, at a hard 420px, which left most of a tall window empty below
+   * them. Each should now take whatever the window has. */
+  const listHeights = async () => page.evaluate(() => [...document.querySelectorAll('.as-split-list')]
+    .map((list) => list.getBoundingClientRect().height));
+
+  for (const item of ['Tornado', 'Metalog', 'Inputs']) {
+    await page.getByText(item, { exact: true }).first().click();
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await expect(page.locator('.as-split-list').first()).toBeVisible();
+    const small = await listHeights();
+    await page.setViewportSize({ width: 1280, height: 1200 });
+    const large = await listHeights();
+
+    expect(small.length, `${item}: expected two lists`).toBe(2);
+    for (const [index, height] of large.entries()) {
+      expect(height - small[index], `${item}: list ${index} did not grow with the window`).toBeGreaterThan(350);
+      expect(height, `${item}: list ${index} is still near the old 420px cap`).toBeGreaterThan(600);
+    }
+  }
 
   assertNoPageErrors();
 });
